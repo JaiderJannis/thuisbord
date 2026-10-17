@@ -165,7 +165,10 @@
                     <div>
                         <div class="flex items-baseline justify-between mb-5">
                             <h3 class="text-xl font-bold text-[#1c2520]">Nu</h3>
-                            <span id="liveSensorSourceSub" class="text-xs font-semibold text-[#197447] bg-[#e8f2ec] px-2.5 py-0.5 rounded-full">Live meting</span>
+                            <span id="liveSensorSourceSub" class="text-xs font-semibold text-[#197447] bg-[#e8f2ec] px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                                <span id="livePulseIndicator" class="w-2 h-2 rounded-full bg-[#19975c] animate-ping"></span>
+                                <span id="liveSensorSourceText">Live meting (2s)</span>
+                            </span>
                         </div>
 
                         <!-- Top 3 Metrics: Zon, Huis, Net -->
@@ -803,14 +806,26 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                        <button onclick="window.fetchHomeAssistantEntities()" class="flex-1 bg-[#152920] hover:bg-[#1e3a2d] text-white font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">
-                            🔄 Haal Alle Entiteiten Op uit Home Assistant
+                        <button onclick="window.fetchHomeAssistantEntities(false, true)" class="flex-1 bg-[#152920] hover:bg-[#1e3a2d] text-white font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">
+                            🔄 1. Haal Entiteiten Op & Verbind Live Stream
+                        </button>
+                        <button onclick="window.autoDetectAndMapHaEntities()" class="bg-[#dcece3] hover:bg-[#c8e2d3] text-[#152920] font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">
+                            ⚡ 2. Auto-Koppel Mijn Energie Sensoren
                         </button>
                     </div>
 
-                    <div id="haCorsHelpBox" class="p-3.5 rounded-2xl bg-[#f4f7f4] text-[11px] text-[#38443d] space-y-1 border border-stone-200/70">
-                        <p class="font-bold text-[#152920]">💡 Tip voor Nabu Casa / Lokale Home Assistant (CORS):</p>
-                        <p>Zorg dat in je `configuration.yaml` van Home Assistant je domein onder `http: cors_allowed_origins:` staat zodat de browser rechtstreeks live de sensoren elke 5 seconden mag uitlezen.</p>
+                    <div id="haCorsHelpBox" class="p-4 rounded-2xl bg-[#f4f7f4] text-[11px] text-[#38443d] space-y-2 border border-stone-200/80">
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-[#152920]">🛠️ Oplossing voor CORS-blokkade (`configuration.yaml`):</p>
+                            <button type="button" onclick="window.copyCorsYamlSnippet()" class="px-2.5 py-1 rounded-lg bg-[#152920] text-white font-bold text-[10px] cursor-pointer">
+                                📋 Kopieer YAML
+                            </button>
+                        </div>
+                        <pre id="corsYamlCode" class="bg-[#152920] text-[#dcece3] p-2.5 rounded-xl font-mono text-[10px] overflow-x-auto select-all">http:
+  cors_allowed_origins:
+    - https://jaiderjannis.github.io
+    - http://localhost:8000</pre>
+                        <p class="text-[10px] text-[#55605a]">Plak dit in Home Assistant in <strong>configuration.yaml</strong> en <strong>herstart Home Assistant</strong>.</p>
                     </div>
                 </div>
 
@@ -888,7 +903,10 @@
                     </div>
 
                     <div class="pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
-                        <span class="text-xs text-[#68736d]">Of pas handmatig de fallback-waardes aan als een sensor niet gekoppeld is:</span>
+                        <label class="flex items-center gap-2 text-xs font-bold text-[#152920] cursor-pointer">
+                            <input id="admLiveSimulationFallback" type="checkbox" checked onchange="window.toggleLiveTickerMode(this.checked)" class="w-4 h-4 accent-[#152920]">
+                            <span>🔄 Live dynamische schommeling tonen voor niet-gekoppelde sensoren (elke 2 sec)</span>
+                        </label>
                         <button onclick="saveAllToFirebase()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">
                             Entiteiten Opslaan in Firebase
                         </button>
@@ -1243,10 +1261,156 @@
         let adviceRotationIndex = 0;
 
         let discoveredHaEntities = []; // Cache van opgehaalde Home Assistant entiteiten
+        let haWebSocket = null;
+        let haWsConnected = false;
+        let lastHaWsUrl = "";
+        let liveTickerEnabled = true;
+
         let db = null;
         let auth = null;
         let currentUser = null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'thuisbord-default-app';
+
+        window.copyCorsYamlSnippet = function() {
+            const yamlText = `http:\n  cors_allowed_origins:\n    - ${window.location.origin}\n    - https://jaiderjannis.github.io`;
+            const temp = document.createElement('textarea');
+            temp.value = yamlText;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("YAML gekopieerd naar je klembord!");
+        };
+
+        window.toggleLiveTickerMode = function(enabled) {
+            liveTickerEnabled = !!enabled;
+            showToast(liveTickerEnabled ? "Live 2-seconden verversing actief" : "Enkel gekoppelde HA sensoren verversen");
+        };
+
+        // Verbindt rechtstreeks via WebSocket met Home Assistant zodat ELKE wijziging op de milliseconde live binnenkomt
+        function connectHomeAssistantWebSocket() {
+            const baseUrl = getCleanHaUrl();
+            const token = (appState.haToken || "").trim();
+            if (!baseUrl || !token) return;
+
+            const wsUrl = baseUrl.replace(/^http/i, 'ws') + '/api/websocket';
+            if (haWebSocket && haWsConnected && lastHaWsUrl === wsUrl) return;
+
+            if (haWebSocket) {
+                try { haWebSocket.close(); } catch (e) {}
+            }
+
+            try {
+                haWebSocket = new WebSocket(wsUrl);
+                lastHaWsUrl = wsUrl;
+
+                haWebSocket.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'auth_required') {
+                            haWebSocket.send(JSON.stringify({
+                                type: 'auth',
+                                access_token: token
+                            }));
+                        } else if (msg.type === 'auth_ok') {
+                            haWsConnected = true;
+                            const statusBadge = document.getElementById('haConnectionBadge');
+                            if (statusBadge) {
+                                statusBadge.textContent = "🟢 Realtime WebSocket Stream Actief";
+                                statusBadge.className = "text-xs font-bold text-[#197447]";
+                            }
+                            const sourceText = document.getElementById('liveSensorSourceText');
+                            if (sourceText) sourceText.textContent = "⚡ Realtime HA Stream";
+                            // Vraag direct alle huidige states op én abonneer op alle state_changed events
+                            haWebSocket.send(JSON.stringify({ id: 1, type: 'get_states' }));
+                            haWebSocket.send(JSON.stringify({ id: 2, type: 'subscribe_events', event_type: 'state_changed' }));
+                        } else if (msg.type === 'result' && msg.id === 1 && Array.isArray(msg.result)) {
+                            discoveredHaEntities = msg.result;
+                            populateHaDatalist(discoveredHaEntities);
+                            applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+                        } else if (msg.type === 'event' && msg.event?.event_type === 'state_changed') {
+                            const newState = msg.event.data?.new_state;
+                            if (newState && newState.entity_id) {
+                                // Update cache en pas direct live toe op het scherm!
+                                const idx = discoveredHaEntities.findIndex(e => e.entity_id === newState.entity_id);
+                                if (idx >= 0) {
+                                    discoveredHaEntities[idx] = newState;
+                                } else {
+                                    discoveredHaEntities.push(newState);
+                                }
+                                applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+                            }
+                        }
+                    } catch (parseErr) {
+                        console.warn("HA WS parse error:", parseErr);
+                    }
+                };
+
+                haWebSocket.onclose = () => {
+                    haWsConnected = false;
+                };
+                haWebSocket.onerror = () => {
+                    haWsConnected = false;
+                };
+            } catch (e) {
+                haWsConnected = false;
+            }
+        }
+
+        function populateHaDatalist(states) {
+            const countBadge = document.getElementById('haEntitiesCountBadge');
+            if (countBadge) countBadge.textContent = `${states.length} entiteiten geladen`;
+
+            const datalist = document.getElementById('haEntitiesDatalist');
+            if (datalist) {
+                datalist.innerHTML = states
+                    .filter(s => s.entity_id.startsWith('sensor.') || s.entity_id.startsWith('switch.') || s.entity_id.startsWith('input_number.'))
+                    .map(s => {
+                        const friendly = s.attributes?.friendly_name || s.entity_id;
+                        const unit = s.attributes?.unit_of_measurement || '';
+                        return `<option value="${s.entity_id}">${friendly} (${s.state} ${unit})</option>`;
+                    }).join('');
+            }
+        }
+
+        // Slimme Auto-Koppeling: zoekt zelf de juiste energie-sensoren in jouw Home Assistant lijst
+        window.autoDetectAndMapHaEntities = function(silent = false) {
+            if (!discoveredHaEntities || discoveredHaEntities.length === 0) {
+                if (!silent) showToast("Haal eerst je entiteiten op met knop 1.");
+                return;
+            }
+            if (!appState.entityMap) appState.entityMap = {};
+            const em = appState.entityMap;
+
+            const findSensor = (keywords, unitFilter = null) => {
+                for (const kw of keywords) {
+                    const match = discoveredHaEntities.find(s => {
+                        if (!s.entity_id.startsWith('sensor.')) return false;
+                        const idAndName = (s.entity_id + ' ' + (s.attributes?.friendly_name || '')).toLowerCase();
+                        const unit = (s.attributes?.unit_of_measurement || '').toLowerCase();
+                        const unitOk = !unitFilter || unitFilter.some(u => unit === u.toLowerCase());
+                        return unitOk && kw.every(word => idAndName.includes(word));
+                    });
+                    if (match) return match.entity_id;
+                }
+                return "";
+            };
+
+            if (!em.solarW) em.solarW = findSensor([['solar', 'power'], ['zon', 'vermogen'], ['pv', 'power'], ['inverter', 'power'], ['zonnepanelen']], ['w', 'kw']);
+            if (!em.houseW) em.houseW = findSensor([['active_power'], ['power_consumption'], ['huis', 'vermogen'], ['actueel', 'verbruik']], ['w', 'kw']);
+            if (!em.gridW) em.gridW = findSensor([['grid', 'power'], ['net', 'vermogen'], ['p1', 'power']], ['w', 'kw']);
+            if (!em.batteryW) em.batteryW = findSensor([['battery', 'power'], ['batterij', 'vermogen'], ['thuisbatterij', 'power']], ['w', 'kw']);
+            if (!em.batteryPct) em.batteryPct = findSensor([['battery', 'soc'], ['battery', 'level'], ['batterij', 'percentage'], ['thuisbatterij']], ['%']);
+            if (!em.gasToday) em.gasToday = findSensor([['gas', 'today'], ['gas', 'vandaag'], ['gas', 'daily']], ['m³', 'm3']);
+            if (!em.waterRate) em.waterRate = findSensor([['water', 'active'], ['water', 'flow'], ['water', 'liter']], ['l/min', 'l/m']);
+            if (!em.waterTodayLiters) em.waterTodayLiters = findSensor([['water', 'today'], ['water', 'vandaag'], ['water', 'daily']], ['l', 'm³', 'm3']);
+            if (!em.kwhSolar) em.kwhSolar = findSensor([['solar', 'today'], ['zon', 'vandaag'], ['pv', 'daily'], ['energy_production_today']], ['kwh']);
+            if (!em.priceSensor) em.priceSensor = findSensor([['nordpool'], ['entsoe'], ['epex'], ['electricity_price'], ['stroomprijs']], null);
+
+            populateAdminInputs();
+            applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            if (!silent) showToast("Beschikbare energie-sensoren automatisch herkend en gekoppeld!");
+        };
 
         function syncActiveHouseholdPointer() {
             if (!platformState.households) platformState.households = {};
@@ -1406,25 +1570,27 @@
             return (appState.haUrl || "").trim().replace(/\/+$/, "");
         }
 
-        window.fetchHomeAssistantEntities = async function(silent = false) {
+        window.fetchHomeAssistantEntities = async function(silent = false, autoMapIfEmpty = false) {
             const baseUrl = getCleanHaUrl();
             const token = (appState.haToken || "").trim();
             const statusBadge = document.getElementById('haConnectionBadge');
-            const countBadge = document.getElementById('haEntitiesCountBadge');
 
             if (!baseUrl || !token) {
                 if (!silent) showToast("Vul eerst de Home Assistant URL én je Long-Lived Access Token in.");
                 return;
             }
 
-            if (!silent) statusBadge.textContent = "⏳ Verbinden met Home Assistant...";
+            // Start ook direct de Realtime WebSocket verbinding
+            connectHomeAssistantWebSocket();
+
+            if (!silent && statusBadge) statusBadge.textContent = "⏳ Verbinden met Home Assistant...";
 
             try {
+                // Geen 'Content-Type' header meesturen bij een GET request voorkomt strenge CORS preflight blokkades
                 const res = await fetch(`${baseUrl}/api/states`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
@@ -1432,31 +1598,31 @@
                 const states = await res.json();
                 discoveredHaEntities = states;
 
-                // Vul de zoekbare datalist met alle relevante energie/water/gas/prijs sensoren
-                const datalist = document.getElementById('haEntitiesDatalist');
-                if (datalist) {
-                    datalist.innerHTML = states
-                        .filter(s => s.entity_id.startsWith('sensor.') || s.entity_id.startsWith('switch.') || s.entity_id.startsWith('input_number.'))
-                        .map(s => {
-                            const friendly = s.attributes?.friendly_name || s.entity_id;
-                            const unit = s.attributes?.unit_of_measurement || '';
-                            return `<option value="${s.entity_id}">${friendly} (${s.state} ${unit})</option>`;
-                        }).join('');
+                populateHaDatalist(states);
+
+                if (statusBadge) {
+                    statusBadge.textContent = haWsConnected ? "🟢 Realtime WebSocket + REST Actief" : "🟢 Live Verbonden met HA";
+                    statusBadge.className = "text-xs font-bold text-[#197447]";
                 }
 
-                statusBadge.textContent = "🟢 Live Verbonden met HA";
-                statusBadge.className = "text-xs font-bold text-[#197447]";
-                if (countBadge) countBadge.textContent = `${states.length} entiteiten geladen`;
+                // Als er nog geen entiteiten zijn ingevuld, probeer ze slim automatisch te koppelen
+                const em = appState.entityMap || {};
+                const hasAnyMapped = Object.values(em).some(v => v && v.trim() !== "");
+                if (!hasAnyMapped || autoMapIfEmpty) {
+                    window.autoDetectAndMapHaEntities(true);
+                }
 
                 // Pas direct de live waardes toe uit de opgehaalde states
                 applyLiveStatesFromHomeAssistant(states);
 
-                if (!silent) showToast(`${states.length} Home Assistant entiteiten geladen! Je kunt ze nu rechts selecteren.`);
+                if (!silent) showToast(`${states.length} Home Assistant entiteiten geladen & live gekoppeld!`);
             } catch (err) {
                 console.warn("Home Assistant fetch error:", err);
-                statusBadge.textContent = "⚠️ Verbinding mislukt (Check URL/Token/CORS)";
-                statusBadge.className = "text-xs font-bold text-amber-700";
-                if (!silent) showToast("Kon Home Assistant niet bereiken. Controleer URL, Token en CORS-instellingen.");
+                if (statusBadge && !haWsConnected) {
+                    statusBadge.textContent = "⚠️ Verbinding geblokkeerd door CORS (Zie YAML-oplossing hieronder)";
+                    statusBadge.className = "text-xs font-bold text-amber-700";
+                }
+                if (!silent) showToast("Kon Home Assistant niet bereiken via REST. Controleer het CORS YAML-blokje hieronder.");
             }
         };
 
@@ -1465,7 +1631,20 @@
             const found = statesMap.get(entityId.trim());
             if (!found) return null;
             const num = parseFloat(String(found.state).replace(',', '.'));
-            return isNaN(num) ? null : num;
+            if (isNaN(num)) return null;
+            // Als een vermogenssensor in kW rapporteert (bijv. 0.45 kW) ipv W, reken automatisch om naar Watt
+            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
+            if (unit === 'kw') return num * 1000;
+            return num;
+        }
+
+        function flashElementOnUpdate(elId) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.classList.add('text-[#19975c]', 'transition-colors', 'duration-300');
+            setTimeout(() => {
+                el.classList.remove('text-[#19975c]');
+            }, 550);
         }
 
         function applyLiveStatesFromHomeAssistant(statesArray) {
@@ -1475,16 +1654,32 @@
             let anyUpdated = false;
 
             const solarVal = readNumericEntity(statesMap, em.solarW);
-            if (solarVal !== null) { appState.solarW = Math.round(solarVal); anyUpdated = true; }
+            if (solarVal !== null) {
+                if (appState.solarW !== Math.round(solarVal)) flashElementOnUpdate('valSolar');
+                appState.solarW = Math.round(solarVal);
+                anyUpdated = true;
+            }
 
             const houseVal = readNumericEntity(statesMap, em.houseW);
-            if (houseVal !== null) { appState.houseW = Math.round(houseVal); anyUpdated = true; }
+            if (houseVal !== null) {
+                if (appState.houseW !== Math.round(houseVal)) flashElementOnUpdate('valHouse');
+                appState.houseW = Math.round(houseVal);
+                anyUpdated = true;
+            }
 
             const gridVal = readNumericEntity(statesMap, em.gridW);
-            if (gridVal !== null) { appState.gridW = Math.round(gridVal); anyUpdated = true; }
+            if (gridVal !== null) {
+                if (appState.gridW !== Math.round(Math.abs(gridVal))) flashElementOnUpdate('valGrid');
+                appState.gridW = Math.round(Math.abs(gridVal));
+                anyUpdated = true;
+            }
 
             const batWVal = readNumericEntity(statesMap, em.batteryW);
-            if (batWVal !== null) { appState.batteryW = Math.round(batWVal); anyUpdated = true; }
+            if (batWVal !== null) {
+                if (appState.batteryW !== Math.round(batWVal)) flashElementOnUpdate('valBatteryW');
+                appState.batteryW = Math.round(batWVal);
+                anyUpdated = true;
+            }
 
             const batPctVal = readNumericEntity(statesMap, em.batteryPct);
             if (batPctVal !== null) { appState.batteryPct = Math.round(batPctVal); anyUpdated = true; }
@@ -1496,7 +1691,11 @@
             if (gasTodayVal !== null) { appState.gasToday = gasTodayVal; anyUpdated = true; }
 
             const waterRateVal = readNumericEntity(statesMap, em.waterRate);
-            if (waterRateVal !== null) { appState.waterRate = waterRateVal; anyUpdated = true; }
+            if (waterRateVal !== null) {
+                if (appState.waterRate !== waterRateVal) flashElementOnUpdate('valWaterRate');
+                appState.waterRate = waterRateVal;
+                anyUpdated = true;
+            }
 
             const waterTodayVal = readNumericEntity(statesMap, em.waterTodayLiters);
             if (waterTodayVal !== null) { appState.waterTodayLiters = waterTodayVal; anyUpdated = true; }
@@ -1526,7 +1725,6 @@
             if (em.priceSensor && statesMap.has(em.priceSensor.trim())) {
                 const priceStateObj = statesMap.get(em.priceSensor.trim());
                 const attrs = priceStateObj.attributes || {};
-                // Nordpool & ENTSO-E hebben vaak `today` en `tomorrow` arrays in hun attributes
                 if (Array.isArray(attrs.today) && attrs.today.length >= 24) {
                     appState.hourlyPrices = attrs.today.slice(0, 24).map(v => Number(v) || 0);
                     anyUpdated = true;
@@ -1544,8 +1742,8 @@
             }
 
             if (anyUpdated) {
-                const liveSub = document.getElementById('liveSensorSourceSub');
-                if (liveSub) liveSub.textContent = "🟢 Live HA Sensoren";
+                const sourceText = document.getElementById('liveSensorSourceText');
+                if (sourceText) sourceText.textContent = haWsConnected ? "⚡ Realtime HA Stream" : "🟢 Live HA Sensoren";
                 pushLivePowerPoint(appState.solarW, appState.houseW);
                 renderAll();
             }
@@ -2992,9 +3190,10 @@
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
             document.getElementById('liveClock').textContent = `${hours}:${mins}`;
             const timeLabel = document.getElementById('liveGraphTimeLabel');
-            if (timeLabel) timeLabel.textContent = `nu (${hours}:${mins})`;
+            if (timeLabel) timeLabel.textContent = `live (${hours}:${mins}:${secs})`;
 
             const formatter = new Intl.DateTimeFormat('nl-NL', {
                 weekday: 'long',
@@ -3002,6 +3201,62 @@
                 month: 'long'
             });
             document.getElementById('liveDate').textContent = formatter.format(now);
+        }
+
+        // Zorgt dat alle niet-gekoppelde energie-onderdelen (Zon, Huis, Net, Batterij, Apparaten, Water & Dagtotalen)
+        // elke 2 seconden natuurlijk en realistisch veranderen, terwijl gekoppelde HA-sensoren 100% uit HA komen!
+        function tickLiveEnergyMetrics() {
+            const em = appState.entityMap || {};
+
+            // 1. Zonvermogen (als er geen actieve HA-sensor op zit)
+            if (!em.solarW || !discoveredHaEntities.length) {
+                const deltaSolar = Math.round((Math.random() - 0.47) * 14);
+                const nextSolar = Math.max(15, Math.min(4200, (Number(appState.solarW) || 220) + deltaSolar));
+                if (nextSolar !== appState.solarW) flashElementOnUpdate('valSolar');
+                appState.solarW = nextSolar;
+                // Laat opgewekte zonne-energie vandaag heel subtiel meestijgen
+                appState.kwhSolar = Number((Number(appState.kwhSolar) + (appState.solarW / 1800000)).toFixed(2));
+            }
+
+            // 2. Huisverbruik (als er geen actieve HA-sensor op zit)
+            if (!em.houseW || !discoveredHaEntities.length) {
+                const deltaHouse = Math.round((Math.random() - 0.49) * 11);
+                const nextHouse = Math.max(45, Math.min(5500, (Number(appState.houseW) || 95) + deltaHouse));
+                if (nextHouse !== appState.houseW) flashElementOnUpdate('valHouse');
+                appState.houseW = nextHouse;
+            }
+
+            // 3. Netvermogen & Batterij vermogen dynamisch mee laten reageren
+            if (!em.gridW || !discoveredHaEntities.length) {
+                const netDiff = appState.houseW - appState.solarW;
+                const nextGrid = netDiff > 0 ? netDiff : Math.max(2, Math.round(Math.random() * 12));
+                if (nextGrid !== appState.gridW) flashElementOnUpdate('valGrid');
+                appState.gridW = nextGrid;
+            }
+
+            if (!em.batteryW || !discoveredHaEntities.length) {
+                const surplus = Math.max(0, appState.solarW - appState.houseW);
+                const nextBatW = surplus > 0 ? Math.max(10, surplus - appState.gridW) : Math.round(Math.random() * 25);
+                if (nextBatW !== appState.batteryW) flashElementOnUpdate('valBatteryW');
+                appState.batteryW = nextBatW;
+            }
+
+            // 4. Actieve Slimme Apparaten (zoals Wasmachine) laten schommelen in wattage tijdens hun programma
+            (appState.appliances || []).forEach(app => {
+                if (app.active && !app.entityId && Number(app.watts) > 0) {
+                    const appDelta = Math.round((Math.random() - 0.48) * 9);
+                    app.watts = Math.max(12, Number(app.watts) + appDelta);
+                }
+            });
+
+            // 5. Waterstroom subtiel laten variëren als de kraan openstaat
+            if ((!em.waterRate || !discoveredHaEntities.length) && Number(appState.waterRate) > 0) {
+                const waterDelta = (Math.random() - 0.5) * 0.4;
+                appState.waterRate = Math.max(0.5, Number((Number(appState.waterRate) + waterDelta).toFixed(1)));
+            }
+
+            pushLivePowerPoint(appState.solarW, appState.houseW);
+            renderAll();
         }
 
         window.onload = function() {
@@ -3014,24 +3269,22 @@
             // Haal direct bij het opstarten de echte EPEX Spotprijzen (Vandaag & Morgen) op
             window.fetchLiveEpexPrices(false);
 
-            // Klok elke 10 sec bijwerken
-            setInterval(updateClock, 10000);
+            // Klok elke seconde bijwerken voor een echte live ervaring
+            setInterval(updateClock, 1000);
 
-            // Elke 5 seconden: Poll Home Assistant live (als URL + Token zijn ingesteld) en beweeg de grafiek live mee
+            // Elke 2 seconden: vernieuw live de energie-getallen én de bewegende grafiek
             setInterval(async () => {
                 if (appState.haUrl && appState.haToken) {
-                    await window.fetchHomeAssistantEntities(true);
-                } else {
-                    // Laat de grafiek ook zonder gekoppelde HA-server elke 5 seconden subtiel live meebewegen met het actuele vermogen
-                    const jitterSolar = Math.max(0, appState.solarW + Math.round((Math.random() - 0.48) * 6));
-                    const jitterHouse = Math.max(25, appState.houseW + Math.round((Math.random() - 0.5) * 4));
-                    appState.solarW = jitterSolar;
-                    appState.houseW = jitterHouse;
-                    appState.gridW = Math.max(0, jitterHouse - jitterSolar);
-                    pushLivePowerPoint(appState.solarW, appState.houseW);
-                    renderAll();
+                    // Als WebSocket nog niet verbonden is, poll elke 2 seconden via REST
+                    if (!haWsConnected) {
+                        await window.fetchHomeAssistantEntities(true);
+                    }
                 }
-            }, 5000);
+                // Laat niet-gekoppelde sensoren ook elke 2 seconden live meebewegen
+                if (liveTickerEnabled) {
+                    tickLiveEnergyMetrics();
+                }
+            }, 2000);
 
             // Live rotatie voor de Advies-banner (elke 10 sec)
             setInterval(() => {
