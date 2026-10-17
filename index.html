@@ -2154,7 +2154,7 @@
 
         window.triggerGoogleSignIn = async function() {
             // Probeer eerst echte Firebase Google OAuth Popup indien geconfigureerd en toegestaan door het scherm
-            if (auth) {
+            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
                 try {
                     const provider = new GoogleAuthProvider();
                     const result = await signInWithPopup(auth, provider);
@@ -2163,11 +2163,15 @@
                         return;
                     }
                 } catch (popupErr) {
-                    // In een ingesloten preview-venster of zonder OAuth-domeinwhitelisting toont de Google-knop de Google Account-kiezer
+                    console.warn("Google OAuth Popup kon niet worden geopend, overschakelen naar accountkiezer:", popupErr);
                     renderGoogleAccountChooser();
                     return;
                 }
             }
+            // Fallback wanneer er nog geen eigen Firebase API-key is ingevuld of in een preview-omgeving
+            renderGoogleAccountChooser();
+        };
+
         window.logoutSession = async function() {
             if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
                 try { await signOut(auth); } catch (e) {}
