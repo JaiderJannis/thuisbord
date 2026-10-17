@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thuisbord - Slimme Energie Display & Multi-Role Beheer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-sage: #eef2ed;
+            --banner-dark: #152920;
+            --pill-green: #dcece3;
+            --text-dark: #1c2520;
+            --text-muted: #68736d;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-sage);
+            color: var(--text-dark);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @keyframes flowRight {
+            0% { transform: translateX(-7px); opacity: 0.25; }
+            50% { opacity: 1; }
+            100% { transform: translateX(7px); opacity: 0.25; }
+        }
+        @keyframes flowLeft {
+            0% { transform: translateX(7px); opacity: 0.25; }
+            50% { opacity: 1; }
+            100% { transform: translateX(-7px); opacity: 0.25; }
+        }
+        @keyframes flowDown {
+            0% { transform: translateY(-5px); opacity: 0.25; }
+            50% { opacity: 1; }
+            100% { transform: translateY(5px); opacity: 0.25; }
+        }
+
+        .dot-flow-right { animation: flowRight 1.6s infinite ease-in-out; }
+        .dot-flow-left { animation: flowLeft 1.6s infinite ease-in-out; }
+        .dot-flow-down { animation: flowDown 1.5s infinite ease-in-out; }
+
+        @keyframes pulsePathDot {
+            0% { offset-distance: 0%; opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { offset-distance: 100%; opacity: 0.2; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5cf; border-radius: 9999px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+    <!-- Floating Toast Notification -->
+    <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden bg-[#152920] text-white px-5 py-3.5 rounded-2xl shadow-xl items-center gap-3 text-sm font-medium border border-white/10 transition-all duration-300">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span>
+        <span id="toastMessage">Wijzigingen opgeslagen in Firebase!</span>
+    </div>
+
+    <!-- Top System Bar (STRICTLY HIDDEN WHEN NOT LOGGED IN) -->
+    <nav id="topSystemNav" class="hidden bg-[#152920] text-white px-4 sm:px-8 py-2.5 flex-wrap items-center justify-between gap-3 text-xs sm:text-sm border-b border-white/10">
+        <div class="flex items-center gap-3 flex-wrap">
+            <span class="font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span>
+                Thuisbord
+            </span>
+            <span id="cloudSyncBadge" class="bg-white/10 text-[#dcece3] px-2.5 py-0.5 rounded-full text-[11px]">
+                Verbinden...
+            </span>
+            <span id="activeRoleBadge" class="hidden bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <!-- Enkel zichtbaar na inloggen: Het Wanddisplay -->
+            <button id="navBtnDisplay" onclick="switchView('display')" class="px-3.5 py-1.5 rounded-xl font-semibold bg-white text-[#152920] transition flex items-center gap-1.5 cursor-pointer">
+                <span>📺</span>
+                <span>Wanddisplay</span>
+            </button>
+
+            <!-- Enkel zichtbaar voor ingelogde Gezinsleden (of Beheerders) -->
+            <button id="navBtnUserPortal" onclick="switchView('userPortal')" class="hidden px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-1.5 cursor-pointer">
+                <span>📅</span>
+                <span>Agenda & Taken</span>
+            </button>
+
+            <!-- Enkel zichtbaar indien het Google-account Gezinsbeheerder of Super Admin is -->
+            <button id="navBtnAdmin" onclick="switchView('admin')" class="hidden px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-1.5 cursor-pointer">
+                <span id="adminNavIcon">🏡</span>
+                <span id="adminNavLabel">Gezinsbeheer</span>
+            </button>
+
+            <!-- Uitlogknop -->
+            <button id="navBtnLogout" onclick="logoutSession()" class="px-3 py-1.5 rounded-xl font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-200 transition cursor-pointer">
+                Uitloggen
+            </button>
+        </div>
+    </nav>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: WALL DISPLAY (ALLEEN TOEGANKELIJK NA GOOGLE INLOGGEN)         -->
+    <!-- ===================================================================== -->
+    <div id="viewDisplay" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col justify-between">
+        <div class="max-w-[1440px] w-full mx-auto">
+
+            <!-- Header Bar -->
+            <header class="flex flex-wrap items-center justify-between gap-4 mb-5 px-1">
+                <div class="flex items-baseline gap-4">
+                    <button onclick="toggleFullScreen()" title="Volledig scherm" class="p-2 -ml-2 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m8-16h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3"/>
+                        </svg>
+                    </button>
+                    <h1 id="liveClock" class="text-4xl sm:text-[42px] font-bold tracking-tight text-[#1c2520]">14:21</h1>
+                    <span id="liveDate" class="text-lg sm:text-xl text-[#5a655e] font-normal">zaterdag 17 oktober</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Household Name Pill -->
+                    <span id="householdNamePill" class="hidden sm:inline-flex items-center gap-1.5 bg-white/70 px-3.5 py-2 rounded-full text-xs font-bold text-[#152920] border border-black/5">
+                        🏡 Huishouden: Familie Peeters
+                    </span>
+
+                    <!-- Live Status Badge -->
+                    <div onclick="openAuthorizedPortalOrLogin()" class="bg-white/95 hover:bg-white shadow-sm px-4 py-2.5 rounded-full flex items-center gap-2.5 text-sm font-medium text-[#3b463f] transition cursor-pointer border border-black/5">
+                        <span id="haStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse"></span>
+                        <span id="haStatusText">Live via Home Assistant</span>
+                    </div>
+
+                    <!-- Quick Settings Trigger Button -->
+                    <button onclick="openAuthorizedPortalOrLogin()" title="Inloggen / Beheer" class="bg-white/95 hover:bg-white shadow-sm w-10 h-10 rounded-full flex items-center justify-center text-[#3b463f] transition cursor-pointer border border-black/5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Smart Live Advice Banner (Met dynamische bericht-rotatie & live triggers) -->
+            <section id="adviceBanner" class="bg-[#152920] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2.5 mb-1">
+                        <p id="adviceCategoryLabel" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#a3b8ae]">ADVIES VOOR NU</p>
+                        <span id="adviceLiveCounter" class="text-[11px] bg-white/10 text-[#dcece3] px-2 py-0.5 rounded-full font-medium">Slimme Engine Actief</span>
+                    </div>
+                    <h2 id="adviceTitle" class="text-xl sm:text-[26px] font-bold tracking-tight leading-snug transition-opacity duration-300">
+                        Stroom is nu goedkoop, tot 15:00. Zet de wasmachine nu aan.
+                    </h2>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="cycleNextAdviceMessage()" title="Volgend live advies tonen" class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    <div id="adviceBadge" class="bg-[#dcece3] text-[#173828] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap">
+                        Gunstig tot 15:00
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main 4-Column Grid -->
+            <main class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 items-stretch">
+
+                <!-- COLUMN 1: Nu (Stroom in huis) -->
+                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-baseline justify-between mb-5">
+                            <h3 class="text-xl font-bold text-[#1c2520]">Nu</h3>
+                            <span class="text-sm text-[#68736d]">Stroom in huis</span>
+                        </div>
+
+                        <!-- Top 3 Metrics: Zon, Huis, Net -->
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <div>
+                                <p class="text-sm text-[#68736d] mb-0.5">Zon</p>
+                                <p class="text-2xl font-bold text-[#1c2520]"><span id="valSolar">224</span> <span class="text-base font-normal text-[#68736d]">W</span></p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm text-[#68736d] mb-0.5">Huis</p>
+                                <p class="text-2xl font-bold text-[#1c2520]"><span id="valHouse">89</span> <span class="text-base font-normal text-[#68736d]">W</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-[#68736d] mb-0.5 flex items-center justify-end gap-0.5">
+                                    Net
+                                    <span id="netArrow" class="text-[#3b6998] font-bold">↓</span>
+                                </p>
+                                <p class="text-2xl font-bold text-[#1c2520]"><span id="valGrid">8</span> <span class="text-base font-normal text-[#68736d]">W</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Visual Flow Diagram (Zon -> Huis <- Net) -->
+                        <div class="py-1 mb-2">
+                            <div class="flex items-center justify-between px-1">
+                                <!-- Solar Node -->
+                                <div class="w-11 h-11 rounded-full bg-[#faecc8] text-[#b47b1c] flex items-center justify-center shrink-0 shadow-2xs">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="4"/>
+                                        <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/>
+                                    </svg>
+                                </div>
+
+                                <!-- Animated Line Solar to House -->
+                                <div class="flex-1 flex items-center justify-center px-1.5 relative">
+                                    <div class="h-[2px] w-full bg-[#f3d078]"></div>
+                                    <div id="solarDots" class="absolute flex items-center justify-around w-3/4">
+                                        <span class="w-2 h-2 rounded-full bg-[#e6a100] dot-flow-right"></span>
+                                        <span class="w-2 h-2 rounded-full bg-[#e6a100] dot-flow-right" style="animation-delay: 0.4s"></span>
+                                    </div>
+                                    <svg class="w-3.5 h-3.5 text-[#e6a100] -ml-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </div>
+
+                                <!-- Center House Node -->
+                                <div class="w-12 h-12 rounded-full bg-[#dcece3] text-[#1c643f] flex items-center justify-center shrink-0 shadow-2xs border-2 border-white z-10">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
+                                    </svg>
+                                </div>
+
+                                <!-- Animated Line Grid to House -->
+                                <div class="flex-1 flex items-center justify-center px-1.5 relative">
+                                    <svg class="w-3.5 h-3.5 text-[#7897c9] -mr-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                                    </svg>
+                                    <div class="h-[2px] w-full bg-[#c5d4eb]"></div>
+                                    <div id="gridDots" class="absolute flex items-center justify-around w-3/4">
+                                        <span class="w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left"></span>
+                                        <span class="w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left" style="animation-delay: 0.5s"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Grid Pylon Node -->
+                                <div class="w-11 h-11 rounded-full bg-[#dfe8f6] text-[#355a8a] flex items-center justify-center shrink-0 shadow-2xs">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3L8 21m4-18l4 18M6 9h12M7 14h10"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Unified Branching Flow Connectors from Center House to Gas (Left), Water (Center) & Battery (Right) -->
+                            <div class="w-full -mt-1 mb-0.5 px-1">
+                                <svg class="w-full h-11 overflow-visible" viewBox="0 0 300 44" fill="none">
+                                    <!-- Branch 1: Gas -> House (Purple curved flow) -->
+                                    <path id="gasBranchPath" d="M 50 38 C 50 20, 128 22, 138 4" stroke="#d5c9ee" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <!-- Arrowhead near House for Gas -->
+                                    <path d="M 133 8 L 138 3 L 141 9" stroke="#8e79b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    <!-- Animated Gas Dot moving along branch -->
+                                    <circle r="3.2" fill="#8e79b8">
+                                        <animateMotion dur="2.2s" repeatCount="indefinite" path="M 50 38 C 50 20, 128 22, 138 4" />
+                                    </circle>
+
+                                    <!-- Branch 2: Water -> House (Blue vertical flow) -->
+                                    <path id="waterBranchPath" d="M 150 38 L 150 5" stroke="#bae6fd" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <!-- Arrowhead near Water/House -->
+                                    <path d="M 146 10 L 150 4 L 154 10" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    <!-- Animated Water Dot -->
+                                    <circle id="waterFlowDot" r="3.2" fill="#0284c7">
+                                        <animateMotion dur="1.7s" repeatCount="indefinite" path="M 150 38 L 150 5" />
+                                    </circle>
+
+                                    <!-- Branch 3: House -> Battery (Amber curved charging flow) -->
+                                    <path id="batteryBranchPath" d="M 162 4 C 172 22, 250 20, 250 38" stroke="#f3d078" stroke-width="2" stroke-linecap="round" fill="none"/>
+                                    <!-- Arrowhead pointing into Battery -->
+                                    <path d="M 246 33 L 250 39 L 254 33" stroke="#e6a100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    <!-- Animated Battery Charging Dot -->
+                                    <circle r="3.2" fill="#e6a100">
+                                        <animateMotion dur="2s" repeatCount="indefinite" path="M 162 4 C 172 22, 250 20, 250 38" />
+                                    </circle>
+                                </svg>
+                            </div>
+
+                            <!-- Gas, Water & Battery Sub-Cards -->
+                            <div class="grid grid-cols-3 gap-2 items-stretch border-b border-stone-100 pb-3.5">
+                                <!-- Gas -->
+                                <div class="flex flex-col items-center text-center p-2.5 rounded-2xl bg-[#f9f7fc] border border-[#ede8f8]">
+                                    <div class="w-7 h-7 rounded-full bg-[#ebe5f7] text-[#614996] flex items-center justify-center mb-1 shadow-2xs">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.5 3.5 5 6.5 5 10a5 5 0 11-10 0c0-3.5 2.5-6.5 5-10z"/>
+                                        </svg>
+                                    </div>
+                                    <p class="text-[11px] text-[#614996] font-bold">Gas</p>
+                                    <p class="text-xs font-bold text-[#1c2520] mt-0.5"><span id="valGasRate">0,06</span> <span class="text-[10px] font-normal text-[#68736d]">m³/u</span></p>
+                                    <p class="text-[10px] text-[#68736d]"><span id="valGasToday">0,42</span> m³ vandaag</p>
+                                </div>
+
+                                <!-- Water -->
+                                <div class="flex flex-col items-center text-center p-2.5 rounded-2xl bg-[#f0f9ff] border border-[#dff1fe]">
+                                    <div class="w-7 h-7 rounded-full bg-[#e0f2fe] text-[#0369a1] flex items-center justify-center mb-1 shadow-2xs">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                                        </svg>
+                                    </div>
+                                    <p class="text-[11px] text-[#0369a1] font-bold">Water</p>
+                                    <p class="text-xs font-bold text-[#1c2520] mt-0.5"><span id="valWaterRate">4,5</span> <span class="text-[10px] font-normal text-[#68736d]">L/m</span></p>
+                                    <p class="text-[10px] text-[#68736d]"><span id="valWaterToday">118</span> L vandaag</p>
+                                </div>
+
+                                <!-- Battery -->
+                                <div class="flex flex-col items-center text-center p-2.5 rounded-2xl bg-[#f3faf6] border border-[#def3e7]">
+                                    <div class="w-7 h-7 rounded-full bg-[#dcece3] text-[#1c643f] flex items-center justify-center mb-1 shadow-2xs">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <rect x="7" y="4" width="10" height="17" rx="2"/>
+                                            <path stroke-linecap="round" d="M10 2h4"/>
+                                            <rect x="9.5" y="10" width="5" height="8" fill="currentColor" stroke="none"/>
+                                        </svg>
+                                    </div>
+                                    <p class="text-[11px] text-[#1c643f] font-bold">Batterij</p>
+                                    <p class="text-xs font-bold text-[#1c2520] mt-0.5"><span id="valBatteryW">143</span> <span class="text-[10px] font-normal text-[#68736d]">W</span></p>
+                                    <p class="text-[10px] text-[#68736d]"><span id="valBatteryPct">100</span>% (<span id="valBatteryCap">15,0</span>kWh)</p>
+                                </div>
+                            </div>
+
+                            <!-- Slimme Apparaten met Live Flow -->
+                            <div class="mt-3">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-[11px] font-bold uppercase tracking-wider text-[#68736d]">Slimme Apparaten Flow</span>
+                                    <span id="activeAppliancesCount" class="text-[11px] font-semibold text-[#197447]">1 actief</span>
+                                </div>
+                                <div id="appliancesFlowContainer" class="space-y-1.5"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Bottom Area Chart -->
+                    <div class="mt-3 pt-2">
+                        <div class="flex justify-between text-xs text-[#68736d] px-4 mb-1">
+                            <span>06</span>
+                            <span>12</span>
+                            <span class="font-bold text-[#1c2520]">nu</span>
+                            <span>18</span>
+                        </div>
+                        <div class="relative h-20 w-full">
+                            <svg class="w-full h-full overflow-visible" viewBox="0 0 240 85">
+                                <line x1="40" y1="0" x2="40" y2="80" stroke="#f0f2ef" stroke-width="1"/>
+                                <line x1="105" y1="0" x2="105" y2="80" stroke="#f0f2ef" stroke-width="1"/>
+                                <line x1="142" y1="0" x2="142" y2="80" stroke="#d5ddd8" stroke-width="1.5"/>
+                                <line x1="195" y1="0" x2="195" y2="80" stroke="#f0f2ef" stroke-width="1"/>
+                                <path d="M55 80 L72 75 L82 60 L95 25 L105 15 L112 32 L120 12 L130 48 L138 35 L142 78 L55 80 Z" fill="rgba(244, 189, 70, 0.25)"/>
+                                <path d="M55 80 L72 75 L82 60 L95 25 L105 15 L112 32 L120 12 L130 48 L138 35 L142 78" fill="none" stroke="#eab338" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M10 78 L65 77 L88 68 L102 45 L115 65 L125 48 L142 76" fill="none" stroke="#a695c7" stroke-width="1.6" stroke-linejoin="round"/>
+                                <line x1="0" y1="80" x2="240" y2="80" stroke="#e4e8e5" stroke-width="1.5"/>
+                                <circle cx="142" cy="78" r="3.5" fill="#e69800"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMN 2: Vandaag (kosten tot nu toe) -->
+                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-baseline justify-between mb-5">
+                            <h3 class="text-xl font-bold text-[#1c2520]">Vandaag</h3>
+                            <span class="text-sm text-[#68736d]">kosten tot nu toe</span>
+                        </div>
+
+                        <div class="space-y-2.5 text-[14px]">
+                            <div class="flex justify-between items-center bg-[#f4f7f4] p-2.5 rounded-xl">
+                                <span class="font-bold text-[#1c2520]">Kosten tot nu toe</span>
+                                <span id="costTotal" class="text-lg font-extrabold text-[#152920]">€ 0,92</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#55605a]">Stroomkosten</span>
+                                <span id="costElec" class="font-medium text-[#1c2520]">€ 0,00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#55605a]">Gaskosten</span>
+                                <span id="costGas" class="font-medium text-[#1c2520]">€ 0,02</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#55605a]">Waterkosten</span>
+                                <span id="costWater" class="font-medium text-[#1c2520]">€ 0,15</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#55605a]">Vaste kosten (netbeheer/dag)</span>
+                                <span id="costFixed" class="font-medium text-[#1c2520]">€ 0,75</span>
+                            </div>
+
+                            <div class="border-t border-stone-100 my-2 pt-2.5 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[#55605a]">Afname</span>
+                                    <span id="kwhImport" class="font-medium text-[#1c2520]">0,01 kWh</span>
+                                </div>
+                                <div class="flex justify-between items-start">
+                                    <span class="text-[#55605a] leading-snug">Opgewekt door de zon</span>
+                                    <span class="font-bold text-[#1c2520]">ongeveer <span id="kwhSolar">10,2</span> kWh</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[#55605a]">Teruglevering</span>
+                                    <span id="kwhExport" class="font-bold text-[#197447]">5,9 kWh</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[#55605a]">Gas</span>
+                                    <span id="m3GasTotal" class="font-medium text-[#1c2520]">0,42 m³</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[#55605a]">Water vandaag</span>
+                                    <span id="litersWaterTotal" class="font-medium text-[#0369a1]">118 L (0,12 m³)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#68736d]">
+                        <span id="displayVatBadge" class="font-bold text-[#152920] bg-stone-100 px-2.5 py-1 rounded-full">BTW: 21% incl.</span>
+                        <span id="displayGasPriceBadge" class="font-bold text-[#197447] bg-[#e6f3ec] px-2.5 py-1 rounded-full">Gas: € 1,32/m³</span>
+                        <span id="displayWaterPriceBadge" class="font-bold text-[#0369a1] bg-[#e0f2fe] px-2.5 py-1 rounded-full">Water: € 1,25/m³</span>
+                    </div>
+                </div>
+
+                <!-- COLUMN 3: Stroomprijs vandaag -->
+                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold text-[#1c2520]">Stroomprijs vandaag</h3>
+                            <span id="priceFormulaPill" class="text-[11px] font-bold bg-[#e8f2ec] text-[#1c643f] px-2.5 py-0.5 rounded-full">All-in incl. BTW</span>
+                        </div>
+                        <p id="priceSubheaderText" class="text-xs text-[#68736d] mt-0.5">per kWh, alles inbegrepen</p>
+
+                        <!-- Big Price Display -->
+                        <div class="mt-4 mb-1 flex items-baseline gap-2">
+                            <span id="activePriceDisplay" class="text-4xl sm:text-[44px] font-bold tracking-tight text-[#1c2520]">€ 0,25</span>
+                            <span id="activePriceLabel" class="text-base text-[#55605a]">nu</span>
+                        </div>
+                        <p id="activePriceBreakdown" class="text-[11px] text-[#68736d] mb-4">
+                            Klik op een uurbalkje om het tarief & advies op dat tijdstip te bekijken
+                        </p>
+
+                        <!-- 24-Hour Dynamic Tariff Bar Chart -->
+                        <div class="mt-4">
+                            <div class="relative pt-5">
+                                <div id="nowBarLabel" class="absolute top-0 text-xs font-bold text-[#1c2520] -translate-x-1/2 transition-all duration-200" style="left: 60.4%;">
+                                    nu
+                                </div>
+                                <div id="priceBarsContainer" class="h-28 flex items-end justify-between gap-[3px] pt-2"></div>
+                            </div>
+
+                            <div class="flex justify-between text-xs text-[#68736d] mt-2">
+                                <span>00:00</span>
+                                <span>06:00</span>
+                                <span>12:00</span>
+                                <span>18:00</span>
+                                <span>24:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cheapest & Most Expensive Windows -->
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <div class="bg-[#e8f2ec] rounded-2xl p-3.5">
+                            <p class="text-xs font-semibold text-[#236942]">Goedkoopst</p>
+                            <p id="cheapestWindowText" class="text-[15px] font-bold text-[#1c2520] mt-1">13:00 – 15:00</p>
+                            <p id="cheapestPriceText" class="text-sm text-[#38443d] mt-0.5">€ 0,24</p>
+                        </div>
+                        <div class="bg-[#faeae1] rounded-2xl p-3.5">
+                            <p class="text-xs font-semibold text-[#9e4516]">Duurst</p>
+                            <p id="expensiveWindowText" class="text-[15px] font-bold text-[#1c2520] mt-1">18:00 – 20:00</p>
+                            <p id="expensivePriceText" class="text-sm text-[#38443d] mt-0.5">€ 0,39</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMN 4: Agenda, Taken & Afvalkalender -->
+                <div class="xl:col-span-3 flex flex-col gap-5 justify-between">
+                    <div class="bg-white rounded-[26px] p-6 shadow-sm flex-1 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-xl font-bold text-[#1c2520]">Agenda</h3>
+                                <button onclick="openAuthorizedPortalOrLogin('agenda')" class="text-xs text-[#2b6e48] hover:underline font-medium cursor-pointer">+ Afspraak / Taak →</button>
+                            </div>
+
+                            <div id="agendaContainer"></div>
+                        </div>
+
+                        <!-- Taken Vandaag Section -->
+                        <div class="pt-4 mt-6 border-t border-stone-200/80">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="text-[15px] font-bold text-[#1c2520]">Taken vandaag</span>
+                                <span id="taskCounter" class="text-sm font-medium text-[#38443d]">0 van 1 gedaan</span>
+                            </div>
+
+                            <div id="taskList" class="space-y-2 mt-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Afvalkalender Card -->
+                    <div id="wasteCard" onclick="openAuthorizedPortalOrLogin()" class="bg-white hover:bg-stone-50/80 rounded-[26px] p-6 shadow-sm cursor-pointer transition group">
+                        <div id="wasteUnlinked">
+                            <p class="text-[16px] font-bold text-[#1c2520] leading-snug group-hover:text-[#19643e] transition">
+                                Afvalkalender nog niet gekoppeld
+                            </p>
+                            <p class="text-xs text-[#68736d] mt-1">Klik om in te stellen</p>
+                        </div>
+                        <div id="wasteLinked" class="hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-[#68736d]">AFVALKALENDER</span>
+                                <span id="wastePostalBadge" class="text-xs text-[#197447] font-medium">Gekoppeld</span>
+                            </div>
+                            <div class="flex items-center gap-3 mt-1">
+                                <div id="wasteTypeBadge" class="w-11 h-11 rounded-xl bg-[#dcece3] text-[#1c643f] flex items-center justify-center font-bold text-xs shrink-0">
+                                    GFT
+                                </div>
+                                <div>
+                                    <p id="wasteDateDisplay" class="text-sm font-bold text-[#1c2520]">Dinsdag 20 oktober</p>
+                                    <p id="wasteDescDisplay" class="text-xs text-[#68736d]">Groente-, fruit- en tuinafval</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: GOOGLE SSO INLOGSCHERM (STANDAARD ZICHTBAAR BIJ START)        -->
+    <!-- ===================================================================== -->
+    <div id="viewLogin" class="flex flex-1 items-center justify-center p-4 min-h-screen">
+        <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-lg border border-black/5">
+            <div class="w-14 h-14 rounded-2xl bg-[#152920] text-[#34d399] flex items-center justify-center mb-4 mx-auto shadow-sm">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
+                </svg>
+            </div>
+            <div class="text-center mb-6">
+                <span class="inline-flex items-center gap-1.5 bg-[#e8f2ec] text-[#1c643f] text-[11px] font-extrabold px-3 py-1 rounded-full mb-2">
+                    🔒 Beveiligde Omgeving
+                </span>
+                <h2 class="text-2xl font-bold text-[#1c2520]">Welkom bij Thuisbord</h2>
+                <p class="text-xs text-[#68736d] mt-1.5 leading-relaxed">
+                    Log in met je persoonlijke Google-account om het wanddisplay en jouw persoonlijke gezinsomgeving te openen.
+                </p>
+            </div>
+
+            <!-- Official Google Sign-In Button -->
+            <button type="button" onclick="triggerGoogleSignIn()" class="w-full bg-white hover:bg-stone-50 text-[#1c2520] font-bold py-3.5 px-4 rounded-2xl border border-stone-300 transition cursor-pointer shadow-xs flex items-center justify-center gap-3 text-sm">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                </svg>
+                <span>Doorgaan met Google</span>
+            </button>
+
+            <!-- Google Account Chooser Modal (Voor wanneer een iframe popups blokkeert of om te wisselen van Google-account) -->
+            <div id="googleAccountChooserBox" class="hidden mt-5 pt-5 border-t border-stone-200/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-[#1c2520]">Kies een Google-account</span>
+                    <span class="text-[11px] text-[#68736d]">Google SSO</span>
+                </div>
+
+                <!-- Dynamic list of Google Accounts -->
+                <div id="googleChooserAccountsList" class="space-y-1.5 max-h-52 overflow-y-auto"></div>
+
+                <!-- Or enter another Google email address -->
+                <form onsubmit="submitGoogleEmailSignIn(event)" class="pt-2 border-t border-stone-100 space-y-2">
+                    <label class="block text-[11px] font-semibold text-[#55605a]">Of log in met een ander Google e-mailadres:</label>
+                    <div class="flex gap-2">
+                        <input id="customGoogleEmailInput" type="email" placeholder="naam@gmail.com" required class="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:border-[#152920] text-xs font-medium">
+                        <button type="submit" class="bg-[#152920] hover:bg-[#1e3a2d] text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer shrink-0">
+                            Inloggen
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <p id="loginErrorMsg" class="text-xs font-semibold text-red-600 hidden text-center mt-4 bg-red-50 p-3 rounded-xl border border-red-100">
+                Dit Google-account heeft geen toegang tot dit Thuisbord. Vraag de beheerder van je gezin om je Google e-mailadres uit te nodigen.
+            </p>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2B: GEZINSPORTAAL (VOOR GEWONE GEZINSLEDEN - ENKEL AGENDA/TAKEN) -->
+    <!-- ===================================================================== -->
+    <div id="viewUserPortal" class="hidden flex-1 p-4 sm:p-6 lg:p-8">
+        <div class="max-w-4xl w-full mx-auto">
+            <div class="bg-[#1f4e37] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div>
+                    <span id="userPortalBadgeText" class="bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full">🏡 Familie Agenda & Taken</span>
+                    <h2 class="text-2xl font-bold mt-2">Gezinsagenda & Taken</h2>
+                    <p class="text-sm text-[#dcece3] mt-0.5">Voeg hier afspraken en huishoudtaken toe of vink ze af voor op het wanddisplay.</p>
+                </div>
+                <button onclick="switchView('display')" class="bg-white text-[#152920] font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
+                    ← Bekijk Wanddisplay
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Nieuwe Afspraak Toevoegen</h3>
+                    <p class="text-xs text-[#68736d] mb-4">Komt direct op het Thuisbord wanddisplay te staan.</p>
+                    <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                        <input id="userNewAgendaTime" type="text" placeholder="Tijd (bijv. 14:00)" class="sm:w-28 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <input id="userNewAgendaTitle" type="text" placeholder="Afspraak (bijv. Tandarts)" class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="userAddAgendaItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-sm cursor-pointer">
+                            + Zet erin
+                        </button>
+                    </div>
+                    <div id="userPortalAgendaList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">✅ Taken Vandaag</h3>
+                    <p class="text-xs text-[#68736d] mb-4">Voeg een huishoudtaak toe of verwijder afgeronde taken.</p>
+                    <div class="flex gap-2 mb-4">
+                        <input id="userNewTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="userAddTaskItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-sm cursor-pointer">
+                            + Taak
+                        </button>
+                    </div>
+                    <div id="userPortalTaskList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 3: BEHEERPANEEL (PAST ZICH STRIKT AAN OP GEZINSBEHEER OF ADMIN)  -->
+    <!-- ===================================================================== -->
+    <div id="viewAdmin" class="hidden flex-1 p-4 sm:p-6 lg:p-8">
+        <div class="max-w-[1380px] w-full mx-auto">
+
+            <!-- Header Banner (Adapts strictly to Gezinsbeheerder vs Super Admin) -->
+            <div id="adminHeaderBanner" class="bg-[#152920] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div>
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <span id="adminHeaderRolePill" class="bg-[#dcece3] text-[#152920] text-xs font-extrabold px-3 py-1 rounded-full">🏡 Gezinsbeheer</span>
+                        <span id="firebaseUidBadge" class="text-xs text-[#a3b8ae] font-mono"></span>
+                    </div>
+                    <h2 id="adminHeaderTitle" class="text-2xl sm:text-3xl font-bold mt-2">Gezinsdashboard & Wanddisplay Beheer</h2>
+                    <p id="adminHeaderSubtitle" class="text-sm text-[#b3c7bd] mt-0.5">Beheer jouw huishouden, gezinsleden (via Google-account), energieprijzen, apparaten en het wanddisplay.</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="saveAllToFirebase()" class="bg-[#dcece3] hover:bg-white text-[#152920] font-bold px-5 py-3 rounded-xl text-sm transition cursor-pointer shadow-sm">
+                        💾 Wijzigingen Opslaan
+                    </button>
+                    <button onclick="switchView('display')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl text-sm transition cursor-pointer">
+                        Bekijk Wanddisplay →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sub-Navigation Tabs -->
+            <div class="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-xs">
+                <button id="adminTabBtn_gebruikers" onclick="switchAdminTab('gebruikers')" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-[#152920] text-white transition cursor-pointer">
+                    👥 1. Gezinsleden (Google Accounts)
+                </button>
+                <button id="adminTabBtn_advies" onclick="switchAdminTab('advies')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    💬 2. Live "Advies voor nu"
+                </button>
+                <button id="adminTabBtn_tarieven" onclick="switchAdminTab('tarieven')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    💶 3. Tarieven, BTW & Vaste Kosten
+                </button>
+                <button id="adminTabBtn_apparaten" onclick="switchAdminTab('apparaten')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    🧺 4. Apparaten & Water Flow
+                </button>
+                <button id="adminTabBtn_energie" onclick="switchAdminTab('energie')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    ⚡ 5. Zon, Huis & Batterij
+                </button>
+                <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    📅 6. Agenda, Taken & Afval
+                </button>
+                <button id="adminTabBtn_systeem" onclick="switchAdminTab('systeem')" class="hidden px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    🔐 7. Platform & Home Assistant
+                </button>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 1: GOOGLE ACCOUNTS & GEZINSLEDEN BEHEER                       -->
+            <!-- ================================================================= -->
+            <div id="adminTab_gebruikers" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Invite Google Account -->
+                <div class="lg:col-span-5 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div>
+                        <span id="userMgmtRoleIndicator" class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
+                            Google Account Toegang
+                        </span>
+                        <h3 id="userMgmtFormTitle" class="text-lg font-bold text-[#1c2520] mt-2">Gezinslid Uitnodigen (Google E-mail)</h3>
+                        <p id="userMgmtHelpText" class="text-xs text-[#68736d] mt-0.5">
+                            Voeg het Google e-mailadres toe van een gezinslid. Zodra diegene inlogt via <strong>Doorgaan met Google</strong>, krijgt hij of zij direct toegang.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Naam</label>
+                            <input id="newMemberName" type="text" placeholder="Bijv. Lotte Peeters" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Google E-mailadres</label>
+                            <input id="newMemberEmail" type="email" placeholder="Bijv. lotte.peeters@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        </div>
+
+                        <!-- Role selector is ONLY shown to Super Admin; hidden for Gezinsbeheerder -->
+                        <div id="roleSelectWrapper" class="hidden">
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Toegangsrol toewijzen</label>
+                            <select id="newMemberRole" class="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold bg-white">
+                                <option value="user">👤 Gezinslid (Enkel Agenda & Taken)</option>
+                                <option value="manager">🏡 Gezinsbeheerder (Beheer over eigen gezin & wanddisplay)</option>
+                                <option value="admin">👑 Super Admin (Volledig Platformbeheer)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Naam van het Gezin / Huishouden</label>
+                            <input id="newMemberHousehold" type="text" value="Familie Peeters" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                        </div>
+                    </div>
+
+                    <button onclick="addAccountMember()" class="w-full bg-[#152920] hover:bg-[#223f31] text-white font-bold py-3 rounded-xl text-sm transition cursor-pointer">
+                        + Google Account Autoriseren
+                    </button>
+                </div>
+
+                <!-- Right: Overview of Authorized Google Users -->
+                <div class="lg:col-span-7 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h3 id="accountsListHeading" class="text-lg font-bold text-[#1c2520]">Geautoriseerde Google Accounts</h3>
+                                <p id="accountsListSubheading" class="text-xs text-[#68736d]">Alleen onderstaande Google-accounts hebben toegang.</p>
+                            </div>
+                            <span id="totalUsersCountBadge" class="text-xs font-bold bg-[#f4f7f4] text-[#152920] px-3 py-1.5 rounded-full"></span>
+                        </div>
+
+                        <div id="accountsTableContainer" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 text-xs text-[#68736d]">
+                        <span>Gebruikers loggen zonder wachtwoord in via hun gekoppelde Google-account.</span>
+                        <button onclick="saveAllToFirebase()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">
+                            Toegangslijst Opslaan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 2: LIVE "ADVIES VOOR NU" ENGINE & BERICHTEN                   -->
+            <!-- ================================================================= -->
+            <div id="adminTab_advies" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Slimme "Advies voor nu"-Engine</h3>
+                    <p class="text-xs text-[#68736d]">Laat het bord live reageren op stroomprijzen, zonnepanelen, draaiende apparaten en waterverbruik.</p>
+
+                    <label class="flex items-center justify-between p-3.5 rounded-2xl bg-[#f4f7f4] cursor-pointer">
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">Slimme Live Advies-Engine Actief</p>
+                            <p class="text-xs text-[#68736d]">Genereert automatisch adviezen op basis van uurprijs, zon en actief verbruik</p>
+                        </div>
+                        <input id="admAutoAdvice" type="checkbox" onchange="applyAdminChangesLive()" class="w-5 h-5 accent-[#152920]">
+                    </label>
+
+                    <label class="flex items-center justify-between p-3.5 rounded-2xl bg-[#f4f7f4] cursor-pointer">
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">Automatisch rouleren tussen live berichten (elke 10 sec)</p>
+                            <p class="text-xs text-[#68736d]">Wisselt live af tussen tariefadvies, zonne-overschot, actieve apparaten en gezinsmeldingen</p>
+                        </div>
+                        <input id="admRotateAdvice" type="checkbox" onchange="applyAdminChangesLive()" class="w-5 h-5 accent-[#152920]">
+                    </label>
+
+                    <div class="pt-2 border-t border-stone-100 space-y-3">
+                        <p class="text-xs font-bold text-[#38443d]">Handmatige tekst (als de automatische engine uit staat):</p>
+                        <div>
+                            <label class="block text-xs text-[#68736d] mb-1">Hoofdtekst in de balk</label>
+                            <input id="admAdviceText" type="text" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-[#68736d] mb-1">Badge rechts (bijv. Gunstig tot 15:00)</label>
+                            <input id="admAdviceBadge" type="text" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Eigen Gezinsberichten in de Live Rotatie</h3>
+                    <p class="text-xs text-[#68736d]">Voeg eigen berichten toe die live mee-rouleren in de bovenste adviesbalk op het wanddisplay.</p>
+
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input id="newCustomAdviceText" type="text" placeholder="Bijv. Vergeet vanavond het GFT-bakje niet buiten te zetten!" class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newCustomAdviceBadge" type="text" placeholder="Badge (bijv. Tip)" class="sm:w-36 px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="addCustomAdviceMessage()" class="bg-[#152920] text-white font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer shrink-0">
+                            + Toevoegen
+                        </button>
+                    </div>
+
+                    <div id="customAdviceListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 3: TARIEVEN, BTW, VASTE KOSTEN & 24-UURS PRIJZEN              -->
+            <!-- ================================================================= -->
+            <div id="adminTab_tarieven" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-5 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Belastingen, BTW & Vaste Kosten</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">BTW Percentage (%)</label>
+                            <input id="admVatPercent" type="number" step="1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Vaste Kosten (€ / dag)</label>
+                            <input id="admFixedDailyCost" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Energiebelasting (€/kWh)</label>
+                            <input id="admTaxPerKwh" type="number" step="0.001" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Inkoopopslag (€/kWh)</label>
+                            <input id="admMarkupPerKwh" type="number" step="0.001" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                    </div>
+
+                    <label class="flex items-center gap-2.5 p-3 rounded-xl bg-[#f4f7f4] cursor-pointer text-xs font-semibold text-[#1c2520]">
+                        <input id="admApplyFormulaToHours" type="checkbox" onchange="applyAdminChangesLive()" class="w-4 h-4 accent-[#152920]">
+                        <span>Tel belasting, opslag & BTW automatisch bovenop de 24 uurprijzen</span>
+                    </label>
+
+                    <div class="pt-3 border-t border-stone-100 grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Gasprijs (€ / m³)</label>
+                            <input id="admGasPrice" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Waterprijs (€ / m³)</label>
+                            <input id="admWaterPrice" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Stroomkosten vandaag (€)</label>
+                            <input id="admCostElec" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Gaskosten vandaag (€)</label>
+                            <input id="admCostGas" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Afname vandaag (kWh)</label>
+                            <input id="admKwhImport" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Teruglevering (kWh)</label>
+                            <input id="admKwhExport" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Zon opgewekt (kWh)</label>
+                            <input id="admKwhSolar" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Gas vandaag (m³)</label>
+                            <input id="admGasToday" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-[#1c2520]">Dynamische Uurprijzen (00:00 – 23:00)</h3>
+                            <p class="text-xs text-[#68736d]">Pas individuele uren aan of plak 24 uurprijzen in één keer.</p>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick="applyPresetTariffs('sunny')" class="px-3 py-1.5 rounded-xl bg-[#e8f2ec] text-[#1c643f] text-xs font-bold cursor-pointer">☀️ Zonnig Profiel</button>
+                            <button onclick="applyPresetTariffs('bare_spot')" class="px-3 py-1.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-bold cursor-pointer">📊 Kale Spotprijzen</button>
+                        </div>
+                    </div>
+
+                    <div id="adminHourlyGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+
+                    <div class="pt-3 border-t border-stone-100">
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Snel 24 uurprijzen plakken (gescheiden door komma of spatie):</label>
+                        <div class="flex gap-2">
+                            <input id="bulkPricesInput" type="text" placeholder="0.27, 0.26, 0.25, 0.24..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-xs">
+                            <button onclick="importBulkHourlyPrices()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">Inladen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 4: SLIMME APPARATEN & WATERMETER FLOW                         -->
+            <!-- ================================================================= -->
+            <div id="adminTab_apparaten" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Extra Slimme Apparaten met Flow</h3>
+                    <p class="text-xs text-[#68736d]">Sluit extra apparaten aan (zoals wasmachine, droger, vaatwasser of laadpaal). Actieve apparaten krijgen direct een geanimeerde energiestroom onder het huis.</p>
+
+                    <div class="flex flex-wrap gap-2">
+                        <select id="newAppIcon" class="px-3 py-2.5 rounded-xl border border-stone-200 text-sm bg-white">
+                            <option value="🧺">🧺 Wasmachine</option>
+                            <option value="🍽️">🍽️ Vaatwasser</option>
+                            <option value="🚗">🚗 Laadpaal EV</option>
+                            <option value="🔥">🔥 Warmtepomp</option>
+                            <option value="👕">👕 Wasdroger</option>
+                            <option value="❄️">❄️ Airco</option>
+                            <option value="🔌">🔌 Slimme Stekker</option>
+                        </select>
+                        <input id="newAppName" type="text" placeholder="Naam (bijv. Wasmachine)" class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newAppWatts" type="number" placeholder="Watt (bijv. 850)" class="w-28 px-3 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="adminAddAppliance()" class="bg-[#152920] text-white font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
+                            + Apparaat
+                        </button>
+                    </div>
+
+                    <div id="adminAppliancesList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">💧 Watermeter & Live Water Flow</h3>
+                    <p class="text-xs text-[#68736d]">Beheer het actuele waterverbruik. Zodra de actuele stroom groter is dan 0 L/min, beweegt de blauwe druppel-pijl naar het huis.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Actuele Waterstroom (Liter / minuut)</label>
+                            <input id="admWaterRate" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Totaal Water Vandaag (Liters)</label>
+                            <input id="admWaterToday" type="number" step="1" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 5: LIVE ZON, HUIS, NET, GAS & BATTERIJ                        -->
+            <!-- ================================================================= -->
+            <div id="adminTab_energie" class="hidden bg-white rounded-[26px] p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-[#1c2520] mb-1">Live Vermogens (Zon, Huis, Net, Gas & Thuisbatterij)</h3>
+                <p class="text-xs text-[#68736d] mb-4">Pas de live sensorwaardes van de eerste kolom ("Nu") aan.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">☀️ Zon Vermogen (W)</label>
+                        <input id="admSolarW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">🏠 Huis Verbruik (W)</label>
+                        <input id="admHouseW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">⚡ Net Vermogen (W)</label>
+                        <input id="admGridW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">🔥 Gasverbruik nu (m³/u)</label>
+                        <input id="admGasRate" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">🔋 Batterij Laadvermogen (W)</label>
+                        <input id="admBatteryW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">🔋 Batterij Percentage (%)</label>
+                        <input id="admBatteryPct" type="number" min="0" max="100" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">🔋 Batterij Capaciteit (kWh)</label>
+                        <input id="admBatteryCap" type="number" step="0.5" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 6: AGENDA, TAKEN & AFVALKALENDER                              -->
+            <!-- ================================================================= -->
+            <div id="adminTab_agenda" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">📅 Agenda Beheer</h3>
+                    <div class="flex gap-2">
+                        <input id="newAgendaTime" type="text" placeholder="14:00" class="w-24 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <input id="newAgendaTitle" type="text" placeholder="Afspraak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="adminAddAgendaItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                    </div>
+                    <div id="adminAgendaList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">✅ Taken Vandaag</h3>
+                    <div class="flex gap-2">
+                        <input id="newTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="adminAddTaskItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                    </div>
+                    <div id="adminTaskList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">♻️ Afvalkalender</h3>
+                    <label class="flex items-center gap-2 text-xs font-bold text-[#1c2520] cursor-pointer">
+                        <input id="admWasteEnabled" type="checkbox" onchange="applyAdminChangesLive()" class="w-4 h-4 accent-[#152920]">
+                        <span>Afvalkalender gekoppeld tonen</span>
+                    </label>
+                    <input id="admWasteType" type="text" placeholder="Type (bijv. GFT of PMD)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWastePostal" type="text" placeholder="Postcode & Plaats" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWasteDate" type="text" placeholder="Ophaaldag (bijv. Dinsdag 20 oktober)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWasteDesc" type="text" placeholder="Omschrijving" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 7: HOME ASSISTANT KOPPELING & SYSTEEMBEHEER (SUPER ADMIN)     -->
+            <!-- ================================================================= -->
+            <div id="adminTab_systeem" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Home Assistant & Wanddisplay Status</h3>
+                    <p class="text-xs text-[#68736d]">Beheer de tekst rechtsboven in de statuspil en koppel de lokale Home Assistant server.</p>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Status Badge Tekst Rechtsboven</label>
+                        <input id="admStatusText" type="text" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Home Assistant URL (Optioneel)</label>
+                        <input id="admHaUrl" type="text" placeholder="http://homeassistant.local:8123" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Long-Lived Access Token</label>
+                        <input id="admHaToken" type="password" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                    </div>
+
+                    <button onclick="saveAllToFirebase()" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-sm cursor-pointer">
+                        Koppeling Opslaan in Firebase
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <h3 class="text-lg font-bold text-[#1c2520]">Google SSO Beveiliging & Platform Reset</h3>
+                        <p class="text-xs text-[#68736d] leading-relaxed">
+                            Toegang tot dit Thuisbord verloopt uitsluitend via <strong>Google Authenticatie</strong>. Alleen e-mailadressen die in Tabblad 1 zijn geautoriseerd krijgen toegang tot hun bijbehorende omgeving.
+                        </p>
+                        <div class="p-4 rounded-2xl bg-[#f4f7f4] text-xs text-[#2c3831] space-y-1.5 border border-stone-200/70">
+                            <p class="font-bold">Rechtenverdeling (Onzichtbaar voor lagere rollen):</p>
+                            <p>• <strong>Gezinslid:</strong> Ziet enkel Wanddisplay + Agenda & Taken.</p>
+                            <p>• <strong>Gezinsbeheerder:</strong> Beheert enkel het eigen gezin + het Wanddisplay.</p>
+                            <p>• <strong>Super Admin:</strong> Volledig beheer over alle gebruikers, gezinsbeheerders en systeemkoppelingen.</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3">
+                        <button onclick="resetToDefaultDemoData()" class="px-4 py-2.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold cursor-pointer">
+                            Standaard Waardes Herstellen
+                        </button>
+                        <button onclick="saveAllToFirebase()" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-sm cursor-pointer">
+                            Systeem Opslaan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- FIREBASE CLOUD, GOOGLE AUTH & LIVE ADVICE ENGINE LOGIC                -->
+    <!-- ===================================================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ============================================================================
+        // STAP VOOR GITHUB PAGES: PLAK HIERONDER JOUW EIGEN FIREBASE CONFIGURATIE
+        // ============================================================================
+        // Zodra je in de Firebase Console (console.firebase.google.com) een web-app
+        // hebt aangemaakt, plak je de gegevens hieronder tussen de aanhalingstekens.
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmbMbBxrTX1TG0u6ujbWhROhgxO_qoHwk",
+            authDomain: "thuisbord-d1b46.firebaseapp.com",
+            projectId: "thuisbord-d1b46",
+            storageBucket: "thuisbord-d1b46.firebasestorage.app",
+            messagingSenderId: "974977360408",
+            appId: "1:974977360408:web:59464b6b219d4e6597d96d"
+        };
+
+        // Vul hier alvast jouw eigen Google e-mailadres in zodat je altijd als Super Admin binnenkomt:
+        const EIGENAAR_SUPER_ADMIN_EMAIL = "jaiderjannis@gmail.com";
+
+        const getDefaultState = () => ({
+            householdName: "Familie Peeters",
+            statusText: "Live via Home Assistant",
+            haUrl: "",
+            haToken: "",
+            autoAdvice: true,
+            rotateAdvice: true,
+            adviceText: "Stroom is nu goedkoop, tot 15:00. Zet de wasmachine nu aan.",
+            adviceBadge: "Gunstig tot 15:00",
+            customAdvices: [
+                { id: "ca1", text: "Zonnepanelen wekken nu gratis stroom op. Ideaal moment voor de vaatwasser!", badge: "Zon-overschot" },
+                { id: "ca2", text: "Vanavond tussen 18:00 en 20:00 piekt de stroomprijs (€ 0,39). Stel droger uit.", badge: "Piekwaarschuwing" }
+            ],
+            accounts: [
+                { id: "u1", name: "Platform Beheerder", email: EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase(), role: "admin", household: "Alle Huishoudens" },
+                { id: "u2", name: "Tom Peeters", email: "tom@familiepeeters.be", role: "manager", household: "Familie Peeters" },
+                { id: "u3", name: "Sanne Peeters", email: "sanne@familiepeeters.be", role: "user", household: "Familie Peeters" },
+                { id: "u4", name: "Lucas Peeters", email: "lucas@familiepeeters.be", role: "user", household: "Familie Peeters" }
+            ],
+            solarW: 224,
+            houseW: 89,
+            gridW: 8,
+            batteryW: 143,
+            batteryPct: 100,
+            batteryCap: 15.0,
+            gasRate: 0.06,
+            gasToday: 0.42,
+            gasPricePerM3: 1.32,
+            waterRate: 4.5,
+            waterTodayLiters: 118,
+            waterPricePerM3: 1.25,
+            vatPercent: 21,
+            fixedDailyCost: 0.75,
+            taxPerKwh: 0.108,
+            markupPerKwh: 0.02,
+            applyFormulaToHours: false,
+            costElec: 0.00,
+            costGas: 0.02,
+            kwhImport: 0.01,
+            kwhSolar: 10.2,
+            kwhExport: 5.9,
+            hourlyPrices: [
+                0.27, 0.26, 0.26, 0.25, 0.25, 0.26,
+                0.28, 0.30, 0.29, 0.28, 0.27, 0.26,
+                0.25, 0.24, 0.25, 0.26, 0.28, 0.32,
+                0.37, 0.39, 0.35, 0.31, 0.29, 0.27
+            ],
+            appliances: [
+                { id: "app1", icon: "🧺", name: "Wasmachine", watts: 65, active: true },
+                { id: "app2", icon: "🍽️", name: "Vaatwasser", watts: 0, active: false },
+                { id: "app3", icon: "🚗", name: "Laadpaal EV", watts: 0, active: false }
+            ],
+            agendaItems: [],
+            tasks: [
+                { id: "t1", text: "Wasmachine aanzetten vóór 15:00", done: false }
+            ],
+            wasteEnabled: false,
+            wasteType: "GFT",
+            wastePostal: "3460 Bekkevoort",
+            wasteDate: "Dinsdag 20 oktober",
+            wasteDesc: "Groente-, fruit- en tuinafval"
+        });
+
+        let appState = getDefaultState();
+        let currentSelectedHour = 14;
+        let currentRole = null; // null | 'user' | 'manager' | 'admin'
+        let currentLoggedUserName = "";
+        let currentLoggedUserEmail = "";
+        let currentLoggedHousehold = "Familie Peeters";
+        let adviceRotationIndex = 0;
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'thuisbord-default-app';
+
+        function showToast(message) {
+            const toast = document.getElementById('toastBanner');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3200);
+        }
+
+        async function initFirebase() {
+            const badge = document.getElementById('cloudSyncBadge');
+            try {
+                let firebaseConfig = null;
+                const hasCustomConfig = MIJN_EIGEN_FIREBASE_CONFIG.apiKey && MIJN_EIGEN_FIREBASE_CONFIG.projectId;
+
+                if (hasCustomConfig) {
+                    firebaseConfig = MIJN_EIGEN_FIREBASE_CONFIG;
+                } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                }
+
+                if (!firebaseConfig) {
+                    badge.textContent = "Lokale Modus (Vul Firebase Config in voor Cloud)";
+                    renderAll();
+                    populateAdminInputs();
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (!hasCustomConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!hasCustomConfig) {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if (!user) return;
+
+                    document.getElementById('firebaseUidBadge').textContent = `Cloud ID: ${user.uid}`;
+                    badge.textContent = "☁️ Live verbonden met Firebase";
+
+                    const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'thuisbord_settings', 'main_dashboard');
+
+                    onSnapshot(
+                        configDocRef,
+                        (snapshot) => {
+                            if (snapshot.exists()) {
+                                const cloudData = snapshot.data();
+                                appState = {
+                                    ...getDefaultState(),
+                                    ...cloudData,
+                                    hourlyPrices: cloudData.hourlyPricesJson ? JSON.parse(cloudData.hourlyPricesJson) : getDefaultState().hourlyPrices,
+                                    appliances: cloudData.appliancesJson ? JSON.parse(cloudData.appliancesJson) : getDefaultState().appliances,
+                                    accounts: cloudData.accountsJson ? JSON.parse(cloudData.accountsJson) : getDefaultState().accounts,
+                                    customAdvices: cloudData.customAdvicesJson ? JSON.parse(cloudData.customAdvicesJson) : getDefaultState().customAdvices,
+                                    agendaItems: cloudData.agendaItemsJson ? JSON.parse(cloudData.agendaItemsJson) : [],
+                                    tasks: cloudData.tasksJson ? JSON.parse(cloudData.tasksJson) : getDefaultState().tasks
+                                };
+                                renderAll();
+                                populateAdminInputs();
+                            } else {
+                                persistStateToFirestore(false);
+                            }
+
+                            // Als de gebruiker via echte Google Auth is ingelogd, log direct door in het Thuisbord
+                            if (user.email && !currentRole) {
+                                completeGoogleSignInWithEmail(user.email, user.displayName);
+                            }
+                        },
+                        (error) => {
+                            console.error("Firestore Listener Error:", error);
+                            badge.textContent = "⚠️ Cloud leesfout";
+                        }
+                    );
+                });
+            } catch (err) {
+                console.error("Firebase init error:", err);
+                badge.textContent = "Offline Modus";
+            }
+        }
+
+        async function persistStateToFirestore(notify = true) {
+            if (!db || !currentUser) {
+                if (notify) showToast("Opgeslagen!");
+                return;
+            }
+            try {
+                const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'thuisbord_settings', 'main_dashboard');
+                const payload = {
+                    ...appState,
+                    hourlyPricesJson: JSON.stringify(appState.hourlyPrices || []),
+                    appliancesJson: JSON.stringify(appState.appliances || []),
+                    accountsJson: JSON.stringify(appState.accounts || []),
+                    customAdvicesJson: JSON.stringify(appState.customAdvices || []),
+                    agendaItemsJson: JSON.stringify(appState.agendaItems || []),
+                    tasksJson: JSON.stringify(appState.tasks || []),
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUser.uid
+                };
+                delete payload.hourlyPrices;
+                delete payload.appliances;
+                delete payload.accounts;
+                delete payload.customAdvices;
+                delete payload.agendaItems;
+                delete payload.tasks;
+
+                await setDoc(configDocRef, payload);
+                if (notify) showToast("Wijzigingen live opgeslagen in Firebase!");
+            } catch (err) {
+                console.error("Save error:", err);
+                showToast("Fout bij opslaan naar Firebase");
+            }
+        }
+
+        function formatEuro(val) {
+            return '€ ' + Number(val).toFixed(2).replace('.', ',');
+        }
+
+        function formatNum(val, decimals = 2) {
+            return Number(val).toFixed(decimals).replace('.', ',');
+        }
+
+        function getEffectiveHourPrice(rawPrice) {
+            const base = Number(rawPrice) || 0;
+            if (!appState.applyFormulaToHours) return base;
+            const tax = Number(appState.taxPerKwh) || 0;
+            const markup = Number(appState.markupPerKwh) || 0;
+            const vatMultiplier = 1 + ((Number(appState.vatPercent) || 0) / 100);
+            return (base + tax + markup) * vatMultiplier;
+        }
+
+        function getEffectivePricesArray() {
+            return (appState.hourlyPrices || []).map(p => getEffectiveHourPrice(p));
+        }
+
+        // Builds a rich list of live contextual advice messages based on real-time state
+        function buildLiveAdvicePool() {
+            const pool = [];
+            const effectivePrices = getEffectivePricesArray();
+            const currentPrice = effectivePrices[currentSelectedHour] ?? 0.25;
+            const { minHour, maxHour } = updateExtremePriceWindows();
+            const pad = (n) => String(n).padStart(2, '0') + ':00';
+
+            // 1. Price-based primary live message
+            if (currentPrice <= effectivePrices[minHour] + 0.02) {
+                pool.push({
+                    category: "SLIM TARIEF ADVIES • " + (currentSelectedHour === 14 ? "NU" : pad(currentSelectedHour)),
+                    text: `Stroom is nu goedkoop (${formatEuro(currentPrice)}/kWh), gunstig venster tot ${pad(minHour + 2)}. Zet de wasmachine of vaatwasser nu aan.`,
+                    badge: `Gunstig tot ${pad(minHour + 2)}`,
+                    theme: "green"
+                });
+            } else if (currentPrice >= effectivePrices[maxHour] - 0.03) {
+                pool.push({
+                    category: "PIEKTARIEF WAARSCHUWING • " + pad(currentSelectedHour),
+                    text: `Let op: stroom is op dit tijdstip duur (${formatEuro(currentPrice)}/kWh). Stel grote verbruikers uit tot na ${pad(maxHour + 2)}.`,
+                    badge: `Piek tot ${pad(maxHour + 2)}`,
+                    theme: "orange"
+                });
+            } else {
+                pool.push({
+                    category: "ADVIES VOOR NU",
+                    text: `Stroomprijs is nu normaal (${formatEuro(currentPrice)}/kWh). Het goedkoopste blok vandaag ligt tussen ${pad(minHour)} en ${pad(minHour + 2)}.`,
+                    badge: `Goedkoopst: ${pad(minHour)}`,
+                    theme: "green"
+                });
+            }
+
+            // 2. Solar Surplus & Battery live insight
+            if (Number(appState.solarW) > Number(appState.houseW)) {
+                const surplusW = Number(appState.solarW) - Number(appState.houseW);
+                pool.push({
+                    category: "ZONNE-ENERGIE LIVE",
+                    text: `Je zonnepanelen leveren nu ${surplusW} W méér dan het huis verbruikt! Batterij staat op ${appState.batteryPct}%.`,
+                    badge: `+${surplusW} W Zon-overschot`,
+                    theme: "green"
+                });
+            }
+
+            // 3. Running Smart Appliances insight
+            const activeApps = (appState.appliances || []).filter(a => a.active && Number(a.watts) > 0);
+            if (activeApps.length > 0) {
+                const names = activeApps.map(a => `${a.icon} ${a.name} (${a.watts}W)`).join(', ');
+                pool.push({
+                    category: "ACTIEVE APPARATEN IN HUIS",
+                    text: `Momenteel actief in huis: ${names}.`,
+                    badge: `${activeApps.length} apparaat actief`,
+                    theme: "green"
+                });
+            }
+
+            // 4. Live Water Flow insight
+            if (Number(appState.waterRate) > 0) {
+                pool.push({
+                    category: "WATERMETER LIVE",
+                    text: `Er stroomt momenteel ${formatNum(appState.waterRate, 1)} liter water per minuut (${Math.round(appState.waterTodayLiters)} L verbruikt vandaag).`,
+                    badge: `💧 ${formatNum(appState.waterRate, 1)} L/min`,
+                    theme: "blue"
+                });
+            }
+
+            // 5. Custom messages added by Admin or Gezinsbeheerder
+            (appState.customAdvices || []).forEach((ca) => {
+                pool.push({
+                    category: "BERICHT VOOR HET GEZIN",
+                    text: ca.text,
+                    badge: ca.badge || "Melding",
+                    theme: "green"
+                });
+            });
+
+            return pool;
+        }
+
+        function renderAdviceBanner() {
+            const banner = document.getElementById('adviceBanner');
+            const catLabel = document.getElementById('adviceCategoryLabel');
+            const counterBadge = document.getElementById('adviceLiveCounter');
+            const titleEl = document.getElementById('adviceTitle');
+            const badgeEl = document.getElementById('adviceBadge');
+
+            if (!appState.autoAdvice) {
+                catLabel.textContent = "ADVIES VOOR NU";
+                counterBadge.textContent = "Handmatig ingesteld";
+                titleEl.textContent = appState.adviceText || "Stroom is nu goedkoop, tot 15:00. Zet de wasmachine nu aan.";
+                badgeEl.textContent = appState.adviceBadge || "Gunstig tot 15:00";
+                banner.className = "bg-[#152920] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500";
+                badgeEl.className = "bg-[#dcece3] text-[#173828] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap";
+                return;
+            }
+
+            const pool = buildLiveAdvicePool();
+            if (adviceRotationIndex >= pool.length) adviceRotationIndex = 0;
+            const currentItem = pool[adviceRotationIndex] || pool[0];
+
+            catLabel.textContent = currentItem.category;
+            counterBadge.textContent = `Live Bericht ${adviceRotationIndex + 1}/${pool.length}`;
+            titleEl.textContent = currentItem.text;
+            badgeEl.textContent = currentItem.badge;
+
+            if (currentItem.theme === "orange") {
+                banner.className = "bg-[#432312] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500";
+                badgeEl.className = "bg-[#faeae1] text-[#9e4516] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap";
+            } else if (currentItem.theme === "blue") {
+                banner.className = "bg-[#102a3b] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500";
+                badgeEl.className = "bg-[#e0f2fe] text-[#0369a1] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap";
+            } else {
+                banner.className = "bg-[#152920] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500";
+                badgeEl.className = "bg-[#dcece3] text-[#173828] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap";
+            }
+        }
+
+        window.cycleNextAdviceMessage = function() {
+            appState.autoAdvice = true;
+            const pool = buildLiveAdvicePool();
+            adviceRotationIndex = (adviceRotationIndex + 1) % pool.length;
+            renderAdviceBanner();
+        };
+
+        function renderAll() {
+            document.getElementById('haStatusText').textContent = appState.statusText || 'Live via Home Assistant';
+            document.getElementById('householdNamePill').textContent = `🏡 Huishouden: ${appState.householdName || 'Familie Peeters'}`;
+
+            // Column 1: Live Power, Gas, Water & Battery Values
+            document.getElementById('valSolar').textContent = appState.solarW;
+            document.getElementById('valHouse').textContent = appState.houseW;
+            document.getElementById('valGrid').textContent = appState.gridW;
+            document.getElementById('valBatteryW').textContent = appState.batteryW;
+            document.getElementById('valBatteryPct').textContent = appState.batteryPct;
+            document.getElementById('valBatteryCap').textContent = formatNum(appState.batteryCap, 1);
+            document.getElementById('valGasRate').textContent = formatNum(appState.gasRate, 2);
+            document.getElementById('valGasToday').textContent = formatNum(appState.gasToday, 2);
+            document.getElementById('valWaterRate').textContent = formatNum(appState.waterRate, 1);
+            document.getElementById('valWaterToday').textContent = Math.round(appState.waterTodayLiters || 0);
+            document.getElementById('netArrow').textContent = appState.solarW > appState.houseW ? '↑' : '↓';
+
+            const waterDot = document.getElementById('waterFlowDot');
+            if (waterDot) {
+                waterDot.style.display = Number(appState.waterRate) > 0 ? 'block' : 'none';
+            }
+
+            renderDisplayAppliancesFlow();
+
+            // Column 2: Today's Costs
+            const waterM3 = (Number(appState.waterTodayLiters) || 0) / 1000;
+            const waterCost = waterM3 * (Number(appState.waterPricePerM3) || 0);
+            const fixedCost = Number(appState.fixedDailyCost) || 0;
+            const totalCost = Number(appState.costElec) + Number(appState.costGas) + waterCost + fixedCost;
+
+            document.getElementById('costTotal').textContent = formatEuro(totalCost);
+            document.getElementById('costElec').textContent = formatEuro(appState.costElec);
+            document.getElementById('costGas').textContent = formatEuro(appState.costGas);
+            document.getElementById('costWater').textContent = formatEuro(waterCost);
+            document.getElementById('costFixed').textContent = formatEuro(fixedCost);
+
+            document.getElementById('kwhImport').textContent = `${formatNum(appState.kwhImport, 2)} kWh`;
+            document.getElementById('kwhSolar').textContent = formatNum(appState.kwhSolar, 1);
+            document.getElementById('kwhExport').textContent = `${formatNum(appState.kwhExport, 1)} kWh`;
+            document.getElementById('m3GasTotal').textContent = `${formatNum(appState.gasToday, 2)} m³`;
+            document.getElementById('litersWaterTotal').textContent = `${Math.round(appState.waterTodayLiters || 0)} L (${formatNum(waterM3, 2)} m³)`;
+
+            document.getElementById('displayVatBadge').textContent = `BTW: ${appState.vatPercent}% incl.`;
+            document.getElementById('displayGasPriceBadge').textContent = `Gas: ${formatEuro(appState.gasPricePerM3)}/m³`;
+            document.getElementById('displayWaterPriceBadge').textContent = `Water: ${formatEuro(appState.waterPricePerM3)}/m³`;
+
+            // Column 3: Hourly Prices & Cheapest/Most Expensive 2-hour Window
+            renderPriceBars();
+            updateExtremePriceWindows();
+
+            // Live Advice Banner
+            renderAdviceBanner();
+
+            // Column 4: Agenda, Tasks & Waste Calendar
+            renderDisplayAgenda();
+            renderDisplayTasks();
+            renderDisplayWaste();
+        }
+
+        function renderDisplayAppliancesFlow() {
+            const container = document.getElementById('appliancesFlowContainer');
+            const countBadge = document.getElementById('activeAppliancesCount');
+            const list = appState.appliances || [];
+            const activeCount = list.filter(a => a.active && Number(a.watts) > 0).length;
+            countBadge.textContent = `${activeCount} actief`;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-[11px] text-[#68736d] italic">Geen extra apparaten gekoppeld.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map((app) => {
+                const isRunning = app.active && Number(app.watts) > 0;
+                return `
+                    <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl border ${isRunning ? 'bg-[#f4fbf7] border-[#bce3ce]' : 'bg-stone-50/70 border-stone-200/60 opacity-65'}">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-sm">${app.icon || '🔌'}</span>
+                            <span class="text-xs font-bold text-[#1c2520] truncate">${app.name}</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${isRunning ? `
+                                <div class="w-10 flex items-center relative">
+                                    <div class="h-[2px] w-full bg-[#8ebd9f]"></div>
+                                    <span class="w-2 h-2 rounded-full bg-[#19975c] absolute left-1/2 dot-flow-right"></span>
+                                </div>
+                                <span class="text-xs font-extrabold text-[#197447]">${app.watts} W</span>
+                            ` : `
+                                <span class="text-[11px] font-medium text-[#68736d]">Uit (0 W)</span>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateExtremePriceWindows() {
+            const prices = getEffectivePricesArray();
+            let minAvg = Infinity, minHour = 13;
+            let maxAvg = -Infinity, maxHour = 18;
+
+            for (let h = 0; h < 23; h++) {
+                const avg = (prices[h] + prices[h + 1]) / 2;
+                if (avg < minAvg) { minAvg = avg; minHour = h; }
+                if (avg > maxAvg) { maxAvg = avg; maxHour = h; }
+            }
+
+            const pad = (n) => String(n).padStart(2, '0') + ':00';
+            document.getElementById('cheapestWindowText').textContent = `${pad(minHour)} – ${pad(minHour + 2)}`;
+            document.getElementById('cheapestPriceText').textContent = formatEuro(Math.min(prices[minHour], prices[minHour + 1]));
+
+            document.getElementById('expensiveWindowText').textContent = `${pad(maxHour)} – ${pad(maxHour + 2)}`;
+            document.getElementById('expensivePriceText').textContent = formatEuro(Math.max(prices[maxHour], prices[maxHour + 1]));
+
+            return { minHour, maxHour };
+        }
+
+        function renderPriceBars() {
+            const container = document.getElementById('priceBarsContainer');
+            container.innerHTML = '';
+            const prices = getEffectivePricesArray();
+            const maxPrice = Math.max(...prices, 0.35);
+            const { minHour, maxHour } = updateExtremePriceWindows();
+
+            const rawSelected = appState.hourlyPrices[currentSelectedHour] ?? 0.25;
+            const activePrice = prices[currentSelectedHour] ?? 0.25;
+            document.getElementById('activePriceDisplay').textContent = formatEuro(activePrice);
+            document.getElementById('activePriceLabel').textContent = currentSelectedHour === 14 ? 'nu' : `${String(currentSelectedHour).padStart(2, '0')}:00`;
+            document.getElementById('nowBarLabel').textContent = currentSelectedHour === 14 ? 'nu' : `${String(currentSelectedHour).padStart(2, '0')}u`;
+
+            document.getElementById('priceSubheaderText').textContent = `per kWh, incl. belasting & ${appState.vatPercent}% BTW`;
+            if (appState.applyFormulaToHours) {
+                document.getElementById('activePriceBreakdown').textContent =
+                    `Kale uurprijs: ${formatEuro(rawSelected)} + Opslag/Belasting: ${formatEuro(Number(appState.taxPerKwh) + Number(appState.markupPerKwh))} + ${appState.vatPercent}% BTW`;
+            } else {
+                document.getElementById('activePriceBreakdown').textContent =
+                    `All-in uurtarief (${appState.vatPercent}% BTW inbegrepen) • Vaste kosten: ${formatEuro(appState.fixedDailyCost)}/dag`;
+            }
+
+            prices.forEach((price, hour) => {
+                const heightPct = Math.max(22, Math.round((price / maxPrice) * 100));
+                const barWrapper = document.createElement('div');
+                barWrapper.className = 'flex-1 h-full flex items-end justify-center cursor-pointer group relative';
+                barWrapper.onclick = () => {
+                    currentSelectedHour = hour;
+                    adviceRotationIndex = 0; // Reset to price advice for the clicked hour
+                    renderAll();
+                };
+
+                let barColorClass = 'bg-[#bdc7c0] group-hover:bg-[#9aa89e]';
+                if (hour === minHour || hour === minHour + 1) barColorClass = 'bg-[#8ebd9f]';
+                if (hour === maxHour || hour === maxHour + 1) barColorClass = 'bg-[#db732b]';
+
+                if (hour === currentSelectedHour) {
+                    barWrapper.innerHTML = `
+                        <div class="w-full rounded-t-full bg-[#246b45] transition-all duration-300 relative flex justify-center" style="height: ${heightPct}%">
+                            <div class="w-[2px] h-full bg-white/80"></div>
+                        </div>
+                    `;
+                } else {
+                    barWrapper.innerHTML = `
+                        <div class="w-full rounded-t-full ${barColorClass} transition-all duration-300" style="height: ${heightPct}%"></div>
+                    `;
+                }
+                container.appendChild(barWrapper);
+            });
+
+            const labelEl = document.getElementById('nowBarLabel');
+            const pctPos = ((currentSelectedHour + 0.5) / 24) * 100;
+            labelEl.style.left = `${pctPos}%`;
+        }
+
+        function renderDisplayAgenda() {
+            const container = document.getElementById('agendaContainer');
+            if (!appState.agendaItems || appState.agendaItems.length === 0) {
+                container.innerHTML = `
+                    <p class="text-[16px] font-bold text-[#1c2520] leading-snug">
+                        Geen afspraken vandaag en morgen
+                    </p>
+                    <p class="text-sm text-[#68736d] mt-2 leading-relaxed">
+                        Afspraken komen uit jullie eigen agenda.
+                    </p>
+                `;
+                return;
+            }
+
+            container.innerHTML = `<div class="space-y-2.5 mt-1">` + appState.agendaItems.map(item => `
+                <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#f4f7f4]">
+                    <span class="w-1.5 h-8 rounded-full bg-[#19975c] shrink-0"></span>
+                    <div>
+                        <p class="text-sm font-bold text-[#1c2520]">${item.time} – ${item.title}</p>
+                    </div>
+                </div>
+            `).join('') + `</div>`;
+        }
+
+        function renderDisplayTasks() {
+            const listEl = document.getElementById('taskList');
+            const counterEl = document.getElementById('taskCounter');
+            const tasks = appState.tasks || [];
+            const doneCount = tasks.filter(t => t.done).length;
+            counterEl.textContent = `${doneCount} van ${tasks.length} gedaan`;
+
+            if (tasks.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-[#68736d]">Geen openstaande taken vandaag.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = tasks.map((task, idx) => `
+                <label class="flex items-center gap-2.5 text-sm text-[#38443d] cursor-pointer hover:bg-stone-50 p-1.5 -mx-1.5 rounded-xl transition">
+                    <input type="checkbox" ${task.done ? 'checked' : ''} onchange="window.toggleTaskDone(${idx})" class="w-4 h-4 rounded accent-[#152920] cursor-pointer">
+                    <span class="${task.done ? 'line-through text-stone-400' : ''}">${task.text}</span>
+                </label>
+            `).join('');
+        }
+
+        function renderDisplayWaste() {
+            const unlinked = document.getElementById('wasteUnlinked');
+            const linked = document.getElementById('wasteLinked');
+            if (!appState.wasteEnabled) {
+                unlinked.classList.remove('hidden');
+                linked.classList.add('hidden');
+            } else {
+                unlinked.classList.add('hidden');
+                linked.classList.remove('hidden');
+                document.getElementById('wasteTypeBadge').textContent = appState.wasteType;
+                document.getElementById('wastePostalBadge').textContent = appState.wastePostal || 'Gekoppeld';
+                document.getElementById('wasteDateDisplay').textContent = appState.wasteDate;
+                document.getElementById('wasteDescDisplay').textContent = appState.wasteDesc;
+            }
+        }
+
+        function populateAdminInputs() {
+            document.getElementById('newMemberHousehold').value = appState.householdName || 'Familie Peeters';
+            document.getElementById('admVatPercent').value = appState.vatPercent ?? 21;
+            document.getElementById('admFixedDailyCost').value = appState.fixedDailyCost ?? 0.75;
+            document.getElementById('admTaxPerKwh').value = appState.taxPerKwh ?? 0.108;
+            document.getElementById('admMarkupPerKwh').value = appState.markupPerKwh ?? 0.02;
+            document.getElementById('admApplyFormulaToHours').checked = !!appState.applyFormulaToHours;
+
+            document.getElementById('admGasPrice').value = appState.gasPricePerM3;
+            document.getElementById('admWaterPrice').value = appState.waterPricePerM3 ?? 1.25;
+            document.getElementById('admKwhImport').value = appState.kwhImport;
+            document.getElementById('admKwhExport').value = appState.kwhExport;
+            document.getElementById('admKwhSolar').value = appState.kwhSolar;
+            document.getElementById('admGasToday').value = appState.gasToday;
+            document.getElementById('admCostElec').value = appState.costElec;
+            document.getElementById('admCostGas').value = appState.costGas;
+
+            document.getElementById('admWaterRate').value = appState.waterRate ?? 4.5;
+            document.getElementById('admWaterToday').value = appState.waterTodayLiters ?? 118;
+
+            document.getElementById('admSolarW').value = appState.solarW;
+            document.getElementById('admHouseW').value = appState.houseW;
+            document.getElementById('admGridW').value = appState.gridW;
+            document.getElementById('admBatteryW').value = appState.batteryW;
+            document.getElementById('admBatteryPct').value = appState.batteryPct;
+            document.getElementById('admBatteryCap').value = appState.batteryCap;
+            document.getElementById('admGasRate').value = appState.gasRate;
+
+            document.getElementById('admAutoAdvice').checked = !!appState.autoAdvice;
+            document.getElementById('admRotateAdvice').checked = !!appState.rotateAdvice;
+            document.getElementById('admAdviceText').value = appState.adviceText;
+            document.getElementById('admAdviceBadge').value = appState.adviceBadge;
+
+            document.getElementById('admWasteEnabled').checked = appState.wasteEnabled;
+            document.getElementById('admWasteType').value = appState.wasteType;
+            document.getElementById('admWastePostal').value = appState.wastePostal;
+            document.getElementById('admWasteDate').value = appState.wasteDate;
+            document.getElementById('admWasteDesc').value = appState.wasteDesc;
+
+            document.getElementById('admStatusText').value = appState.statusText;
+            document.getElementById('admHaUrl').value = appState.haUrl;
+            document.getElementById('admHaToken').value = appState.haToken;
+
+            const hourlyGrid = document.getElementById('adminHourlyGrid');
+            hourlyGrid.innerHTML = appState.hourlyPrices.map((p, h) => {
+                const eff = getEffectiveHourPrice(p);
+                return `
+                <div class="bg-[#f6f8f5] p-2 rounded-xl border border-stone-200/70">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[10px] font-bold text-[#55605a]">${String(h).padStart(2, '0')}:00</label>
+                        <span class="text-[10px] font-semibold text-[#197447]">${formatEuro(eff)}</span>
+                    </div>
+                    <input type="number" step="0.01" value="${Number(p).toFixed(2)}" oninput="window.updateSingleHourPrice(${h}, this.value)" class="w-full px-2 py-1 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                </div>
+            `}).join('');
+
+            renderAccountsManagementTable();
+            renderCustomAdviceList();
+            renderAdminLists();
+            renderAdminAppliancesList();
+            updateAdminRolePermissionsUI();
+        }
+
+        // Strict UI isolation: Niet-ingelogde bezoekers zien GEEN navigatiebalk en GEEN wanddisplay
+        function updateNavigationAndRoleVisibility() {
+            const topSystemNav = document.getElementById('topSystemNav');
+            const navBtnUserPortal = document.getElementById('navBtnUserPortal');
+            const navBtnAdmin = document.getElementById('navBtnAdmin');
+            const adminNavIcon = document.getElementById('adminNavIcon');
+            const adminNavLabel = document.getElementById('adminNavLabel');
+            const roleBadge = document.getElementById('activeRoleBadge');
+
+            if (!currentRole) {
+                // Niet ingelogd: Verberg de volledige navigatiebalk zodat alleen het inlogscherm zichtbaar is
+                topSystemNav.classList.add('hidden');
+                topSystemNav.classList.remove('flex');
+                roleBadge.classList.add('hidden');
+                return;
+            }
+
+            // Ingelogd met Google: Toon de navigatiebalk en enkel de knoppen waar de persoon recht op heeft
+            topSystemNav.classList.remove('hidden');
+            topSystemNav.classList.add('flex');
+            roleBadge.classList.remove('hidden');
+
+            if (currentRole === 'user') {
+                // Gezinslid ziet ENKEL Wanddisplay + Agenda & Taken
+                roleBadge.textContent = `${currentLoggedUserName}`;
+                navBtnUserPortal.classList.remove('hidden');
+                navBtnUserPortal.classList.add('flex');
+                navBtnAdmin.classList.add('hidden');
+                navBtnAdmin.classList.remove('flex');
+            } else if (currentRole === 'manager') {
+                // Gezinsbeheerder ziet Wanddisplay + Gezinsbeheer + Agenda & Taken (geen Super Admin vermelding)
+                roleBadge.textContent = `${currentLoggedUserName} (${currentLoggedHousehold})`;
+                navBtnUserPortal.classList.remove('hidden');
+                navBtnUserPortal.classList.add('flex');
+                navBtnAdmin.classList.remove('hidden');
+                navBtnAdmin.classList.add('flex');
+                adminNavIcon.textContent = '🏡';
+                adminNavLabel.textContent = 'Gezinsbeheer';
+            } else if (currentRole === 'admin') {
+                // Super Admin ziet alles
+                roleBadge.textContent = `👑 ${currentLoggedUserName}`;
+                navBtnUserPortal.classList.remove('hidden');
+                navBtnUserPortal.classList.add('flex');
+                navBtnAdmin.classList.remove('hidden');
+                navBtnAdmin.classList.add('flex');
+                adminNavIcon.textContent = '👑';
+                adminNavLabel.textContent = 'Platform & Systeembeheer';
+            }
+        }
+
+        function updateAdminRolePermissionsUI() {
+            const isSuperAdmin = currentRole === 'admin';
+            const headerBanner = document.getElementById('adminHeaderBanner');
+            const rolePill = document.getElementById('adminHeaderRolePill');
+            const headerTitle = document.getElementById('adminHeaderTitle');
+            const headerSubtitle = document.getElementById('adminHeaderSubtitle');
+            const sysTabBtn = document.getElementById('adminTabBtn_systeem');
+            const userTabBtn = document.getElementById('adminTabBtn_gebruikers');
+            const roleSelectWrapper = document.getElementById('roleSelectWrapper');
+            const newMemberRoleSelect = document.getElementById('newMemberRole');
+            const userMgmtFormTitle = document.getElementById('userMgmtFormTitle');
+            const userMgmtHelpText = document.getElementById('userMgmtHelpText');
+            const accountsListHeading = document.getElementById('accountsListHeading');
+            const accountsListSubheading = document.getElementById('accountsListSubheading');
+
+            if (isSuperAdmin) {
+                headerBanner.className = "bg-[#152920] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm";
+                rolePill.textContent = "👑 Super Admin";
+                headerTitle.textContent = "Volledig Platform-, Gezins- & Energiebeheer";
+                headerSubtitle.textContent = "Beheer alle gebruikers, gezinsbeheerders, gezinsleden, live adviezen, dynamische prijzen, BTW en apparaten.";
+                sysTabBtn.classList.remove('hidden');
+                userTabBtn.textContent = "👥 1. Alle Gebruikers & Rollen";
+                roleSelectWrapper.classList.remove('hidden');
+                userMgmtFormTitle.textContent = "Nieuw Google Account Autoriseren";
+                userMgmtHelpText.innerHTML = "Voeg een Google e-mailadres toe en wijs de rol toe (Gezinslid, Gezinsbeheerder of Super Admin).";
+                accountsListHeading.textContent = "Alle Geautoriseerde Google Accounts";
+                accountsListSubheading.textContent = "Overzicht van alle gebruikers en beheerders op het platform.";
+            } else {
+                // Gezinsbeheerder ziet uitsluitend het eigen gezin & eigen wanddisplay beheer
+                headerBanner.className = "bg-[#1e4631] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm";
+                rolePill.textContent = `🏡 ${appState.householdName || 'Gezinsbeheer'}`;
+                headerTitle.textContent = `Beheer ${appState.householdName || 'Jouw Gezin'} & Wanddisplay`;
+                headerSubtitle.textContent = `Pas het wanddisplay van jullie gezin aan en nodig gezinsleden uit met hun Google e-mailadres.`;
+                sysTabBtn.classList.add('hidden');
+                userTabBtn.textContent = "👥 1. Gezinsleden";
+                roleSelectWrapper.classList.add('hidden');
+                if (newMemberRoleSelect) newMemberRoleSelect.value = 'user';
+                userMgmtFormTitle.textContent = "Gezinslid Toevoegen (Google E-mail)";
+                userMgmtHelpText.innerHTML = "Vul het Google e-mailadres van een gezinslid in zodat diegene afspraken en taken kan beheren.";
+                accountsListHeading.textContent = `Gezinsleden van ${appState.householdName || 'jullie huishouden'}`;
+                accountsListSubheading.textContent = "Deze gezinsleden hebben via hun Google-account toegang tot jullie gezinsbord.";
+            }
+        }
+
+        function renderAccountsManagementTable() {
+            const container = document.getElementById('accountsTableContainer');
+            const countBadge = document.getElementById('totalUsersCountBadge');
+            if (!container) return;
+
+            const isSuperAdmin = currentRole === 'admin';
+            const allAccounts = appState.accounts || [];
+
+            // Gezinsbeheerder ziet uitsluitend leden van het eigen gezin (en ziet nooit Super Admins)
+            const visibleAccounts = isSuperAdmin
+                ? allAccounts
+                : allAccounts.filter(a => a.role !== 'admin' && (!a.household || a.household === appState.householdName));
+
+            countBadge.textContent = isSuperAdmin
+                ? `${visibleAccounts.length} accounts`
+                : `${visibleAccounts.length} gezinsleden`;
+
+            container.innerHTML = visibleAccounts.map((acc) => {
+                const realIdx = allAccounts.findIndex(a => a.id === acc.id);
+
+                // Gezinsbeheerder ziet alleen een schone aanduiding zonder systeemhiërarchie
+                let roleBadge = '';
+                if (isSuperAdmin) {
+                    roleBadge = acc.role === 'admin'
+                        ? `<span class="bg-amber-100 text-amber-900 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">👑 Super Admin</span>`
+                        : acc.role === 'manager'
+                        ? `<span class="bg-[#dcece3] text-[#152920] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">🏡 Gezinsbeheerder</span>`
+                        : `<span class="bg-stone-200 text-stone-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">👤 Gezinslid</span>`;
+                } else {
+                    roleBadge = acc.role === 'manager'
+                        ? `<span class="bg-[#dcece3] text-[#152920] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">Beheerder</span>`
+                        : `<span class="bg-stone-200 text-stone-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">Gezinslid</span>`;
+                }
+
+                const canDelete = isSuperAdmin || acc.role === 'user';
+
+                return `
+                    <div class="flex flex-wrap items-center justify-between gap-3 bg-[#f6f8f5] p-3.5 rounded-2xl border border-stone-200/70">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center font-bold text-sm text-[#152920]">
+                                ${(acc.name || 'G').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="text-sm font-bold text-[#1c2520]">${acc.name}</p>
+                                    ${roleBadge}
+                                </div>
+                                <p class="text-xs text-[#68736d] flex items-center gap-1.5 mt-0.5">
+                                    <span>Google: <strong>${acc.email}</strong></span>
+                                    ${isSuperAdmin ? `<span>• ${acc.household || appState.householdName}</span>` : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${isSuperAdmin ? `
+                                <select onchange="window.changeAccountRole(${realIdx}, this.value)" class="px-2.5 py-1.5 rounded-xl bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                                    <option value="user" ${acc.role === 'user' ? 'selected' : ''}>Gezinslid</option>
+                                    <option value="manager" ${acc.role === 'manager' ? 'selected' : ''}>Gezinsbeheerder</option>
+                                    <option value="admin" ${acc.role === 'admin' ? 'selected' : ''}>Super Admin</option>
+                                </select>
+                            ` : ''}
+                            ${canDelete ? `
+                                <button onclick="window.removeAccountMember(${realIdx})" class="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold cursor-pointer">
+                                    Verwijder
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.addAccountMember = function() {
+            const name = document.getElementById('newMemberName').value.trim();
+            const email = document.getElementById('newMemberEmail').value.trim().toLowerCase();
+            let role = document.getElementById('newMemberRole').value;
+            const household = document.getElementById('newMemberHousehold').value.trim() || appState.householdName;
+
+            if (!name || !email) {
+                showToast("Vul zowel een naam als een Google e-mailadres in.");
+                return;
+            }
+            // Gezinsbeheerder kan uitsluitend Gezinsleden voor het eigen gezin toevoegen
+            if (currentRole !== 'admin') {
+                role = 'user';
+            }
+
+            if (!appState.accounts) appState.accounts = [];
+            appState.accounts.push({
+                id: 'acc_' + Date.now(),
+                name,
+                email,
+                role,
+                household
+            });
+
+            document.getElementById('newMemberName').value = '';
+            document.getElementById('newMemberEmail').value = '';
+            renderAccountsManagementTable();
+            persistStateToFirestore(true);
+        };
+
+        window.changeAccountRole = function(idx, newRole) {
+            if (currentRole !== 'admin') {
+                showToast("Alleen de Super Admin kan beheerdersrollen wijzigen.");
+                return;
+            }
+            if (!appState.accounts[idx]) return;
+            appState.accounts[idx].role = newRole;
+            renderAccountsManagementTable();
+            persistStateToFirestore(true);
+        };
+
+        window.removeAccountMember = function(idx) {
+            if (!appState.accounts[idx]) return;
+            appState.accounts.splice(idx, 1);
+            renderAccountsManagementTable();
+            persistStateToFirestore(true);
+        };
+
+        function renderCustomAdviceList() {
+            const container = document.getElementById('customAdviceListContainer');
+            if (!container) return;
+            const list = appState.customAdvices || [];
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-[#68736d] italic">Geen extra eigen berichten toegevoegd.</p>`;
+                return;
+            }
+            container.innerHTML = list.map((item, idx) => `
+                <div class="flex items-center justify-between gap-2 bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl border border-stone-200/70">
+                    <div>
+                        <p class="text-xs font-bold text-[#1c2520]">${item.text}</p>
+                        <span class="text-[10px] font-semibold text-[#197447] bg-[#dcece3] px-2 py-0.5 rounded-full">${item.badge}</span>
+                    </div>
+                    <button onclick="window.removeCustomAdviceMessage(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer shrink-0">Verwijder</button>
+                </div>
+            `).join('');
+        }
+
+        window.addCustomAdviceMessage = function() {
+            const text = document.getElementById('newCustomAdviceText').value.trim();
+            const badge = document.getElementById('newCustomAdviceBadge').value.trim() || 'Gezinsadvies';
+            if (!text) return;
+            if (!appState.customAdvices) appState.customAdvices = [];
+            appState.customAdvices.push({ id: 'ca_' + Date.now(), text, badge });
+            document.getElementById('newCustomAdviceText').value = '';
+            document.getElementById('newCustomAdviceBadge').value = '';
+            renderCustomAdviceList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.removeCustomAdviceMessage = function(idx) {
+            appState.customAdvices.splice(idx, 1);
+            renderCustomAdviceList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        function renderAdminAppliancesList() {
+            const container = document.getElementById('adminAppliancesList');
+            if (!container) return;
+            const list = appState.appliances || [];
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-[#68736d] italic py-2">Nog geen slimme apparaten toegevoegd.</p>`;
+                return;
+            }
+            container.innerHTML = list.map((app, idx) => `
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl border border-stone-200/60">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">${app.icon || '🔌'}</span>
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">${app.name}</p>
+                            <p class="text-[11px] text-[#68736d]">${app.active ? 'Flow actief op scherm' : 'Gepauzeerd / Uit'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-stone-200">
+                            <input type="number" value="${app.watts}" oninput="window.adminUpdateApplianceWatts(${idx}, this.value)" class="w-16 text-xs font-bold text-[#1c2520] focus:outline-none">
+                            <span class="text-[11px] text-[#68736d]">W</span>
+                        </div>
+                        <button onclick="window.adminToggleAppliance(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${app.active ? 'bg-[#19975c] text-white' : 'bg-stone-200 text-stone-700'}">
+                            ${app.active ? 'AAN' : 'UIT'}
+                        </button>
+                        <button onclick="window.adminRemoveAppliance(${idx})" class="text-xs font-bold text-red-600 hover:underline px-1.5 cursor-pointer">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminLists() {
+            const agendaHtml = !appState.agendaItems.length
+                ? `<p class="text-xs text-[#68736d] italic py-2">Geen afspraken ingesteld (standaard tekst wordt getoond).</p>`
+                : appState.agendaItems.map((item, idx) => `
+                    <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
+                        <span><strong>${item.time}</strong> – ${item.title}</span>
+                        <button onclick="window.adminRemoveAgendaItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+
+            const taskHtml = !appState.tasks.length
+                ? `<p class="text-xs text-[#68736d] italic py-2">Geen taken ingesteld.</p>`
+                : appState.tasks.map((task, idx) => `
+                    <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
+                        <span>${task.text}</span>
+                        <button onclick="window.adminRemoveTaskItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+
+            document.getElementById('adminAgendaList').innerHTML = agendaHtml;
+            document.getElementById('adminTaskList').innerHTML = taskHtml;
+
+            const userAgendaEl = document.getElementById('userPortalAgendaList');
+            const userTaskEl = document.getElementById('userPortalTaskList');
+            if (userAgendaEl) userAgendaEl.innerHTML = agendaHtml;
+            if (userTaskEl) userTaskEl.innerHTML = taskHtml;
+        }
+
+        window.switchView = function(view) {
+            // Strikte beveiliging: Zonder geldige Google-login krijg je ALTIJD het inlogscherm (ook geen wanddisplay)
+            if (!currentRole) {
+                view = 'login';
+            } else if (view === 'admin' && currentRole !== 'manager' && currentRole !== 'admin') {
+                view = 'display';
+            }
+
+            const viewDisplayEl = document.getElementById('viewDisplay');
+            const viewLoginEl = document.getElementById('viewLogin');
+            const viewUserPortalEl = document.getElementById('viewUserPortal');
+            const viewAdminEl = document.getElementById('viewAdmin');
+
+            viewDisplayEl.classList.toggle('hidden', view !== 'display');
+            viewDisplayEl.classList.toggle('flex', view === 'display');
+
+            viewLoginEl.classList.toggle('hidden', view !== 'login');
+            viewLoginEl.classList.toggle('flex', view === 'login');
+
+            viewUserPortalEl.classList.toggle('hidden', view !== 'userPortal');
+            viewAdminEl.classList.toggle('hidden', view !== 'admin');
+
+            const btnDisplay = document.getElementById('navBtnDisplay');
+            const btnUser = document.getElementById('navBtnUserPortal');
+            const btnAdmin = document.getElementById('navBtnAdmin');
+
+            const activeClass = 'px-3.5 py-1.5 rounded-xl font-semibold bg-white text-[#152920] transition flex items-center gap-1.5 cursor-pointer';
+            const inactiveClass = 'px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 cursor-pointer';
+
+            btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
+            if (currentRole) {
+                btnUser.className = view === 'userPortal' ? activeClass : inactiveClass;
+            }
+            if (currentRole === 'manager' || currentRole === 'admin') {
+                btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
+            }
+            updateNavigationAndRoleVisibility();
+        };
+
+        // Stuurt een klik op het wanddisplay automatisch naar het juiste scherm op basis van wie er is ingelogd
+        window.openAuthorizedPortalOrLogin = function(preferredSection = null) {
+            if (!currentRole) {
+                document.getElementById('loginErrorMsg').classList.add('hidden');
+                document.getElementById('googleAccountChooserBox').classList.add('hidden');
+                window.switchView('login');
+                return;
+            }
+            if (preferredSection === 'agenda' || currentRole === 'user') {
+                renderAdminLists();
+                window.switchView('userPortal');
+            } else if (currentRole === 'manager' || currentRole === 'admin') {
+                updateAdminRolePermissionsUI();
+                window.switchView('admin');
+            }
+        };
+
+        // Verwerkt een geverifieerd Google e-mailadres en wijst exact de juiste omgeving toe
+        function completeGoogleSignInWithEmail(email, displayName = "") {
+            const cleanEmail = (email || "").trim().toLowerCase();
+            const errEl = document.getElementById('loginErrorMsg');
+            const matchedAccount = (appState.accounts || []).find(
+                a => (a.email || "").toLowerCase() === cleanEmail
+            );
+
+            if (!matchedAccount) {
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            errEl.classList.add('hidden');
+            currentRole = matchedAccount.role; // 'user' | 'manager' | 'admin'
+            currentLoggedUserName = matchedAccount.name || displayName || cleanEmail;
+            currentLoggedUserEmail = matchedAccount.email;
+            currentLoggedHousehold = matchedAccount.household || appState.householdName || "Familie Peeters";
+
+            updateNavigationAndRoleVisibility();
+            populateAdminInputs();
+
+            // Na het inloggen met Google opent direct het Wanddisplay (en staan jouw beheerknoppen klaar in de bovenbalk)
+            if (currentRole === 'admin' || currentRole === 'manager') {
+                window.switchAdminTab('gebruikers');
+            }
+            renderAdminLists();
+            window.switchView('display');
+            showToast(`Ingelogd als ${currentLoggedUserName}`);
+        }
+
+        function renderGoogleAccountChooser() {
+            const box = document.getElementById('googleAccountChooserBox');
+            const listEl = document.getElementById('googleChooserAccountsList');
+            box.classList.remove('hidden');
+
+            const accounts = appState.accounts || [];
+            listEl.innerHTML = accounts.map((acc) => `
+                <button type="button" onclick="window.selectGoogleChooserAccount('${acc.email}')" class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#f4f7f4] border border-stone-200/80 transition text-left cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-[#152920] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        ${(acc.name || 'G').charAt(0).toUpperCase()}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-[#1c2520] truncate">${acc.name}</p>
+                        <p class="text-[11px] text-[#68736d] truncate">${acc.email}</p>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        window.selectGoogleChooserAccount = function(email) {
+            completeGoogleSignInWithEmail(email);
+        };
+
+        window.submitGoogleEmailSignIn = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('customGoogleEmailInput').value;
+            completeGoogleSignInWithEmail(email);
+        };
+
+        window.triggerGoogleSignIn = async function() {
+            // Probeer eerst echte Firebase Google OAuth Popup indien geconfigureerd en toegestaan door het scherm
+            if (auth) {
+                try {
+                    const provider = new GoogleAuthProvider();
+                    const result = await signInWithPopup(auth, provider);
+                    if (result && result.user && result.user.email) {
+                        completeGoogleSignInWithEmail(result.user.email, result.user.displayName);
+                        return;
+                    }
+                } catch (popupErr) {
+                    // In een ingesloten preview-venster of zonder OAuth-domeinwhitelisting toont de Google-knop de Google Account-kiezer
+                    renderGoogleAccountChooser();
+                    return;
+                }
+            }
+        window.logoutSession = async function() {
+            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
+                try { await signOut(auth); } catch (e) {}
+            }
+            currentRole = null;
+            currentLoggedUserName = "";
+            currentLoggedUserEmail = "";
+            document.getElementById('googleAccountChooserBox').classList.add('hidden');
+            updateNavigationAndRoleVisibility();
+            window.switchView('login');
+            showToast("Je bent uitgelogd");
+        };
+
+        window.switchAdminTab = function(tabName) {
+            const tabs = ['gebruikers', 'advies', 'tarieven', 'apparaten', 'energie', 'agenda', 'systeem'];
+            tabs.forEach(t => {
+                document.getElementById('adminTab_' + t).classList.toggle('hidden', t !== tabName);
+                const btn = document.getElementById('adminTabBtn_' + t);
+                if (!btn) return;
+                const isHidden = btn.classList.contains('hidden');
+                if (t === tabName) {
+                    btn.className = 'px-4 py-2.5 rounded-xl text-sm font-bold bg-[#152920] text-white transition cursor-pointer' + (isHidden ? ' hidden' : '');
+                } else {
+                    btn.className = 'px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer' + (isHidden ? ' hidden' : '');
+                }
+            });
+        };
+
+        window.applyAdminChangesLive = function() {
+            appState.householdName = document.getElementById('newMemberHousehold').value.trim() || 'Familie Peeters';
+            appState.vatPercent = parseFloat(document.getElementById('admVatPercent').value) || 0;
+            appState.fixedDailyCost = parseFloat(document.getElementById('admFixedDailyCost').value) || 0;
+            appState.taxPerKwh = parseFloat(document.getElementById('admTaxPerKwh').value) || 0;
+            appState.markupPerKwh = parseFloat(document.getElementById('admMarkupPerKwh').value) || 0;
+            appState.applyFormulaToHours = document.getElementById('admApplyFormulaToHours').checked;
+
+            appState.gasPricePerM3 = parseFloat(document.getElementById('admGasPrice').value) || 0;
+            appState.waterPricePerM3 = parseFloat(document.getElementById('admWaterPrice').value) || 0;
+            appState.kwhImport = parseFloat(document.getElementById('admKwhImport').value) || 0;
+            appState.kwhExport = parseFloat(document.getElementById('admKwhExport').value) || 0;
+            appState.kwhSolar = parseFloat(document.getElementById('admKwhSolar').value) || 0;
+            appState.gasToday = parseFloat(document.getElementById('admGasToday').value) || 0;
+            appState.costElec = parseFloat(document.getElementById('admCostElec').value) || 0;
+            appState.costGas = parseFloat(document.getElementById('admCostGas').value) || 0;
+
+            appState.waterRate = parseFloat(document.getElementById('admWaterRate').value) || 0;
+            appState.waterTodayLiters = parseFloat(document.getElementById('admWaterToday').value) || 0;
+
+            appState.solarW = parseInt(document.getElementById('admSolarW').value, 10) || 0;
+            appState.houseW = parseInt(document.getElementById('admHouseW').value, 10) || 0;
+            appState.gridW = parseInt(document.getElementById('admGridW').value, 10) || 0;
+            appState.batteryW = parseInt(document.getElementById('admBatteryW').value, 10) || 0;
+            appState.batteryPct = parseInt(document.getElementById('admBatteryPct').value, 10) || 0;
+            appState.batteryCap = parseFloat(document.getElementById('admBatteryCap').value) || 0;
+            appState.gasRate = parseFloat(document.getElementById('admGasRate').value) || 0;
+
+            appState.autoAdvice = document.getElementById('admAutoAdvice').checked;
+            appState.rotateAdvice = document.getElementById('admRotateAdvice').checked;
+            appState.adviceText = document.getElementById('admAdviceText').value;
+            appState.adviceBadge = document.getElementById('admAdviceBadge').value;
+
+            appState.wasteEnabled = document.getElementById('admWasteEnabled').checked;
+            appState.wasteType = document.getElementById('admWasteType').value;
+            appState.wastePostal = document.getElementById('admWastePostal').value;
+            appState.wasteDate = document.getElementById('admWasteDate').value;
+            appState.wasteDesc = document.getElementById('admWasteDesc').value;
+
+            appState.statusText = document.getElementById('admStatusText').value;
+            appState.haUrl = document.getElementById('admHaUrl').value;
+            appState.haToken = document.getElementById('admHaToken').value;
+
+            renderAll();
+        };
+
+        window.updateSingleHourPrice = function(hour, val) {
+            appState.hourlyPrices[hour] = parseFloat(val) || 0;
+            renderAll();
+        };
+
+        window.importBulkHourlyPrices = function() {
+            const rawText = document.getElementById('bulkPricesInput').value.trim();
+            if (!rawText) return;
+            const parsed = rawText
+                .replace(/;/g, ',')
+                .split(/[\s,]+/)
+                .map(s => parseFloat(s.replace(',', '.')))
+                .filter(n => !isNaN(n));
+
+            if (parsed.length === 0) {
+                showToast("Geen geldige getallen gevonden.");
+                return;
+            }
+            for (let i = 0; i < 24; i++) {
+                if (parsed[i] !== undefined) {
+                    appState.hourlyPrices[i] = parsed[i];
+                }
+            }
+            document.getElementById('bulkPricesInput').value = '';
+            populateAdminInputs();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.applyPresetTariffs = function(preset) {
+            if (preset === 'bare_spot') {
+                appState.applyFormulaToHours = true;
+                appState.hourlyPrices = [
+                    0.08, 0.07, 0.07, 0.06, 0.06, 0.08,
+                    0.11, 0.14, 0.13, 0.09, 0.06, 0.04,
+                    0.02, 0.01, 0.02, 0.06, 0.11, 0.16,
+                    0.21, 0.23, 0.17, 0.12, 0.09, 0.08
+                ];
+            } else if (preset === 'sunny') {
+                appState.applyFormulaToHours = false;
+                appState.hourlyPrices = [
+                    0.26, 0.25, 0.24, 0.24, 0.25, 0.27,
+                    0.29, 0.31, 0.28, 0.22, 0.18, 0.14,
+                    0.11, 0.08, 0.09, 0.16, 0.25, 0.34,
+                    0.39, 0.41, 0.36, 0.30, 0.27, 0.25
+                ];
+            } else {
+                appState.applyFormulaToHours = false;
+                appState.hourlyPrices = [
+                    0.31, 0.30, 0.29, 0.29, 0.30, 0.34,
+                    0.42, 0.48, 0.45, 0.39, 0.36, 0.34,
+                    0.33, 0.32, 0.34, 0.38, 0.46, 0.54,
+                    0.59, 0.57, 0.48, 0.41, 0.36, 0.33
+                ];
+            }
+            populateAdminInputs();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddAppliance = function() {
+            const icon = document.getElementById('newAppIcon').value;
+            const name = document.getElementById('newAppName').value.trim();
+            const watts = parseInt(document.getElementById('newAppWatts').value, 10) || 0;
+            if (!name) {
+                showToast("Geef het apparaat een naam (bijv. Wasmachine)");
+                return;
+            }
+            if (!appState.appliances) appState.appliances = [];
+            appState.appliances.push({
+                id: 'app_' + Date.now(),
+                icon,
+                name,
+                watts,
+                active: true
+            });
+            document.getElementById('newAppName').value = '';
+            renderAdminAppliancesList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminToggleAppliance = function(idx) {
+            if (!appState.appliances[idx]) return;
+            appState.appliances[idx].active = !appState.appliances[idx].active;
+            renderAdminAppliancesList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminUpdateApplianceWatts = function(idx, val) {
+            if (!appState.appliances[idx]) return;
+            appState.appliances[idx].watts = parseInt(val, 10) || 0;
+            renderAll();
+        };
+
+        window.adminRemoveAppliance = function(idx) {
+            appState.appliances.splice(idx, 1);
+            renderAdminAppliancesList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.userAddAgendaItem = function() {
+            const time = document.getElementById('userNewAgendaTime').value.trim() || 'Vandaag';
+            const title = document.getElementById('userNewAgendaTitle').value.trim();
+            if (!title) return;
+            appState.agendaItems.push({ time, title });
+            document.getElementById('userNewAgendaTime').value = '';
+            document.getElementById('userNewAgendaTitle').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.userAddTaskItem = function() {
+            const text = document.getElementById('userNewTaskText').value.trim();
+            if (!text) return;
+            appState.tasks.push({ id: Date.now().toString(), text, done: false });
+            document.getElementById('userNewTaskText').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddAgendaItem = function() {
+            const time = document.getElementById('newAgendaTime').value.trim() || 'Vandaag';
+            const title = document.getElementById('newAgendaTitle').value.trim();
+            if (!title) return;
+            appState.agendaItems.push({ time, title });
+            document.getElementById('newAgendaTime').value = '';
+            document.getElementById('newAgendaTitle').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveAgendaItem = function(idx) {
+            appState.agendaItems.splice(idx, 1);
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddTaskItem = function() {
+            const text = document.getElementById('newTaskText').value.trim();
+            if (!text) return;
+            appState.tasks.push({ id: Date.now().toString(), text, done: false });
+            document.getElementById('newTaskText').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveTaskItem = function(idx) {
+            appState.tasks.splice(idx, 1);
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.toggleTaskDone = function(idx) {
+            if (!appState.tasks[idx]) return;
+            appState.tasks[idx].done = !appState.tasks[idx].done;
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.saveAllToFirebase = function() {
+            window.applyAdminChangesLive();
+            persistStateToFirestore(true);
+        };
+
+        window.resetToDefaultDemoData = function() {
+            appState = getDefaultState();
+            populateAdminInputs();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.toggleFullScreen = function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        };
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('liveClock').textContent = `${hours}:${mins}`;
+
+            const formatter = new Intl.DateTimeFormat('nl-NL', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+            document.getElementById('liveDate').textContent = formatter.format(now);
+        }
+
+        window.onload = function() {
+            renderAll();
+            populateAdminInputs();
+            updateClock();
+            // Start altijd vergrendeld op het Google Inlogscherm totdat de gebruiker is ingelogd
+            window.switchView('login');
+            setInterval(updateClock, 15000);
+            // Live rotation timer for the Advice Banner (every 10 seconds)
+            setInterval(() => {
+                if (appState.autoAdvice && appState.rotateAdvice) {
+                    const pool = buildLiveAdvicePool();
+                    if (pool.length > 1) {
+                        adviceRotationIndex = (adviceRotationIndex + 1) % pool.length;
+                        renderAdviceBanner();
+                    }
+                }
+            }, 10000);
+            initFirebase();
+        };
+    </script>
+</body>
+</html>
