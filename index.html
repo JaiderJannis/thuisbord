@@ -897,16 +897,21 @@
 
                     <div id="haCorsHelpBox" class="p-4 rounded-2xl bg-[#f4f7f4] text-[11px] text-[#38443d] space-y-2 border border-stone-200/80">
                         <div class="flex items-center justify-between">
-                            <p class="font-bold text-[#152920]">🛠️ Oplossing voor CORS-blokkade (`configuration.yaml`):</p>
+                            <p class="font-bold text-[#152920]">📱 Waarom blokkeert iPhone/Smartphone `http://192.168...`?</p>
                             <button type="button" onclick="window.copyCorsYamlSnippet()" class="px-2.5 py-1 rounded-lg bg-[#152920] text-white font-bold text-[10px] cursor-pointer">
                                 📋 Kopieer YAML
                             </button>
                         </div>
+                        <p class="text-[11px] text-[#197447] font-semibold bg-[#e8f2ec] p-2.5 rounded-xl border border-[#bce3ce]">
+                            ✅ Opgelost met Cloud-Bridge: Zolang het dashboard op je computer (of via een HTTPS-adres) aanstaat, stuurt die alle live Home Assistant waardes automatisch door naar je smartphone (werkt zelfs op 4G/5G)!
+                        </p>
+                        <p class="text-[10px] text-[#55605a] leading-relaxed">
+                            Wil je dat je iPhone óók zonder computer rechtstreeks met Home Assistant praat? Gebruik dan in het URL-veld hierboven een <strong>https://</strong> adres (bijv. via <strong>Tailscale HTTPS certificaat</strong>, <strong>Nabu Casa</strong> of <strong>Cloudflare Tunnel</strong>) in plaats van <code>http://192.168...</code>, want Apple iOS blokkeert altijd <code>http://</code> binnen een <code>https://</code> website.
+                        </p>
                         <pre id="corsYamlCode" class="bg-[#152920] text-[#dcece3] p-2.5 rounded-xl font-mono text-[10px] overflow-x-auto select-all">http:
   cors_allowed_origins:
     - https://jaiderjannis.github.io
     - http://localhost:8000</pre>
-                        <p class="text-[10px] text-[#55605a]">Plak dit in Home Assistant in <strong>configuration.yaml</strong> en <strong>herstart Home Assistant</strong>.</p>
                     </div>
                 </div>
 
@@ -1450,13 +1455,55 @@
         let discoveredHaEntities = [];
         let haWebSocket = null;
         let haWsConnected = false;
+        let haDirectRestConnected = false;
         let lastHaWsUrl = "";
+        let lastCloudBridgePushMs = 0;
         let liveTickerEnabled = true;
 
         let db = null;
         let auth = null;
         let currentUser = null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'thuisbord-default-app';
+
+        function isMobileOrHttpsMixedContentBlocked() {
+            const url = (appState.haUrl || "").trim().toLowerCase();
+            return window.location.protocol === 'https:' && url.startsWith('http://');
+        }
+
+        function pushLiveTelemetryToCloudBridge() {
+            // Alleen het apparaat dat rechtstreeks verbonden is met Home Assistant pusht elke 3.5 sec de live sensordata naar Firebase voor smartphones
+            if (!haWsConnected && !haDirectRestConnected) return;
+            const nowMs = Date.now();
+            if (nowMs - lastCloudBridgePushMs < 3500) return;
+            lastCloudBridgePushMs = nowMs;
+            appState.lastBridgeSyncAt = new Date().toISOString();
+            persistStateToFirestore(false);
+        }
+
+        function updateConnectionBadgesForCloudBridge() {
+            const statusBadge = document.getElementById('haConnectionBadge');
+            const sourceText = document.getElementById('liveSensorSourceText');
+            if (haWsConnected || haDirectRestConnected) return;
+
+            if (appState.lastBridgeSyncAt) {
+                const ageSec = Math.round((Date.now() - new Date(appState.lastBridgeSyncAt).getTime()) / 1000);
+                if (ageSec < 60) {
+                    if (statusBadge) {
+                        statusBadge.textContent = "🟢 Live via Smartphone Cloud-Bridge (Gesynchroniseerd)";
+                        statusBadge.className = "text-xs font-bold text-[#197447]";
+                    }
+                    if (sourceText) {
+                        sourceText.textContent = "📱 Live via Cloud-Bridge";
+                    }
+                    return;
+                }
+            }
+
+            if (isMobileOrHttpsMixedContentBlocked() && statusBadge) {
+                statusBadge.textContent = "📱 Wacht op Cloud-Bridge (Open dashboard op pc of gebruik https:// HA-link)";
+                statusBadge.className = "text-xs font-bold text-[#0369a1]";
+            }
+        }
 
         function showToast(message) {
             const toast = document.getElementById('toastBanner');
@@ -1865,6 +1912,8 @@
                 if (sourceText) sourceText.textContent = haWsConnected ? "⚡ Realtime HA Stream" : "🟢 Live HA Sensoren";
                 pushLivePowerPoint(appState.solarW, appState.houseW);
                 renderAll();
+                // Stuur deze echte Home Assistant waardes direct door naar Firebase zodat smartphones (iPhone/Android) ze live ontvangen!
+                pushLiveTelemetryToCloudBridge();
             }
         }
 
@@ -1960,6 +2009,7 @@
                                     });
                                 }
                                 syncActiveHouseholdPointer();
+                                updateConnectionBadgesForCloudBridge();
                                 renderAll();
                                 populateAdminInputs();
                             } else {
@@ -2029,6 +2079,7 @@
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const states = await res.json();
                 discoveredHaEntities = states;
+                haDirectRestConnected = true;
 
                 populateHaDatalist(states);
 
@@ -2047,12 +2098,16 @@
 
                 if (!silent) showToast(`${states.length} Home Assistant entiteiten geladen & live gekoppeld!`);
             } catch (err) {
+                haDirectRestConnected = false;
                 console.warn("Home Assistant fetch error:", err);
-                if (statusBadge && !haWsConnected) {
-                    statusBadge.textContent = "⚠️ Verbinding geblokkeerd door CORS (Zie YAML-oplossing hieronder)";
-                    statusBadge.className = "text-xs font-bold text-amber-700";
+                updateConnectionBadgesForCloudBridge();
+                if (!silent) {
+                    if (isMobileOrHttpsMixedContentBlocked()) {
+                        showToast("iPhone blokkeert http:// op een https:// site. Gebruik de automatische Cloud-Bridge (via je pc) of een https:// HA-link!");
+                    } else {
+                        showToast("Kon Home Assistant niet direct bereiken. Controleer de verbinding.");
+                    }
                 }
-                if (!silent) showToast("Kon Home Assistant niet bereiken via REST. Controleer het CORS YAML-blokje hieronder.");
             }
         };
 
@@ -3818,7 +3873,10 @@
                         await window.fetchHomeAssistantEntities(true);
                     }
                 }
-                if (liveTickerEnabled) {
+                updateConnectionBadgesForCloudBridge();
+                // Alleen simuleren als er géén directe HA-verbinding is én er geen verse Cloud-Bridge data binnenkomt
+                const bridgeFresh = appState.lastBridgeSyncAt && ((Date.now() - new Date(appState.lastBridgeSyncAt).getTime()) < 25000);
+                if (liveTickerEnabled && !haWsConnected && !haDirectRestConnected && !bridgeFresh) {
                     tickLiveEnergyMetrics();
                 }
             }, 2000);
