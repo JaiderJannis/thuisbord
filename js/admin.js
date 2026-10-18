@@ -57,7 +57,7 @@ function populateAdminInputs() {
     [
         'solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct',
         'gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhImportT2','kwhExport','kwhExportT2',
-        'kwhSolar','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
+        'kwhSolar','monthlyPeakW','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
     ].forEach(k => {
         const el = document.getElementById('map_' + k);
         if (el) el.value = em[k] || '';
@@ -224,7 +224,8 @@ function renderAdminLists() {
 }
 
 window.switchAdminTab = function(tabName) {
-    const tabs = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'weergave'];
+    if (tabName === 'autos') renderAdminCarsList();
+    const tabs = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'weergave', 'autos'];
     tabs.forEach(t => {
         const tabEl = document.getElementById('adminTab_' + t);
         if (tabEl) tabEl.classList.toggle('hidden', t !== tabName);
