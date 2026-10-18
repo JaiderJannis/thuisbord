@@ -143,6 +143,7 @@ window.autoDetectAndMapHaEntities = function(silent = false) {
     if (!em.waterRate) em.waterRate = findEntity('sensor.', [['water', 'active'], ['water', 'flow'], ['water', 'liter_per_minute']], ['l/min', 'l/m']);
     if (!em.waterTodayLiters) em.waterTodayLiters = findEntity('sensor.', [['water', 'today'], ['water', 'vandaag'], ['total_water'], ['watermeter_total']], ['l', 'm³', 'm3']);
     if (!em.kwhSolar) em.kwhSolar = findEntity('sensor.', [['solar', 'today'], ['zon', 'vandaag'], ['pv', 'daily'], ['energy_production_today']], ['kwh']);
+    if (!em.monthlyPeakW) em.monthlyPeakW = findEntity('sensor.', [['peak', 'demand', 'month'], ['monthly', 'power', 'peak'], ['peak_demand_current_month'], ['piek', 'maand'], ['maandpiek'], ['capacity', 'peak']], ['w', 'kw']);
     if (!em.priceSensor) em.priceSensor = findEntity('sensor.', [['nordpool'], ['entsoe'], ['epex'], ['electricity_price'], ['stroomprijs']], null);
 
     if (!em.statusLamp) {
@@ -232,7 +233,7 @@ window.saveEntityMapping = function() {
     const keys = [
         'solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct',
         'gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhImportT2','kwhExport','kwhExportT2',
-        'kwhSolar','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
+        'kwhSolar','monthlyPeakW','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
     ];
     keys.forEach(k => {
         const el = document.getElementById('map_' + k);
