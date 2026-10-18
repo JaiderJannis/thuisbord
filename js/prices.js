@@ -8,7 +8,10 @@ window.fetchLiveEpexPrices = async function(showNotification = false) {
     const badgeEl = document.getElementById('liveEpexBadge');
 
     try {
-        const response = await fetch(`https://api.energy-charts.info/price?bzn=${zone}`);
+        const priceBase = (typeof EPEX_PROXY_URL === 'string' && EPEX_PROXY_URL.trim())
+            ? EPEX_PROXY_URL.trim().replace(/\/+$/, '')
+            : 'https://api.energy-charts.info';
+        const response = await fetch(`${priceBase}/price?bzn=${encodeURIComponent(zone)}`);
         if (!response.ok) throw new Error("EPEX API niet bereikbaar");
         const data = await response.json();
 
