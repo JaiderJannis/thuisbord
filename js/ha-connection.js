@@ -467,6 +467,9 @@ function applyLiveStatesFromHomeAssistant(statesArray) {
         anyUpdated = true;
     }
 
+    const monthlyPeakVal = readNumericEntity(statesMap, em.monthlyPeakW);
+    if (monthlyPeakVal !== null) { appState.monthlyPeakW = Math.max(0, Math.round(monthlyPeakVal)); anyUpdated = true; }
+
     const kwhSolarVal = readNumericEntity(statesMap, em.kwhSolar);
     if (kwhSolarVal !== null) { appState.kwhSolar = kwhSolarVal; anyUpdated = true; }
 
