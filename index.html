@@ -82,6 +82,11 @@
                 <span>Wanddisplay</span>
             </button>
 
+            <button id="navBtnCalendar" onclick="switchView('calendar')" class="px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 cursor-pointer">
+                <span>🗓️</span>
+                <span>Maandkalender</span>
+            </button>
+
             <button id="navBtnUserPortal" onclick="switchView('userPortal')" class="hidden px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-1.5 cursor-pointer">
                 <span>📅</span>
                 <span>Agenda & Taken</span>
@@ -121,8 +126,9 @@
                         🏡 Huishouden: Familie Peeters
                     </span>
 
+                    <!-- Live Status & Pulse Lamp Badge Rechtsboven -->
                     <div onclick="openAuthorizedPortalOrLogin()" class="bg-white/95 hover:bg-white shadow-sm px-4 py-2.5 rounded-full flex items-center gap-2.5 text-sm font-medium text-[#3b463f] transition cursor-pointer border border-black/5">
-                        <span id="haStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse"></span>
+                        <span id="haStatusDot" class="w-3 h-3 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
                         <span id="haStatusText">Live via Home Assistant</span>
                     </div>
 
@@ -134,12 +140,18 @@
                 </div>
             </header>
 
-            <!-- Smart Live Advice Banner -->
+            <!-- Smart Live Advice Banner (Inclusief de Live Pulse Lamp Ronder Badge tussen Live Berichten en Nu) -->
             <section id="adviceBanner" class="bg-[#152920] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500">
                 <div class="flex-1">
-                    <div class="flex items-center gap-2.5 mb-1">
+                    <div class="flex items-center gap-2.5 mb-1 flex-wrap">
                         <p id="adviceCategoryLabel" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#a3b8ae]">ADVIES VOOR NU</p>
-                        <span id="adviceLiveCounter" class="text-[11px] bg-white/10 text-[#dcece3] px-2 py-0.5 rounded-full font-medium">Slimme Engine Actief</span>
+                        <span id="adviceLiveCounter" class="text-[11px] bg-white/10 text-[#dcece3] px-2.5 py-0.5 rounded-full font-medium">Live Bericht 1/4</span>
+
+                        <!-- ROND PULSE LAMP BADGE MET ECHTE LIVE KLEUR VAN DE LAMP ENTITEIT -->
+                        <div id="bannerLampPill" onclick="openAuthorizedPortalOrLogin()" title="Live kleur van gekoppelde slimme lamp" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-white cursor-pointer transition border border-white/15">
+                            <span id="bannerLampDot" class="w-2.5 h-2.5 rounded-full bg-[#34d399] animate-pulse transition-all duration-300" style="box-shadow: 0 0 8px #34d399;"></span>
+                            <span id="bannerLampLabel">Lamp: Actief</span>
+                        </div>
                     </div>
                     <h2 id="adviceTitle" class="text-xl sm:text-[26px] font-bold tracking-tight leading-snug transition-opacity duration-300">
                         Stroom is nu goedkoop, tot 15:00. Zet de wasmachine nu aan.
@@ -163,8 +175,15 @@
                 <!-- COLUMN 1: Nu (Stroom in huis) + Live Moving Chart -->
                 <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
                     <div>
-                        <div class="flex items-baseline justify-between mb-5">
-                            <h3 class="text-xl font-bold text-[#1c2520]">Nu</h3>
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-xl font-bold text-[#1c2520]">Nu</h3>
+                                <!-- Ronde Pulse Lamp Badge naast Nu die de live kleur van de lamp overneemt -->
+                                <span id="nuCardLampBadge" title="Live kleur van gekoppelde lamp" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#f4f7f4] text-[#1c2520] border border-stone-200/80 transition-all duration-300">
+                                    <span id="nuLampColorDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse transition-all duration-300"></span>
+                                    <span id="nuLampStateText" class="text-[10px]">Lamp</span>
+                                </span>
+                            </div>
                             <span id="liveSensorSourceSub" class="text-xs font-semibold text-[#197447] bg-[#e8f2ec] px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
                                 <span id="livePulseIndicator" class="w-2 h-2 rounded-full bg-[#19975c] animate-ping"></span>
                                 <span id="liveSensorSourceText">Live meting (2s)</span>
@@ -225,9 +244,8 @@
                                     </svg>
                                 </div>
 
-                                <!-- Animated Line Grid <-> House (Switches direction between Import & Export) -->
+                                <!-- Animated Line Grid <-> House -->
                                 <div class="flex-1 flex items-center justify-center px-1.5 relative">
-                                    <!-- Arrowhead near House (Visible when importing from Grid: Grid -> House) -->
                                     <svg id="gridArrowLeftToHouse" class="w-3.5 h-3.5 text-[#7897c9] -mr-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                                     </svg>
@@ -236,7 +254,6 @@
                                         <span id="gridDot1" class="w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left"></span>
                                         <span id="gridDot2" class="w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left" style="animation-delay: 0.5s"></span>
                                     </div>
-                                    <!-- Arrowhead near Grid Pylon (Visible when exporting to Grid: House -> Grid) -->
                                     <svg id="gridArrowRightToGrid" class="hidden w-3.5 h-3.5 text-[#19975c] -ml-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                                     </svg>
@@ -250,12 +267,12 @@
                                 </div>
                             </div>
 
-                            <!-- Unified Branching Flow Connectors from Center House to Gas (Left), Water (Center) & Battery (Right) -->
+                            <!-- Unified 90-Degree Orthogonal Branching Flow Connectors -->
                             <div class="w-full -mt-1 mb-0.5 px-1">
                                 <svg class="w-full h-11 overflow-visible" viewBox="0 0 300 44" fill="none">
                                     <!-- Gas -> House (90-degree orthogonal line) -->
                                     <path id="gasBranchPath" d="M 50 38 L 50 22 L 138 22 L 138 4" stroke="#d5c9ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                    <path d="M 133 8 L 138 3 L 141 9" stroke="#8e79b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    <path d="M 134 9 L 138 3 L 142 9" stroke="#8e79b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                                     <circle id="gasFlowDot" r="3.2" fill="#8e79b8">
                                         <animateMotion dur="2.2s" repeatCount="indefinite" path="M 50 38 L 50 22 L 138 22 L 138 4" />
                                     </circle>
@@ -267,13 +284,12 @@
                                         <animateMotion dur="1.7s" repeatCount="indefinite" path="M 150 38 L 150 5" />
                                     </circle>
 
-                                    <!-- Battery <-> House (Dynamic Direction: Discharging = Battery->House, Charging = House->Battery) -->
+                                    <!-- Battery <-> House (90-degree orthogonal line) -->
                                     <path id="batteryBranchPath" d="M 162 4 L 162 22 L 250 22 L 250 38" stroke="#8ebd9f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                    
                                     <!-- Arrowhead at Battery (shown when CHARGING: House -> Battery) -->
                                     <path id="batteryArrowCharge" class="hidden" d="M 246 33 L 250 39 L 254 33" stroke="#e6a100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                    <!-- Arrowhead at House (shown when DISCHARGING / USING: Battery -> House) -->
-                                    <path id="batteryArrowDischarge" d="M 159 9 L 162 3 L 167 8" stroke="#19975c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    <!-- Arrowhead at House (shown when DISCHARGING: Battery -> House) -->
+                                    <path id="batteryArrowDischarge" d="M 158 9 L 162 3 L 166 9" stroke="#19975c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
                                     <!-- Dot for CHARGING (House -> Battery) -->
                                     <circle id="batteryFlowDotCharge" class="hidden" r="3.2" fill="#e6a100">
@@ -430,7 +446,6 @@
                     <div>
                         <div class="flex items-center justify-between gap-2">
                             <h3 id="priceCardTitle" class="text-xl font-bold text-[#1c2520]">Stroomprijs</h3>
-                            <!-- Toggle Vandaag / Morgen -->
                             <div class="inline-flex bg-[#f4f7f4] p-1 rounded-xl border border-stone-200/70 text-xs font-bold">
                                 <button id="btnPriceDayToday" onclick="window.switchPriceDayView('today')" class="px-2.5 py-1 rounded-lg bg-[#152920] text-white transition cursor-pointer">Vandaag</button>
                                 <button id="btnPriceDayTomorrow" onclick="window.switchPriceDayView('tomorrow')" class="px-2.5 py-1 rounded-lg text-[#55605a] hover:text-[#1c2520] transition cursor-pointer">Morgen</button>
@@ -484,20 +499,24 @@
                     </div>
                 </div>
 
-                <!-- COLUMN 4: Agenda, Taken & Afvalkalender -->
+                <!-- COLUMN 4: Agenda Vandaag, Taken & Live Recycle Afvalkalender -->
                 <div class="xl:col-span-3 flex flex-col gap-5 justify-between">
                     <div class="bg-white rounded-[26px] p-6 shadow-sm flex-1 flex flex-col justify-between">
                         <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-xl font-bold text-[#1c2520]">Agenda</h3>
-                                <button onclick="openAuthorizedPortalOrLogin('agenda')" class="text-xs text-[#2b6e48] hover:underline font-medium cursor-pointer">+ Afspraak / Taak →</button>
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="text-xl font-bold text-[#1c2520]">Agenda vandaag</h3>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="switchView('calendar')" class="text-xs bg-[#e8f2ec] text-[#1c643f] hover:bg-[#dcece3] px-2.5 py-1 rounded-lg font-bold cursor-pointer transition">🗓️ Maand</button>
+                                    <button onclick="openAuthorizedPortalOrLogin('agenda')" class="text-xs text-[#2b6e48] hover:underline font-bold cursor-pointer">+ Nieuw</button>
+                                </div>
                             </div>
+                            <p id="agendaDateSub" class="text-[11px] text-[#68736d] mb-3">Enkel de afspraken van vandaag</p>
 
                             <div id="agendaContainer"></div>
                         </div>
 
                         <!-- Taken Vandaag Section -->
-                        <div class="pt-4 mt-6 border-t border-stone-200/80">
+                        <div class="pt-4 mt-5 border-t border-stone-200/80">
                             <div class="flex items-center justify-between mb-2.5">
                                 <span class="text-[15px] font-bold text-[#1c2520]">Taken vandaag</span>
                                 <span id="taskCounter" class="text-sm font-medium text-[#38443d]">0 van 1 gedaan</span>
@@ -507,33 +526,64 @@
                         </div>
                     </div>
 
-                    <!-- Afvalkalender Card -->
+                    <!-- Afvalkalender Card (Ondersteunt zowel Live HA Recycle-entiteiten als Handmatig) -->
                     <div id="wasteCard" onclick="openAuthorizedPortalOrLogin()" class="bg-white hover:bg-stone-50/80 rounded-[26px] p-6 shadow-sm cursor-pointer transition group">
                         <div id="wasteUnlinked">
                             <p class="text-[16px] font-bold text-[#1c2520] leading-snug group-hover:text-[#19643e] transition">
                                 Afvalkalender nog niet gekoppeld
                             </p>
-                            <p class="text-xs text-[#68736d] mt-1">Klik om in te stellen</p>
+                            <p class="text-xs text-[#68736d] mt-1">Klik om RecycleApp / HA-sensoren (PMD, GFT, Papier, Rest) te koppelen</p>
                         </div>
-                        <div id="wasteLinked" class="hidden">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-[#68736d]">AFVALKALENDER</span>
-                                <span id="wastePostalBadge" class="text-xs text-[#197447] font-medium">Gekoppeld</span>
-                            </div>
-                            <div class="flex items-center gap-3 mt-1">
-                                <div id="wasteTypeBadge" class="w-11 h-11 rounded-xl bg-[#dcece3] text-[#1c643f] flex items-center justify-center font-bold text-xs shrink-0">
-                                    GFT
-                                </div>
-                                <div>
-                                    <p id="wasteDateDisplay" class="text-sm font-bold text-[#1c2520]">Dinsdag 20 oktober</p>
-                                    <p id="wasteDescDisplay" class="text-xs text-[#68736d]">Groente-, fruit- en tuinafval</p>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="wasteLinked" class="hidden"></div>
                     </div>
                 </div>
 
             </main>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 4: GOOGLE AGENDA MAANDOVERZICHT (APART TABBLAD)                  -->
+    <!-- ===================================================================== -->
+    <div id="viewCalendar" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-4 mb-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🗓️</span>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Google Agenda — Maandoverzicht</h2>
+                        <p class="text-xs text-[#b3c7bd]">Volledige maandkalender van jullie gezin naast de dagelijkse 'Agenda vandaag' op het wanddisplay.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openAuthorizedPortalOrLogin('agenda')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ⚙️ Google Agenda Link Instellen
+                    </button>
+                    <button onclick="switchView('display')" class="bg-[#dcece3] hover:bg-white text-[#152920] font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ← Terug naar Wanddisplay
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-white rounded-[26px] p-3 sm:p-5 shadow-sm border border-stone-200/80 min-h-[640px] flex flex-col justify-between">
+                <div id="calendarUnlinkedBox" class="my-auto max-w-lg mx-auto text-center p-6 space-y-4">
+                    <div class="w-14 h-14 rounded-2xl bg-[#e8f2ec] text-[#1c643f] flex items-center justify-center mx-auto text-2xl font-bold">
+                        📅
+                    </div>
+                    <h3 class="text-xl font-bold text-[#1c2520]">Koppel jullie Google Agenda voor het Maandoverzicht</h3>
+                    <p class="text-xs text-[#68736d] leading-relaxed">
+                        Ga in Google Agenda op je computer naar <strong>Instellingen → Instellingen voor mijn agenda's → Agenda integreren</strong> en kopieer het <strong>Agenda-ID</strong> (bijv. <code>familie@gmail.com</code>) of de <strong>Insluit-URL (`https://calendar.google.com/calendar/embed?src=...`)</strong>.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                        <input id="quickGcalInput" type="text" placeholder="Plak Google Agenda e-mailadres of embed-URL..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
+                        <button onclick="window.saveQuickGoogleCalendarUrl()" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shrink-0">
+                            Koppel Maandkalender
+                        </button>
+                    </div>
+                </div>
+
+                <iframe id="googleCalendarIframe" class="hidden w-full flex-1 min-h-[600px] rounded-2xl border-0" frameborder="0" scrolling="no"></iframe>
+            </div>
         </div>
     </div>
 
@@ -599,18 +649,23 @@
             <div class="bg-[#1f4e37] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
                 <div>
                     <span id="userPortalBadgeText" class="bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full">🏡 Familie Agenda & Taken</span>
-                    <h2 class="text-2xl font-bold mt-2">Gezinsagenda & Taken</h2>
-                    <p class="text-sm text-[#dcece3] mt-0.5">Voeg hier afspraken en huishoudtaken toe of vink ze af voor op het wanddisplay.</p>
+                    <h2 class="text-2xl font-bold mt-2">Agenda Vandaag & Taken</h2>
+                    <p class="text-sm text-[#dcece3] mt-0.5">Voeg hier afspraken voor vandaag en huishoudtaken toe voor op het wanddisplay.</p>
                 </div>
-                <button onclick="switchView('display')" class="bg-white text-[#152920] font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
-                    ← Bekijk Wanddisplay
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="switchView('calendar')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
+                        🗓️ Maandkalender
+                    </button>
+                    <button onclick="switchView('display')" class="bg-white text-[#152920] font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
+                        ← Bekijk Wanddisplay
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white rounded-[26px] p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Nieuwe Afspraak Toevoegen</h3>
-                    <p class="text-xs text-[#68736d] mb-4">Komt direct op het Thuisbord wanddisplay te staan.</p>
+                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Afspraak voor Vandaag Toevoegen</h3>
+                    <p class="text-xs text-[#68736d] mb-4">Komt direct onder 'Agenda vandaag' op het wanddisplay te staan.</p>
                     <div class="flex flex-col sm:flex-row gap-2 mb-4">
                         <input id="userNewAgendaTime" type="text" placeholder="Tijd (bijv. 14:00)" class="sm:w-28 px-3 py-2 rounded-xl border border-stone-200 text-sm">
                         <input id="userNewAgendaTitle" type="text" placeholder="Afspraak (bijv. Tandarts)" class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
@@ -651,7 +706,7 @@
                         <span id="firebaseUidBadge" class="text-xs text-[#a3b8ae] font-mono"></span>
                     </div>
                     <h2 id="adminHeaderTitle" class="text-2xl sm:text-3xl font-bold mt-2">Gezinsdashboard & Wanddisplay Beheer</h2>
-                    <p id="adminHeaderSubtitle" class="text-sm text-[#b3c7bd] mt-0.5">Beheer jouw huishouden, gezinsleden, Home Assistant entiteiten en live prijzen.</p>
+                    <p id="adminHeaderSubtitle" class="text-sm text-[#b3c7bd] mt-0.5">Beheer jouw huishouden, gezinsleden, Home Assistant entiteiten (incl. lamp & recycle afval) en live prijzen.</p>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -673,7 +728,7 @@
                     👥 1. Gezinsleden
                 </button>
                 <button id="adminTabBtn_ha_entiteiten" onclick="switchAdminTab('ha_entiteiten')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🔌 2. Home Assistant & Entiteiten
+                    🔌 2. Home Assistant, Lamp & Afval Sensoren
                 </button>
                 <button id="adminTabBtn_tarieven" onclick="switchAdminTab('tarieven')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
                     💶 3. Live Prijzen (Vandaag & Morgen)
@@ -685,7 +740,7 @@
                     💬 5. Live Advies
                 </button>
                 <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    📅 6. Agenda, Taken & Afval
+                    📅 6. Google Agenda, Taken & Afval
                 </button>
             </div>
 
@@ -699,7 +754,7 @@
                     </span>
                     <h3 class="text-lg font-bold text-[#1c2520]">Nieuw Gezin / Huishouden Aanmaken</h3>
                     <p class="text-xs text-[#68736d]">
-                        Maak een nieuw gezin aan. Elk gezin krijgt een eigen wanddisplay, eigen Home Assistant token & entiteiten, en eigen gezinsleden.
+                        Maak een nieuw gezin aan. Elk gezin krijgt een eigen wanddisplay, eigen Home Assistant token & entiteiten, eigen Google Agenda en eigen gezinsleden.
                     </p>
                     <div class="space-y-3 pt-1">
                         <div>
@@ -800,7 +855,7 @@
             </div>
 
             <!-- ================================================================= -->
-            <!-- TAB 2: HOME ASSISTANT KOPPELING & LIVE ENTITEITEN SELECTEREN      -->
+            <!-- TAB 2: HOME ASSISTANT KOPPELING, LAMP & RECYCLE ENTITEITEN        -->
             <!-- ================================================================= -->
             <div id="adminTab_ha_entiteiten" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Left: HA URL & Token -->
@@ -813,13 +868,13 @@
                     </div>
                     <h3 class="text-lg font-bold text-[#1c2520]">Home Assistant Koppelen</h3>
                     <p class="text-xs text-[#68736d] leading-relaxed">
-                        Vul de Home Assistant URL en een <strong>Long-Lived Access Token</strong> van dit gezin in. Klik daarna op <strong>"Haal Alle Entiteiten Op"</strong> om direct alle energie-sensoren te kiezen!
+                        Vul de Home Assistant URL en een <strong>Long-Lived Access Token</strong> van dit gezin in. Klik daarna op <strong>"Haal Entiteiten Op"</strong> om alle energie-, lamp- en afval-sensoren te kiezen!
                     </p>
 
                     <div class="space-y-3">
                         <div>
                             <label class="block text-xs font-bold text-[#38443d] mb-1">Home Assistant URL</label>
-                            <input id="admHaUrl" type="text" placeholder="http://homeassistant.local:8123 of https://jouwhuis.ui.nabu.casa" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                            <input id="admHaUrl" type="text" placeholder="http://homeassistant.local:8123 of https://..." oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-[#38443d] mb-1">Long-Lived Access Token</label>
@@ -836,7 +891,7 @@
                             🔄 1. Haal Entiteiten Op & Verbind Live Stream
                         </button>
                         <button onclick="window.autoDetectAndMapHaEntities()" class="bg-[#dcece3] hover:bg-[#c8e2d3] text-[#152920] font-bold py-3 px-4 rounded-xl text-xs transition cursor-pointer">
-                            ⚡ 2. Auto-Koppel Mijn Energie Sensoren
+                            ⚡ 2. Auto-Koppel Sensoren (Energie, Lamp & Afval)
                         </button>
                     </div>
 
@@ -860,20 +915,47 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
-                                Stap 2 • Energie Entiteiten Koppelen
+                                Stap 2 • Energie, Pulse Lamp & Recycle Afval Koppelen
                             </span>
-                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Kies jouw Sensoren voor Zon, Huis, Net, Water & Prijzen</h3>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Kies jouw Home Assistant Entiteiten</h3>
                         </div>
                         <span id="haEntitiesCountBadge" class="text-xs font-bold bg-[#f4f7f4] text-[#152920] px-3 py-1 rounded-full">0 entiteiten geladen</span>
                     </div>
 
-                    <p class="text-xs text-[#68736d]">
-                        Zodra je hieronder een entiteit selecteert (of typt), leest het Thuisbord de actuele waarde **live** uit Home Assistant en beweegt de grafiek automatisch mee.
-                    </p>
-
                     <datalist id="haEntitiesDatalist"></datalist>
 
-                    <div id="entityMappingGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                    <div id="entityMappingGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                        <!-- LIVE PULSE LAMP ENTITEIT -->
+                        <div class="sm:col-span-2 bg-[#fdf8ec] p-3 rounded-2xl border border-[#f5d78e]">
+                            <label class="block text-xs font-extrabold text-[#925f0e] mb-1">💡 Live Pulse Lamp Entiteit (Geeft zijn echte RGB-kleur aan de ronde badge tussen Live Berichten & Nu)</label>
+                            <input id="map_statusLamp" list="haEntitiesDatalist" placeholder="light.pulse_lamp of light.woonkamer" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl bg-white border border-[#f3d078] text-xs font-mono">
+                        </div>
+
+                        <!-- RECYCLE / AFVALBEHEER ENTITEITEN -->
+                        <div class="sm:col-span-2 pt-1">
+                            <p class="text-xs font-extrabold text-[#152920]">♻️ RecycleApp / Afvalkalender Entiteiten (PMD, GFT, Papier & Karton, Restafval)</p>
+                        </div>
+                        <div class="bg-[#f0f9ff] p-2.5 rounded-xl border border-[#bae6fd]">
+                            <label class="block text-[11px] font-bold text-[#0369a1] mb-1">🥤 PMD Sensor</label>
+                            <input id="map_waste_pmd" list="haEntitiesDatalist" placeholder="sensor.recycleapp_pmd" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
+                        </div>
+                        <div class="bg-[#f2fbf6] p-2.5 rounded-xl border border-[#bce3ce]">
+                            <label class="block text-[11px] font-bold text-[#197447] mb-1">🍏 GFT Sensor</label>
+                            <input id="map_waste_gft" list="haEntitiesDatalist" placeholder="sensor.recycleapp_gft" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
+                        </div>
+                        <div class="bg-[#fefce8] p-2.5 rounded-xl border border-[#fef08a]">
+                            <label class="block text-[11px] font-bold text-[#854d0e] mb-1">📦 Papier & Karton Sensor</label>
+                            <input id="map_waste_papier" list="haEntitiesDatalist" placeholder="sensor.recycleapp_papier" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
+                        </div>
+                        <div class="bg-stone-100 p-2.5 rounded-xl border border-stone-300">
+                            <label class="block text-[11px] font-bold text-stone-700 mb-1">🗑️ Restafval Sensor</label>
+                            <input id="map_waste_rest" list="haEntitiesDatalist" placeholder="sensor.recycleapp_restafval" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
+                        </div>
+
+                        <!-- ENERGIE ENTITEITEN -->
+                        <div class="sm:col-span-2 pt-2 border-t border-stone-100">
+                            <p class="text-xs font-extrabold text-[#152920]">⚡ Energie, Gas, Water & Batterij Entiteiten</p>
+                        </div>
                         <div>
                             <label class="block text-[11px] font-bold text-[#38443d] mb-1">☀️ Zon Vermogen (W) Entiteit</label>
                             <input id="map_solarW" list="haEntitiesDatalist" placeholder="sensor.zonnepanelen_actueel_vermogen" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
@@ -882,8 +964,7 @@
                             <label class="block text-[11px] font-bold text-[#38443d] mb-1">🏠 Huis Verbruik (W) Entiteit</label>
                             <input id="map_houseW" list="haEntitiesDatalist" placeholder="sensor.p1_meter_active_power" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
                         </div>
-                        
-                        <!-- Net Import & Export Specific Fields -->
+
                         <div class="bg-[#f0f6fc] p-2.5 rounded-xl border border-[#cfe0f5]">
                             <label class="block text-[11px] font-bold text-[#274b7a] mb-1">⚡ Net Import / Afname Vermogen (W)</label>
                             <input id="map_gridImportW" list="haEntitiesDatalist" placeholder="sensor.p1_meter_power_import" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
@@ -893,13 +974,12 @@
                             <input id="map_gridExportW" list="haEntitiesDatalist" placeholder="sensor.p1_meter_power_export" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
                         </div>
                         <div class="sm:col-span-2">
-                            <label class="block text-[11px] font-bold text-[#68736d] mb-1">⚡ Of Gecombineerde Net Vermogen Sensor (W) (Optioneel indien geen losse Import/Export)</label>
+                            <label class="block text-[11px] font-bold text-[#68736d] mb-1">⚡ Of Gecombineerde Net Vermogen Sensor (W)</label>
                             <input id="map_gridW" list="haEntitiesDatalist" placeholder="sensor.net_vermogen_watt (positief = import, negatief = export)" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
                         </div>
 
-                        <!-- Battery specific direction toggle -->
                         <div class="bg-[#f4fbf7] p-2.5 rounded-xl border border-[#c7ead6]">
-                            <label class="block text-[11px] font-bold text-[#1c643f] mb-1">🔋 Batterij Vermogen (W) Entiteit (Gecombineerd of Ontladen)</label>
+                            <label class="block text-[11px] font-bold text-[#1c643f] mb-1">🔋 Batterij Vermogen (W) Entiteit</label>
                             <input id="map_batteryW" list="haEntitiesDatalist" placeholder="sensor.thuisbatterij_power" onchange="window.saveEntityMapping()" class="w-full px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-mono">
                         </div>
                         <div class="bg-[#fdf9ed] p-2.5 rounded-xl border border-[#f3d999]">
@@ -909,7 +989,7 @@
                                 <option value="negative_discharge">Negatief getal = Ontladen naar Huis (Positief = Laden)</option>
                             </select>
                         </div>
-                        
+
                         <div>
                             <label class="block text-[11px] font-bold text-[#38443d] mb-1">🔋 Batterij Percentage (%) Entiteit</label>
                             <input id="map_batteryPct" list="haEntitiesDatalist" placeholder="sensor.thuisbatterij_soc" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
@@ -942,9 +1022,13 @@
                             <label class="block text-[11px] font-bold text-[#38443d] mb-1">☀️ Zon Opgewekt Vandaag (kWh)</label>
                             <input id="map_kwhSolar" list="haEntitiesDatalist" placeholder="sensor.zonnepanelen_vandaag_kwh" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
                         </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-[11px] font-bold text-[#197447] mb-1">💶 Dynamische Stroomprijs Sensor (Nordpool / ENTSO-E / Tibber met vandaag & morgen attributen)</label>
-                            <input id="map_priceSensor" list="haEntitiesDatalist" placeholder="sensor.nordpool_kwh_be_eur_3_10_021 of sensor.entsoe_average_electricity_price" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono">
+                        <div>
+                            <label class="block text-[11px] font-bold text-[#197447] mb-1">💶 Dynamische Stroomprijs Sensor</label>
+                            <input id="map_priceSensor" list="haEntitiesDatalist" placeholder="sensor.nordpool_kwh_be..." onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-[#197447] mb-1">📅 HA Calendar Entiteit (Optioneel voor Agenda Vandaag)</label>
+                            <input id="map_calendarEntity" list="haEntitiesDatalist" placeholder="calendar.gezin" onchange="window.saveEntityMapping()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono">
                         </div>
                     </div>
 
@@ -1080,10 +1164,10 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div><label class="block text-[11px] font-bold mb-1">☀️ Zon (W)</label><input id="admSolarW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">🏠 Huis (W)</label><input id="admHouseW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
-                        
+
                         <div><label class="block text-[11px] font-bold text-[#274b7a] mb-1">⚡ Net Import (W)</label><input id="admGridImportW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#cfe0f5] bg-[#f8fbff] text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold text-[#197447] mb-1">⚡ Net Export (W)</label><input id="admGridExportW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#c7ead6] bg-[#f4fbf7] text-sm font-bold"></div>
-                        
+
                         <div><label class="block text-[11px] font-bold mb-1">🔋 Batterij (W)</label><input id="admBatteryW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div>
                             <label class="block text-[11px] font-bold mb-1">🔋 Batterij Status</label>
@@ -1093,17 +1177,20 @@
                             </select>
                         </div>
                         <div><label class="block text-[11px] font-bold mb-1">🔋 Batterij (%)</label><input id="admBatteryPct" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
-                        
+
                         <div><label class="block text-[11px] font-bold mb-1">🔥 Gas nu (m³/u)</label><input id="admGasRate" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">💧 Water (L/min)</label><input id="admWaterRate" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">💧 Water Vandaag (L)</label><input id="admWaterToday" type="number" step="1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
-                        
+
                         <div><label class="block text-[11px] font-bold mb-1">📥 Afname (kWh)</label><input id="admKwhImport" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">📤 Export (kWh)</label><input id="admKwhExport" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">☀️ Zon (kWh)</label><input id="admKwhSolar" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
                         <div><label class="block text-[11px] font-bold mb-1">🔥 Gas Vandaag (m³)</label><input id="admGasToday" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-[#925f0e] mb-1">💡 Test Kleur Pulse Lamp</label>
+                            <input id="admLampFallbackColor" type="color" value="#19975c" oninput="applyAdminChangesLive()" class="w-full h-9 rounded-xl border cursor-pointer">
+                        </div>
                     </div>
-                    <!-- Hidden legacy fields kept for compatibility -->
                     <input id="admGridW" type="hidden" value="8">
                     <input id="admCostElec" type="hidden" value="0">
                     <input id="admCostGas" type="hidden" value="0">
@@ -1153,21 +1240,40 @@
             </div>
 
             <!-- ================================================================= -->
-            <!-- TAB 6: AGENDA, TAKEN & AFVALKALENDER                              -->
+            <!-- TAB 6: GOOGLE AGENDA MAANDOVERZICHT, AGENDA VANDAAG & AFVAL       -->
             <!-- ================================================================= -->
             <div id="adminTab_agenda" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
-                    <h3 class="text-lg font-bold text-[#1c2520]">📅 Agenda Beheer</h3>
-                    <div class="flex gap-2">
-                        <input id="newAgendaTime" type="text" placeholder="14:00" class="w-24 px-3 py-2 rounded-xl border border-stone-200 text-sm">
-                        <input id="newAgendaTitle" type="text" placeholder="Afspraak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
-                        <button onclick="adminAddAgendaItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                <!-- Col 1: Google Agenda Maandkalender & Agenda Vandaag -->
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div>
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
+                            🗓️ Google Agenda Koppeling
+                        </span>
+                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Maandkalender & Agenda Vandaag</h3>
+                        <p class="text-xs text-[#68736d] mt-0.5">
+                            Plak je Google Agenda e-mailadres (of de volledige <code>https://calendar.google.com/calendar/embed?src=...</code> URL) voor het aparte tabblad <strong>Maandkalender</strong>.
+                        </p>
                     </div>
-                    <div id="adminAgendaList" class="space-y-2"></div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Google Agenda ID of Embed-URL</label>
+                        <input id="admGcalUrl" type="text" placeholder="familie@gmail.com of https://calendar.google.com/..." oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono">
+                    </div>
+
+                    <div class="pt-3 border-t border-stone-100 space-y-2">
+                        <p class="text-xs font-bold text-[#1c2520]">📅 Afspraken Vandaag (Op Wanddisplay)</p>
+                        <div class="flex gap-2">
+                            <input id="newAgendaTime" type="text" placeholder="14:00" class="w-20 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                            <input id="newAgendaTitle" type="text" placeholder="Afspraak vandaag..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                            <button onclick="adminAddAgendaItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                        </div>
+                        <div id="adminAgendaList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                    </div>
                 </div>
 
+                <!-- Col 2: Taken Vandaag -->
                 <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
                     <h3 class="text-lg font-bold text-[#1c2520]">✅ Taken Vandaag</h3>
+                    <p class="text-xs text-[#68736d]">Taken kunnen rechtstreeks op het wanddisplay worden afgevinkt.</p>
                     <div class="flex gap-2">
                         <input id="newTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
                         <button onclick="adminAddTaskItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
@@ -1175,11 +1281,15 @@
                     <div id="adminTaskList" class="space-y-2"></div>
                 </div>
 
+                <!-- Col 3: Afvalkalender Fallback -->
                 <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
-                    <h3 class="text-lg font-bold text-[#1c2520]">♻️ Afvalkalender</h3>
+                    <h3 class="text-lg font-bold text-[#1c2520]">♻️ Afvalkalender (Handmatig of via HA)</h3>
+                    <p class="text-xs text-[#68736d]">
+                        Tip: In <strong>Tabblad 2</strong> kun je jouw echte Home Assistant RecycleApp sensoren (PMD, GFT, Papier, Rest) koppelen! Heb je die nog niet gekoppeld? Gebruik dan deze handmatige instelling:
+                    </p>
                     <label class="flex items-center gap-2 text-xs font-bold text-[#1c2520] cursor-pointer">
                         <input id="admWasteEnabled" type="checkbox" onchange="applyAdminChangesLive()" class="w-4 h-4 accent-[#152920]">
-                        <span>Afvalkalender gekoppeld tonen</span>
+                        <span>Handmatige afvalkalender tonen (als geen HA sensor)</span>
                     </label>
                     <input id="admWasteType" type="text" placeholder="Type (bijv. GFT of PMD)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
                     <input id="admWastePostal" type="text" placeholder="Postcode & Plaats" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
@@ -1218,8 +1328,14 @@
             haUrl: "",
             haToken: "",
             bznZone: "BE",
-            batterySignConvention: "positive_discharge", // 'positive_discharge' | 'negative_discharge'
-            batteryMode: "discharging", // 'discharging' (Batterij -> Huis) | 'charging' (Huis -> Batterij)
+            googleCalendarUrl: "",
+            lampColorHex: "#19975c",
+            lampIsOn: true,
+            lampFriendlyName: "Pulse Lamp",
+            liveWasteItems: [],
+            haTodayEvents: [],
+            batterySignConvention: "positive_discharge",
+            batteryMode: "discharging",
             entityMap: {
                 solarW: "",
                 houseW: "",
@@ -1235,7 +1351,13 @@
                 kwhImport: "",
                 kwhExport: "",
                 kwhSolar: "",
-                priceSensor: ""
+                priceSensor: "",
+                statusLamp: "",
+                waste_pmd: "",
+                waste_gft: "",
+                waste_papier: "",
+                waste_rest: "",
+                calendarEntity: ""
             },
             autoAdvice: true,
             rotateAdvice: true,
@@ -1318,14 +1440,14 @@
         let appState = platformState.households[activeHouseholdName];
 
         let currentSelectedHour = new Date().getHours();
-        let activePriceDayView = 'today'; // 'today' | 'tomorrow'
-        let adminEditPriceDay = 'today';  // 'today' | 'tomorrow'
-        let currentRole = null; // null | 'user' | 'manager' | 'admin'
+        let activePriceDayView = 'today';
+        let adminEditPriceDay = 'today';
+        let currentRole = null;
         let currentLoggedUserName = "";
         let currentLoggedUserEmail = "";
         let adviceRotationIndex = 0;
 
-        let discoveredHaEntities = []; // Cache van opgehaalde Home Assistant entiteiten
+        let discoveredHaEntities = [];
         let haWebSocket = null;
         let haWsConnected = false;
         let lastHaWsUrl = "";
@@ -1335,6 +1457,17 @@
         let auth = null;
         let currentUser = null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'thuisbord-default-app';
+
+        function showToast(message) {
+            const toast = document.getElementById('toastBanner');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3200);
+        }
 
         window.copyCorsYamlSnippet = function() {
             const yamlText = `http:\n  cors_allowed_origins:\n    - ${window.location.origin}\n    - https://jaiderjannis.github.io`;
@@ -1352,7 +1485,10 @@
             showToast(liveTickerEnabled ? "Live 2-seconden verversing actief" : "Enkel gekoppelde HA sensoren verversen");
         };
 
-        // Verbindt rechtstreeks via WebSocket met Home Assistant zodat ELKE wijziging op de milliseconde live binnenkomt
+        function getCleanHaUrl() {
+            return (appState.haUrl || "").trim().replace(/\/+$/, "");
+        }
+
         function connectHomeAssistantWebSocket() {
             const baseUrl = getCleanHaUrl();
             const token = (appState.haToken || "").trim();
@@ -1386,7 +1522,6 @@
                             }
                             const sourceText = document.getElementById('liveSensorSourceText');
                             if (sourceText) sourceText.textContent = "⚡ Realtime HA Stream";
-                            // Vraag direct alle huidige states op én abonneer op alle state_changed events
                             haWebSocket.send(JSON.stringify({ id: 1, type: 'get_states' }));
                             haWebSocket.send(JSON.stringify({ id: 2, type: 'subscribe_events', event_type: 'state_changed' }));
                         } else if (msg.type === 'result' && msg.id === 1 && Array.isArray(msg.result)) {
@@ -1396,7 +1531,6 @@
                         } else if (msg.type === 'event' && msg.event?.event_type === 'state_changed') {
                             const newState = msg.event.data?.new_state;
                             if (newState && newState.entity_id) {
-                                // Update cache en pas direct live toe op het scherm!
                                 const idx = discoveredHaEntities.findIndex(e => e.entity_id === newState.entity_id);
                                 if (idx >= 0) {
                                     discoveredHaEntities[idx] = newState;
@@ -1411,12 +1545,8 @@
                     }
                 };
 
-                haWebSocket.onclose = () => {
-                    haWsConnected = false;
-                };
-                haWebSocket.onerror = () => {
-                    haWsConnected = false;
-                };
+                haWebSocket.onclose = () => { haWsConnected = false; };
+                haWebSocket.onerror = () => { haWsConnected = false; };
             } catch (e) {
                 haWsConnected = false;
             }
@@ -1429,7 +1559,13 @@
             const datalist = document.getElementById('haEntitiesDatalist');
             if (datalist) {
                 datalist.innerHTML = states
-                    .filter(s => s.entity_id.startsWith('sensor.') || s.entity_id.startsWith('switch.') || s.entity_id.startsWith('input_number.'))
+                    .filter(s =>
+                        s.entity_id.startsWith('sensor.') ||
+                        s.entity_id.startsWith('light.') ||
+                        s.entity_id.startsWith('switch.') ||
+                        s.entity_id.startsWith('calendar.') ||
+                        s.entity_id.startsWith('input_number.')
+                    )
                     .map(s => {
                         const friendly = s.attributes?.friendly_name || s.entity_id;
                         const unit = s.attributes?.unit_of_measurement || '';
@@ -1438,7 +1574,6 @@
             }
         }
 
-        // Slimme Auto-Koppeling: zoekt zelf de juiste energie-sensoren in jouw Home Assistant lijst
         window.autoDetectAndMapHaEntities = function(silent = false) {
             if (!discoveredHaEntities || discoveredHaEntities.length === 0) {
                 if (!silent) showToast("Haal eerst je entiteiten op met knop 1.");
@@ -1447,10 +1582,10 @@
             if (!appState.entityMap) appState.entityMap = {};
             const em = appState.entityMap;
 
-            const findSensor = (keywords, unitFilter = null) => {
+            const findEntity = (domainPrefix, keywords, unitFilter = null) => {
                 for (const kw of keywords) {
                     const match = discoveredHaEntities.find(s => {
-                        if (!s.entity_id.startsWith('sensor.')) return false;
+                        if (domainPrefix && !s.entity_id.startsWith(domainPrefix)) return false;
                         const idAndName = (s.entity_id + ' ' + (s.attributes?.friendly_name || '')).toLowerCase();
                         const unit = (s.attributes?.unit_of_measurement || '').toLowerCase();
                         const unitOk = !unitFilter || unitFilter.some(u => unit === u.toLowerCase());
@@ -1461,23 +1596,277 @@
                 return "";
             };
 
-            if (!em.solarW) em.solarW = findSensor([['solar', 'power'], ['zon', 'vermogen'], ['pv', 'power'], ['inverter', 'power'], ['zonnepanelen']], ['w', 'kw']);
-            if (!em.houseW) em.houseW = findSensor([['active_power'], ['power_consumption'], ['huis', 'vermogen'], ['actueel', 'verbruik']], ['w', 'kw']);
-            if (!em.gridImportW) em.gridImportW = findSensor([['power_import'], ['import_power'], ['afname', 'vermogen'], ['grid_import']], ['w', 'kw']);
-            if (!em.gridExportW) em.gridExportW = findSensor([['power_export'], ['export_power'], ['injectie', 'vermogen'], ['teruglevering', 'vermogen'], ['grid_export']], ['w', 'kw']);
-            if (!em.gridW) em.gridW = findSensor([['grid', 'power'], ['net', 'vermogen'], ['p1', 'power']], ['w', 'kw']);
-            if (!em.batteryW) em.batteryW = findSensor([['battery', 'power'], ['batterij', 'vermogen'], ['thuisbatterij', 'power']], ['w', 'kw']);
-            if (!em.batteryPct) em.batteryPct = findSensor([['battery', 'soc'], ['battery', 'level'], ['batterij', 'percentage'], ['thuisbatterij']], ['%']);
-            if (!em.gasToday) em.gasToday = findSensor([['gas', 'today'], ['gas', 'vandaag'], ['gas', 'daily']], ['m³', 'm3']);
-            if (!em.waterRate) em.waterRate = findSensor([['water', 'active'], ['water', 'flow'], ['water', 'liter']], ['l/min', 'l/m']);
-            if (!em.waterTodayLiters) em.waterTodayLiters = findSensor([['water', 'today'], ['water', 'vandaag'], ['water', 'daily']], ['l', 'm³', 'm3']);
-            if (!em.kwhSolar) em.kwhSolar = findSensor([['solar', 'today'], ['zon', 'vandaag'], ['pv', 'daily'], ['energy_production_today']], ['kwh']);
-            if (!em.priceSensor) em.priceSensor = findSensor([['nordpool'], ['entsoe'], ['epex'], ['electricity_price'], ['stroomprijs']], null);
+            if (!em.solarW) em.solarW = findEntity('sensor.', [['solar', 'power'], ['zon', 'vermogen'], ['pv', 'power'], ['inverter', 'power'], ['zonnepanelen']], ['w', 'kw']);
+            if (!em.houseW) em.houseW = findEntity('sensor.', [['active_power'], ['power_consumption'], ['huis', 'vermogen'], ['actueel', 'verbruik']], ['w', 'kw']);
+            if (!em.gridImportW) em.gridImportW = findEntity('sensor.', [['power_import'], ['import_power'], ['afname', 'vermogen'], ['grid_import']], ['w', 'kw']);
+            if (!em.gridExportW) em.gridExportW = findEntity('sensor.', [['power_export'], ['export_power'], ['injectie', 'vermogen'], ['teruglevering', 'vermogen'], ['grid_export']], ['w', 'kw']);
+            if (!em.gridW) em.gridW = findEntity('sensor.', [['grid', 'power'], ['net', 'vermogen'], ['p1', 'power']], ['w', 'kw']);
+            if (!em.batteryW) em.batteryW = findEntity('sensor.', [['battery', 'power'], ['batterij', 'vermogen'], ['thuisbatterij', 'power']], ['w', 'kw']);
+            if (!em.batteryPct) em.batteryPct = findEntity('sensor.', [['battery', 'soc'], ['battery', 'level'], ['batterij', 'percentage'], ['thuisbatterij']], ['%']);
+            if (!em.gasToday) em.gasToday = findEntity('sensor.', [['gas', 'today'], ['gas', 'vandaag'], ['gas', 'daily']], ['m³', 'm3']);
+            if (!em.waterRate) em.waterRate = findEntity('sensor.', [['water', 'active'], ['water', 'flow'], ['water', 'liter']], ['l/min', 'l/m']);
+            if (!em.waterTodayLiters) em.waterTodayLiters = findEntity('sensor.', [['water', 'today'], ['water', 'vandaag'], ['water', 'daily']], ['l', 'm³', 'm3']);
+            if (!em.kwhSolar) em.kwhSolar = findEntity('sensor.', [['solar', 'today'], ['zon', 'vandaag'], ['pv', 'daily'], ['energy_production_today']], ['kwh']);
+            if (!em.priceSensor) em.priceSensor = findEntity('sensor.', [['nordpool'], ['entsoe'], ['epex'], ['electricity_price'], ['stroomprijs']], null);
+
+            // Auto-detect Pulse Lamp (light.*)
+            if (!em.statusLamp) {
+                em.statusLamp = findEntity('light.', [['pulse'], ['energie'], ['glow'], ['status'], ['woonkamer'], ['living'], ['lamp'], ['led']], null);
+                if (!em.statusLamp) {
+                    const anyLight = discoveredHaEntities.find(s => s.entity_id.startsWith('light.'));
+                    if (anyLight) em.statusLamp = anyLight.entity_id;
+                }
+            }
+
+            // Auto-detect RecycleApp / Afvalbeheer sensoren
+            if (!em.waste_pmd) em.waste_pmd = findEntity('sensor.', [['pmd']], null);
+            if (!em.waste_gft) em.waste_gft = findEntity('sensor.', [['gft'], ['groente']], null);
+            if (!em.waste_papier) em.waste_papier = findEntity('sensor.', [['papier'], ['karton'], ['paper']], null);
+            if (!em.waste_rest) em.waste_rest = findEntity('sensor.', [['restafval'], ['rest'], ['residual']], null);
+
+            // Auto-detect Calendar
+            if (!em.calendarEntity) {
+                const anyCal = discoveredHaEntities.find(s => s.entity_id.startsWith('calendar.'));
+                if (anyCal) em.calendarEntity = anyCal.entity_id;
+            }
 
             populateAdminInputs();
             applyLiveStatesFromHomeAssistant(discoveredHaEntities);
-            if (!silent) showToast("Beschikbare energie-sensoren automatisch herkend en gekoppeld!");
+            if (!silent) showToast("Energie-, Lamp- en Recycle-sensoren automatisch herkend en gekoppeld!");
         };
+
+        function readNumericEntity(statesMap, entityId) {
+            if (!entityId) return null;
+            const found = statesMap.get(entityId.trim());
+            if (!found) return null;
+            const num = parseFloat(String(found.state).replace(',', '.'));
+            if (isNaN(num)) return null;
+            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
+            if (unit === 'kw') return num * 1000;
+            return num;
+        }
+
+        function flashElementOnUpdate(elId) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.classList.add('text-[#19975c]', 'transition-colors', 'duration-300');
+            setTimeout(() => {
+                el.classList.remove('text-[#19975c]');
+            }, 550);
+        }
+
+        function hsToRgb(h, s) {
+            const sNorm = s / 100;
+            const c = sNorm;
+            const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            let r = 0, g = 0, b = 0;
+            if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+            else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+            else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+            else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+            else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            const m = 1 - c;
+            return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+        }
+
+        function applyLiveStatesFromHomeAssistant(statesArray) {
+            if (!Array.isArray(statesArray) || statesArray.length === 0) return;
+            const statesMap = new Map(statesArray.map(s => [s.entity_id, s]));
+            const em = appState.entityMap || {};
+            let anyUpdated = false;
+
+            // 1. LIVE PULSE LAMP KLEUR & STATUS UITLEZEN
+            if (em.statusLamp && statesMap.has(em.statusLamp.trim())) {
+                const lampObj = statesMap.get(em.statusLamp.trim());
+                const isOn = lampObj.state === 'on';
+                appState.lampIsOn = isOn;
+                appState.lampFriendlyName = lampObj.attributes?.friendly_name || em.statusLamp;
+
+                if (isOn) {
+                    const rgb = lampObj.attributes?.rgb_color;
+                    const hs = lampObj.attributes?.hs_color;
+                    if (Array.isArray(rgb) && rgb.length === 3) {
+                        appState.lampColorHex = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+                    } else if (Array.isArray(hs) && hs.length === 2) {
+                        const [r, g, b] = hsToRgb(hs[0], hs[1]);
+                        appState.lampColorHex = `rgb(${r}, ${g}, ${b})`;
+                    } else {
+                        // Warm geel/groen als de lamp geen kleur-attribuut meestuurt maar wel AAN staat
+                        appState.lampColorHex = '#34d399';
+                    }
+                } else {
+                    appState.lampColorHex = '#9ca3af'; // Grijs wanneer de lamp uit staat
+                }
+                anyUpdated = true;
+            }
+
+            // 2. LIVE RECYCLE / AFVALBEHEER SENSOREN UITLEZEN (PMD, GFT, Papier, Rest)
+            const wasteDefinitions = [
+                { key: 'waste_pmd', label: 'PMD (Plastic, Metaal & Drankkartons)', short: 'PMD', bg: 'bg-[#e0f2fe]', text: 'text-[#0369a1]', border: 'border-[#bae6fd]' },
+                { key: 'waste_gft', label: 'Groente-, Fruit- en Tuinafval', short: 'GFT', bg: 'bg-[#dcece3]', text: 'text-[#1c643f]', border: 'border-[#bce3ce]' },
+                { key: 'waste_papier', label: 'Papier & Karton', short: 'PAPIER', bg: 'bg-[#fef9c3]', text: 'text-[#854d0e]', border: 'border-[#fef08a]' },
+                { key: 'waste_rest', label: 'Restafval', short: 'REST', bg: 'bg-stone-200', text: 'text-stone-700', border: 'border-stone-300' }
+            ];
+            const collectedWaste = [];
+            wasteDefinitions.forEach(def => {
+                const entityId = (em[def.key] || '').trim();
+                if (entityId && statesMap.has(entityId)) {
+                    const stObj = statesMap.get(entityId);
+                    if (stObj.state && stObj.state !== 'unknown' && stObj.state !== 'unavailable') {
+                        const daysUntil = stObj.attributes?.Days_until ?? stObj.attributes?.days_until ?? null;
+                        collectedWaste.push({
+                            ...def,
+                            stateValue: stObj.state,
+                            friendlyName: stObj.attributes?.friendly_name || def.label,
+                            daysUntil
+                        });
+                    }
+                }
+            });
+            if (collectedWaste.length > 0) {
+                appState.liveWasteItems = collectedWaste;
+                anyUpdated = true;
+            }
+
+            // 3. LIVE CALENDAR ENTITEIT VOOR AGENDA VANDAAG
+            if (em.calendarEntity && statesMap.has(em.calendarEntity.trim())) {
+                const calObj = statesMap.get(em.calendarEntity.trim());
+                const msg = calObj.attributes?.message;
+                const startTime = calObj.attributes?.start_time;
+                if (msg && startTime) {
+                    const startDt = new Date(startTime);
+                    const nowDt = new Date();
+                    if (startDt.toDateString() === nowDt.toDateString()) {
+                        const timeFormatted = `${String(startDt.getHours()).padStart(2, '0')}:${String(startDt.getMinutes()).padStart(2, '0')}`;
+                        appState.haTodayEvents = [{ time: timeFormatted, title: msg }];
+                        anyUpdated = true;
+                    } else {
+                        appState.haTodayEvents = [];
+                    }
+                }
+            }
+
+            // 4. ENERGIE, WATER, GAS & BATTERIJ UITLEZEN
+            const solarVal = readNumericEntity(statesMap, em.solarW);
+            if (solarVal !== null) {
+                if (appState.solarW !== Math.round(solarVal)) flashElementOnUpdate('valSolar');
+                appState.solarW = Math.round(solarVal);
+                anyUpdated = true;
+            }
+
+            const houseVal = readNumericEntity(statesMap, em.houseW);
+            if (houseVal !== null) {
+                if (appState.houseW !== Math.round(houseVal)) flashElementOnUpdate('valHouse');
+                appState.houseW = Math.round(houseVal);
+                anyUpdated = true;
+            }
+
+            const gridImpVal = readNumericEntity(statesMap, em.gridImportW);
+            const gridExpVal = readNumericEntity(statesMap, em.gridExportW);
+            const gridCombVal = readNumericEntity(statesMap, em.gridW);
+
+            if (gridImpVal !== null || gridExpVal !== null) {
+                const newImp = gridImpVal !== null ? Math.max(0, Math.round(gridImpVal)) : 0;
+                const newExp = gridExpVal !== null ? Math.max(0, Math.round(gridExpVal)) : 0;
+                if (appState.gridImportW !== newImp || appState.gridExportW !== newExp) flashElementOnUpdate('valGrid');
+                appState.gridImportW = newImp;
+                appState.gridExportW = newExp;
+                appState.gridW = newExp > newImp ? newExp : newImp;
+                anyUpdated = true;
+            } else if (gridCombVal !== null) {
+                if (gridCombVal >= 0) {
+                    appState.gridImportW = Math.round(gridCombVal);
+                    appState.gridExportW = 0;
+                } else {
+                    appState.gridImportW = 0;
+                    appState.gridExportW = Math.round(Math.abs(gridCombVal));
+                }
+                if (appState.gridW !== Math.round(Math.abs(gridCombVal))) flashElementOnUpdate('valGrid');
+                appState.gridW = Math.round(Math.abs(gridCombVal));
+                anyUpdated = true;
+            }
+
+            const batWVal = readNumericEntity(statesMap, em.batteryW);
+            if (batWVal !== null) {
+                const absBatW = Math.round(Math.abs(batWVal));
+                if (appState.batteryW !== absBatW) flashElementOnUpdate('valBatteryW');
+                appState.batteryW = absBatW;
+
+                const convention = appState.batterySignConvention || 'positive_discharge';
+                if (batWVal < 0) {
+                    appState.batteryMode = (convention === 'negative_discharge') ? 'discharging' : 'charging';
+                } else if (batWVal > 0) {
+                    appState.batteryMode = (convention === 'positive_discharge') ? 'discharging' : 'charging';
+                }
+                anyUpdated = true;
+            }
+
+            const batPctVal = readNumericEntity(statesMap, em.batteryPct);
+            if (batPctVal !== null) { appState.batteryPct = Math.round(batPctVal); anyUpdated = true; }
+
+            const gasRateVal = readNumericEntity(statesMap, em.gasRate);
+            if (gasRateVal !== null) { appState.gasRate = gasRateVal; anyUpdated = true; }
+
+            const gasTodayVal = readNumericEntity(statesMap, em.gasToday);
+            if (gasTodayVal !== null) { appState.gasToday = gasTodayVal; anyUpdated = true; }
+
+            const waterRateVal = readNumericEntity(statesMap, em.waterRate);
+            if (waterRateVal !== null) {
+                if (appState.waterRate !== waterRateVal) flashElementOnUpdate('valWaterRate');
+                appState.waterRate = waterRateVal;
+                anyUpdated = true;
+            }
+
+            const waterTodayVal = readNumericEntity(statesMap, em.waterTodayLiters);
+            if (waterTodayVal !== null) { appState.waterTodayLiters = waterTodayVal; anyUpdated = true; }
+
+            const importVal = readNumericEntity(statesMap, em.kwhImport);
+            if (importVal !== null) { appState.kwhImport = importVal; anyUpdated = true; }
+
+            const exportVal = readNumericEntity(statesMap, em.kwhExport);
+            if (exportVal !== null) { appState.kwhExport = exportVal; anyUpdated = true; }
+
+            const kwhSolarVal = readNumericEntity(statesMap, em.kwhSolar);
+            if (kwhSolarVal !== null) { appState.kwhSolar = kwhSolarVal; anyUpdated = true; }
+
+            (appState.appliances || []).forEach(app => {
+                if (app.entityId) {
+                    const w = readNumericEntity(statesMap, app.entityId);
+                    if (w !== null) {
+                        app.watts = Math.round(w);
+                        app.active = app.watts > 2;
+                        anyUpdated = true;
+                    }
+                }
+            });
+
+            if (em.priceSensor && statesMap.has(em.priceSensor.trim())) {
+                const priceStateObj = statesMap.get(em.priceSensor.trim());
+                const attrs = priceStateObj.attributes || {};
+                if (Array.isArray(attrs.today) && attrs.today.length >= 24) {
+                    appState.hourlyPrices = attrs.today.slice(0, 24).map(v => Number(v) || 0);
+                    anyUpdated = true;
+                } else if (Array.isArray(attrs.prices_today) && attrs.prices_today.length >= 24) {
+                    appState.hourlyPrices = attrs.prices_today.slice(0, 24).map(v => Number(v.price ?? v) || 0);
+                    anyUpdated = true;
+                }
+                if (Array.isArray(attrs.tomorrow) && attrs.tomorrow.length >= 24) {
+                    appState.tomorrowPrices = attrs.tomorrow.slice(0, 24).map(v => Number(v) || 0);
+                    anyUpdated = true;
+                } else if (Array.isArray(attrs.prices_tomorrow) && attrs.prices_tomorrow.length >= 24) {
+                    appState.tomorrowPrices = attrs.prices_tomorrow.slice(0, 24).map(v => Number(v.price ?? v) || 0);
+                    anyUpdated = true;
+                }
+            }
+
+            if (anyUpdated) {
+                const sourceText = document.getElementById('liveSensorSourceText');
+                if (sourceText) sourceText.textContent = haWsConnected ? "⚡ Realtime HA Stream" : "🟢 Live HA Sensoren";
+                pushLivePowerPoint(appState.solarW, appState.houseW);
+                renderAll();
+            }
+        }
 
         function syncActiveHouseholdPointer() {
             if (!platformState.households) platformState.households = {};
@@ -1496,6 +1885,8 @@
             if (!appState.powerHistory || !Array.isArray(appState.powerHistory)) {
                 appState.powerHistory = createDefaultHouseholdConfig(activeHouseholdName).powerHistory;
             }
+            if (!appState.liveWasteItems) appState.liveWasteItems = [];
+            if (!appState.haTodayEvents) appState.haTodayEvents = [];
         }
 
         async function initFirebase() {
@@ -1550,23 +1941,14 @@
                                     Object.keys(parsedHouseholds).forEach(hName => {
                                         platformState.households[hName] = {
                                             ...createDefaultHouseholdConfig(hName),
-                                            ...parsedHouseholds[hName]
+                                            ...parsedHouseholds[hName],
+                                            entityMap: {
+                                                ...createDefaultHouseholdConfig(hName).entityMap,
+                                                ...(parsedHouseholds[hName].entityMap || {})
+                                            }
                                         };
                                     });
-                                } else if (cloudData.householdName) {
-                                    // Migratie van oude single-household opslag naar multi-gezin
-                                    const hName = cloudData.householdName || "Familie Peeters";
-                                    platformState.households[hName] = {
-                                        ...createDefaultHouseholdConfig(hName),
-                                        ...cloudData,
-                                        hourlyPrices: cloudData.hourlyPricesJson ? JSON.parse(cloudData.hourlyPricesJson) : createDefaultHouseholdConfig().hourlyPrices,
-                                        appliances: cloudData.appliancesJson ? JSON.parse(cloudData.appliancesJson) : createDefaultHouseholdConfig().appliances,
-                                        customAdvices: cloudData.customAdvicesJson ? JSON.parse(cloudData.customAdvicesJson) : createDefaultHouseholdConfig().customAdvices,
-                                        agendaItems: cloudData.agendaItemsJson ? JSON.parse(cloudData.agendaItemsJson) : [],
-                                        tasks: cloudData.tasksJson ? JSON.parse(cloudData.tasksJson) : createDefaultHouseholdConfig().tasks
-                                    };
                                 }
-                                // Zorg dat Super Admin altijd in de lijst staat
                                 const hasSuperAdmin = (platformState.accounts || []).some(a => (a.email || "").toLowerCase() === EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase());
                                 if (!hasSuperAdmin) {
                                     platformState.accounts.unshift({
@@ -1622,10 +2004,6 @@
             }
         }
 
-        function getCleanHaUrl() {
-            return (appState.haUrl || "").trim().replace(/\/+$/, "");
-        }
-
         window.fetchHomeAssistantEntities = async function(silent = false, autoMapIfEmpty = false) {
             const baseUrl = getCleanHaUrl();
             const token = (appState.haToken || "").trim();
@@ -1636,13 +2014,11 @@
                 return;
             }
 
-            // Start ook direct de Realtime WebSocket verbinding
             connectHomeAssistantWebSocket();
 
             if (!silent && statusBadge) statusBadge.textContent = "⏳ Verbinden met Home Assistant...";
 
             try {
-                // Geen 'Content-Type' header meesturen bij een GET request voorkomt strenge CORS preflight blokkades
                 const res = await fetch(`${baseUrl}/api/states`, {
                     method: 'GET',
                     headers: {
@@ -1661,14 +2037,12 @@
                     statusBadge.className = "text-xs font-bold text-[#197447]";
                 }
 
-                // Als er nog geen entiteiten zijn ingevuld, probeer ze slim automatisch te koppelen
                 const em = appState.entityMap || {};
                 const hasAnyMapped = Object.values(em).some(v => v && v.trim() !== "");
                 if (!hasAnyMapped || autoMapIfEmpty) {
                     window.autoDetectAndMapHaEntities(true);
                 }
 
-                // Pas direct de live waardes toe uit de opgehaalde states
                 applyLiveStatesFromHomeAssistant(states);
 
                 if (!silent) showToast(`${states.length} Home Assistant entiteiten geladen & live gekoppeld!`);
@@ -1682,160 +2056,13 @@
             }
         };
 
-        function readNumericEntity(statesMap, entityId) {
-            if (!entityId) return null;
-            const found = statesMap.get(entityId.trim());
-            if (!found) return null;
-            const num = parseFloat(String(found.state).replace(',', '.'));
-            if (isNaN(num)) return null;
-            // Als een vermogenssensor in kW rapporteert (bijv. 0.45 kW) ipv W, reken automatisch om naar Watt
-            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
-            if (unit === 'kw') return num * 1000;
-            return num;
-        }
-
-        function flashElementOnUpdate(elId) {
-            const el = document.getElementById(elId);
-            if (!el) return;
-            el.classList.add('text-[#19975c]', 'transition-colors', 'duration-300');
-            setTimeout(() => {
-                el.classList.remove('text-[#19975c]');
-            }, 550);
-        }
-
-        function applyLiveStatesFromHomeAssistant(statesArray) {
-            if (!Array.isArray(statesArray) || statesArray.length === 0) return;
-            const statesMap = new Map(statesArray.map(s => [s.entity_id, s]));
-            const em = appState.entityMap || {};
-            let anyUpdated = false;
-
-            const solarVal = readNumericEntity(statesMap, em.solarW);
-            if (solarVal !== null) {
-                if (appState.solarW !== Math.round(solarVal)) flashElementOnUpdate('valSolar');
-                appState.solarW = Math.round(solarVal);
-                anyUpdated = true;
-            }
-
-            const houseVal = readNumericEntity(statesMap, em.houseW);
-            if (houseVal !== null) {
-                if (appState.houseW !== Math.round(houseVal)) flashElementOnUpdate('valHouse');
-                appState.houseW = Math.round(houseVal);
-                anyUpdated = true;
-            }
-
-            // Net Import & Export Vermogen (W) apart of gecombineerd uitlezen
-            const gridImpVal = readNumericEntity(statesMap, em.gridImportW);
-            const gridExpVal = readNumericEntity(statesMap, em.gridExportW);
-            const gridCombVal = readNumericEntity(statesMap, em.gridW);
-
-            if (gridImpVal !== null || gridExpVal !== null) {
-                const newImp = gridImpVal !== null ? Math.max(0, Math.round(gridImpVal)) : 0;
-                const newExp = gridExpVal !== null ? Math.max(0, Math.round(gridExpVal)) : 0;
-                if (appState.gridImportW !== newImp || appState.gridExportW !== newExp) flashElementOnUpdate('valGrid');
-                appState.gridImportW = newImp;
-                appState.gridExportW = newExp;
-                appState.gridW = newExp > newImp ? newExp : newImp;
-                anyUpdated = true;
-            } else if (gridCombVal !== null) {
-                if (gridCombVal >= 0) {
-                    appState.gridImportW = Math.round(gridCombVal);
-                    appState.gridExportW = 0;
-                } else {
-                    appState.gridImportW = 0;
-                    appState.gridExportW = Math.round(Math.abs(gridCombVal));
-                }
-                if (appState.gridW !== Math.round(Math.abs(gridCombVal))) flashElementOnUpdate('valGrid');
-                appState.gridW = Math.round(Math.abs(gridCombVal));
-                anyUpdated = true;
-            }
-
-            // Batterij Vermogen (W) & Richting (Ontladen naar Huis vs. Opladen vanuit Huis)
-            const batWVal = readNumericEntity(statesMap, em.batteryW);
-            if (batWVal !== null) {
-                const absBatW = Math.round(Math.abs(batWVal));
-                if (appState.batteryW !== absBatW) flashElementOnUpdate('valBatteryW');
-                appState.batteryW = absBatW;
-
-                const convention = appState.batterySignConvention || 'positive_discharge';
-                if (batWVal < 0) {
-                    appState.batteryMode = (convention === 'negative_discharge') ? 'discharging' : 'charging';
-                } else if (batWVal > 0) {
-                    appState.batteryMode = (convention === 'positive_discharge') ? 'discharging' : 'charging';
-                }
-                anyUpdated = true;
-            }
-
-            const batPctVal = readNumericEntity(statesMap, em.batteryPct);
-            if (batPctVal !== null) { appState.batteryPct = Math.round(batPctVal); anyUpdated = true; }
-
-            const gasRateVal = readNumericEntity(statesMap, em.gasRate);
-            if (gasRateVal !== null) { appState.gasRate = gasRateVal; anyUpdated = true; }
-
-            const gasTodayVal = readNumericEntity(statesMap, em.gasToday);
-            if (gasTodayVal !== null) { appState.gasToday = gasTodayVal; anyUpdated = true; }
-
-            const waterRateVal = readNumericEntity(statesMap, em.waterRate);
-            if (waterRateVal !== null) {
-                if (appState.waterRate !== waterRateVal) flashElementOnUpdate('valWaterRate');
-                appState.waterRate = waterRateVal;
-                anyUpdated = true;
-            }
-
-            const waterTodayVal = readNumericEntity(statesMap, em.waterTodayLiters);
-            if (waterTodayVal !== null) { appState.waterTodayLiters = waterTodayVal; anyUpdated = true; }
-
-            const importVal = readNumericEntity(statesMap, em.kwhImport);
-            if (importVal !== null) { appState.kwhImport = importVal; anyUpdated = true; }
-
-            const exportVal = readNumericEntity(statesMap, em.kwhExport);
-            if (exportVal !== null) { appState.kwhExport = exportVal; anyUpdated = true; }
-
-            const kwhSolarVal = readNumericEntity(statesMap, em.kwhSolar);
-            if (kwhSolarVal !== null) { appState.kwhSolar = kwhSolarVal; anyUpdated = true; }
-
-            // Slimme Apparaten met eigen Home Assistant entiteit uitlezen
-            (appState.appliances || []).forEach(app => {
-                if (app.entityId) {
-                    const w = readNumericEntity(statesMap, app.entityId);
-                    if (w !== null) {
-                        app.watts = Math.round(w);
-                        app.active = app.watts > 2;
-                        anyUpdated = true;
-                    }
-                }
-            });
-
-            // Dynamische prijs-sensor uit Home Assistant (Nordpool / ENTSO-E / Tibber)
-            if (em.priceSensor && statesMap.has(em.priceSensor.trim())) {
-                const priceStateObj = statesMap.get(em.priceSensor.trim());
-                const attrs = priceStateObj.attributes || {};
-                if (Array.isArray(attrs.today) && attrs.today.length >= 24) {
-                    appState.hourlyPrices = attrs.today.slice(0, 24).map(v => Number(v) || 0);
-                    anyUpdated = true;
-                } else if (Array.isArray(attrs.prices_today) && attrs.prices_today.length >= 24) {
-                    appState.hourlyPrices = attrs.prices_today.slice(0, 24).map(v => Number(v.price ?? v) || 0);
-                    anyUpdated = true;
-                }
-                if (Array.isArray(attrs.tomorrow) && attrs.tomorrow.length >= 24) {
-                    appState.tomorrowPrices = attrs.tomorrow.slice(0, 24).map(v => Number(v) || 0);
-                    anyUpdated = true;
-                } else if (Array.isArray(attrs.prices_tomorrow) && attrs.prices_tomorrow.length >= 24) {
-                    appState.tomorrowPrices = attrs.prices_tomorrow.slice(0, 24).map(v => Number(v.price ?? v) || 0);
-                    anyUpdated = true;
-                }
-            }
-
-            if (anyUpdated) {
-                const sourceText = document.getElementById('liveSensorSourceText');
-                if (sourceText) sourceText.textContent = haWsConnected ? "⚡ Realtime HA Stream" : "🟢 Live HA Sensoren";
-                pushLivePowerPoint(appState.solarW, appState.houseW);
-                renderAll();
-            }
-        }
-
         window.saveEntityMapping = function() {
             if (!appState.entityMap) appState.entityMap = {};
-            const keys = ['solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct','gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhExport','kwhSolar','priceSensor'];
+            const keys = [
+                'solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct',
+                'gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhExport',
+                'kwhSolar','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
+            ];
             keys.forEach(k => {
                 const el = document.getElementById('map_' + k);
                 if (el) appState.entityMap[k] = el.value.trim();
@@ -1852,7 +2079,6 @@
             const badgeEl = document.getElementById('liveEpexBadge');
 
             try {
-                // Officiële Energy-Charts (Fraunhofer ISE / ENTSO-E Day-Ahead) API voor België & Nederland
                 const response = await fetch(`https://api.energy-charts.info/price?bzn=${zone}`);
                 if (!response.ok) throw new Error("EPEX API niet bereikbaar");
                 const data = await response.json();
@@ -1871,7 +2097,6 @@
                         const dt = new Date(sec * 1000);
                         const eurPerMwh = data.price[idx];
                         if (eurPerMwh === null || eurPerMwh === undefined) return;
-                        // Omrekenen van EUR/MWh naar EUR/kWh
                         const eurPerKwh = Number((eurPerMwh / 1000).toFixed(4));
                         const h = dt.getHours();
 
@@ -1911,7 +2136,6 @@
                     return;
                 }
             } catch (e) {
-                // Als de browser zonder internet of achter een strikte firewall zit, berekenen we een actuele day-ahead curve op basis van de datum
                 const todaySeed = new Date().getDate();
                 appState.hourlyPrices = Array.from({ length: 24 }, (_, h) => {
                     const wave = Math.sin(((h - 5) / 24) * Math.PI * 2) * 0.06;
@@ -2071,7 +2295,6 @@
                 });
             }
 
-            // Morgen voorspelling in de live advies-rotatie
             if (effectiveTomorrow.length === 24) {
                 let minTomIdx = 0;
                 for (let h = 1; h < 24; h++) {
@@ -2148,6 +2371,51 @@
             } else {
                 banner.className = "bg-[#152920] text-white rounded-[22px] px-6 py-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all duration-500";
                 badgeEl.className = "bg-[#dcece3] text-[#173828] font-semibold px-5 py-2.5 rounded-full text-sm sm:text-base whitespace-nowrap";
+            }
+        }
+
+        function renderPulseLampBadges() {
+            const color = appState.lampColorHex || '#19975c';
+            const isOn = appState.lampIsOn !== false;
+            const lampEntity = appState.entityMap?.statusLamp || '';
+            const shortName = lampEntity
+                ? (appState.lampFriendlyName || lampEntity.replace('light.', ''))
+                : 'Pulse Lamp';
+
+            // 1. Rechtsboven in header
+            const headerDot = document.getElementById('haStatusDot');
+            if (headerDot) {
+                headerDot.style.backgroundColor = color;
+                headerDot.style.boxShadow = isOn ? `0 0 9px ${color}` : 'none';
+                headerDot.classList.toggle('animate-pulse', isOn);
+            }
+
+            // 2. Ronde badge in de Advies-balk naast 'Live Bericht'
+            const bannerDot = document.getElementById('bannerLampDot');
+            const bannerLabel = document.getElementById('bannerLampLabel');
+            if (bannerDot) {
+                bannerDot.style.backgroundColor = color;
+                bannerDot.style.boxShadow = isOn ? `0 0 9px ${color}` : 'none';
+                bannerDot.classList.toggle('animate-pulse', isOn);
+            }
+            if (bannerLabel) {
+                bannerLabel.textContent = isOn ? `${shortName}` : `${shortName} (Uit)`;
+            }
+
+            // 3. Ronde badge naast 'Nu' in Kolom 1
+            const nuDot = document.getElementById('nuLampColorDot');
+            const nuText = document.getElementById('nuLampStateText');
+            const nuBadge = document.getElementById('nuCardLampBadge');
+            if (nuDot) {
+                nuDot.style.backgroundColor = color;
+                nuDot.style.boxShadow = isOn ? `0 0 8px ${color}` : 'none';
+                nuDot.classList.toggle('animate-pulse', isOn);
+            }
+            if (nuText) {
+                nuText.textContent = isOn ? shortName : 'Uit';
+            }
+            if (nuBadge) {
+                nuBadge.style.borderColor = isOn ? color : '#e5e7eb';
             }
         }
 
@@ -2246,12 +2514,50 @@
             labelEl.style.left = `${pctPos}%`;
         }
 
+        function normalizeGoogleCalendarEmbedUrl(rawInput) {
+            const val = (rawInput || "").trim();
+            if (!val) return "";
+            if (val.startsWith("http://") || val.startsWith("https://")) {
+                return val;
+            }
+            // Als de gebruiker een Google Agenda ID of e-mailadres plakt, maak er automatisch een nette maand-embed van
+            return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(val)}&ctz=Europe%2FBrussels&mode=MONTH&showTitle=0&showPrint=0&showCalendars=0`;
+        }
+
+        window.saveQuickGoogleCalendarUrl = function() {
+            const raw = document.getElementById('quickGcalInput').value.trim();
+            if (!raw) return;
+            appState.googleCalendarUrl = normalizeGoogleCalendarEmbedUrl(raw);
+            populateAdminInputs();
+            renderGoogleCalendarTab();
+            persistStateToFirestore(true);
+        };
+
+        function renderGoogleCalendarTab() {
+            const iframe = document.getElementById('googleCalendarIframe');
+            const unlinkedBox = document.getElementById('calendarUnlinkedBox');
+            const embedUrl = normalizeGoogleCalendarEmbedUrl(appState.googleCalendarUrl);
+
+            if (embedUrl) {
+                unlinkedBox.classList.add('hidden');
+                iframe.classList.remove('hidden');
+                if (iframe.src !== embedUrl) {
+                    iframe.src = embedUrl;
+                }
+            } else {
+                unlinkedBox.classList.remove('hidden');
+                iframe.classList.add('hidden');
+            }
+        }
+
         function renderAll() {
             syncActiveHouseholdPointer();
             document.getElementById('haStatusText').textContent = appState.statusText || 'Live via Home Assistant';
             document.getElementById('householdNamePill').textContent = `🏡 Huishouden: ${appState.householdName || activeHouseholdName}`;
             const adminHouseholdBadge = document.getElementById('activeAdminHouseholdBadge');
             if (adminHouseholdBadge) adminHouseholdBadge.textContent = `🏡 Gezin: ${activeHouseholdName}`;
+
+            renderPulseLampBadges();
 
             // Column 1: Live Power, Gas, Water & Battery Values
             document.getElementById('valSolar').textContent = appState.solarW;
@@ -2268,7 +2574,6 @@
             if (gridImpSub) gridImpSub.textContent = gridImportW;
             if (gridExpSub) gridExpSub.textContent = gridExportW;
 
-            // Update Net pijl en animatierichting tussen Huis en Net
             const netArrowEl = document.getElementById('netArrow');
             const netStatusLabel = document.getElementById('netStatusLabel');
             const arrowLeftToHouse = document.getElementById('gridArrowLeftToHouse');
@@ -2297,7 +2602,6 @@
                 if (gridDot2) gridDot2.className = 'w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left';
             }
 
-            // Batterij waarden & Tweerichtings-animatie (Ontladen: Batterij -> Huis vs. Laden: Huis -> Batterij)
             document.getElementById('valBatteryW').textContent = appState.batteryW;
             document.getElementById('valBatteryPct').textContent = appState.batteryPct;
             document.getElementById('valBatteryCap').textContent = formatNum(appState.batteryCap, 1);
@@ -2318,7 +2622,6 @@
                     batModePill.className = 'text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-stone-200 text-stone-600';
                 }
             } else if (isDischarging) {
-                // Batterij levert stroom aan het Huis (Batterij -> Huis)
                 if (batBranchPath) batBranchPath.setAttribute('stroke', '#8ebd9f');
                 if (batArrowCharge) batArrowCharge.classList.add('hidden');
                 if (batArrowDischarge) batArrowDischarge.classList.remove('hidden');
@@ -2329,7 +2632,6 @@
                     batModePill.className = 'text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#dcece3] text-[#197447]';
                 }
             } else {
-                // Batterij is aan het opladen vanuit Huis/Zon (Huis -> Batterij)
                 if (batBranchPath) batBranchPath.setAttribute('stroke', '#f3d078');
                 if (batArrowCharge) batArrowCharge.classList.remove('hidden');
                 if (batArrowDischarge) batArrowDischarge.classList.add('hidden');
@@ -2352,7 +2654,7 @@
             renderDisplayAppliancesFlow();
             renderLiveMovingGraph();
 
-            // Column 2: Automatisch berekende dagkosten op basis van actuele prijzen + verbruik
+            // Column 2: Automatisch berekende dagkosten
             const effectiveToday = getEffectivePricesArray('today');
             const currentHourPrice = effectiveToday[new Date().getHours()] ?? 0.25;
             const autoElecCost = Number(appState.kwhImport) * currentHourPrice;
@@ -2378,16 +2680,12 @@
             document.getElementById('displayGasPriceBadge').textContent = `Gas: ${formatEuro(appState.gasPricePerM3)}/m³`;
             document.getElementById('displayWaterPriceBadge').textContent = `Water: ${formatEuro(appState.waterPricePerM3)}/m³`;
 
-            // Column 3: Hourly Prices (Vandaag of Morgen)
             renderPriceBars();
-
-            // Live Advice Banner
             renderAdviceBanner();
-
-            // Column 4: Agenda, Tasks & Waste Calendar
             renderDisplayAgenda();
             renderDisplayTasks();
             renderDisplayWaste();
+            renderGoogleCalendarTab();
         }
 
         function renderDisplayAppliancesFlow() {
@@ -2428,21 +2726,23 @@
 
         function renderDisplayAgenda() {
             const container = document.getElementById('agendaContainer');
-            if (!appState.agendaItems || appState.agendaItems.length === 0) {
+            const combinedToday = [...(appState.haTodayEvents || []), ...(appState.agendaItems || [])];
+
+            if (combinedToday.length === 0) {
                 container.innerHTML = `
-                    <p class="text-[16px] font-bold text-[#1c2520] leading-snug">
-                        Geen afspraken vandaag en morgen
+                    <p class="text-[15px] font-bold text-[#1c2520] leading-snug">
+                        Geen afspraken vandaag
                     </p>
-                    <p class="text-sm text-[#68736d] mt-2 leading-relaxed">
-                        Afspraken komen uit jullie eigen agenda.
+                    <p class="text-xs text-[#68736d] mt-1 leading-relaxed">
+                        Bekijk het volledige maandoverzicht via het tabblad <strong>🗓️ Maandkalender</strong>.
                     </p>
                 `;
                 return;
             }
 
-            container.innerHTML = `<div class="space-y-2.5 mt-1">` + appState.agendaItems.map(item => `
+            container.innerHTML = `<div class="space-y-2 mt-1">` + combinedToday.map(item => `
                 <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#f4f7f4]">
-                    <span class="w-1.5 h-8 rounded-full bg-[#19975c] shrink-0"></span>
+                    <span class="w-1.5 h-7 rounded-full bg-[#19975c] shrink-0"></span>
                     <div>
                         <p class="text-sm font-bold text-[#1c2520]">${item.time} – ${item.title}</p>
                     </div>
@@ -2473,16 +2773,51 @@
         function renderDisplayWaste() {
             const unlinked = document.getElementById('wasteUnlinked');
             const linked = document.getElementById('wasteLinked');
-            if (!appState.wasteEnabled) {
-                unlinked.classList.remove('hidden');
-                linked.classList.add('hidden');
-            } else {
+            const liveItems = appState.liveWasteItems || [];
+
+            if (liveItems.length > 0) {
                 unlinked.classList.add('hidden');
                 linked.classList.remove('hidden');
-                document.getElementById('wasteTypeBadge').textContent = appState.wasteType;
-                document.getElementById('wastePostalBadge').textContent = appState.wastePostal || 'Gekoppeld';
-                document.getElementById('wasteDateDisplay').textContent = appState.wasteDate;
-                document.getElementById('wasteDescDisplay').textContent = appState.wasteDesc;
+                linked.innerHTML = `
+                    <div class="flex items-center justify-between mb-2.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-[#1c2520]">♻️ Afvalkalender</span>
+                        <span class="text-[10px] font-bold bg-[#e8f2ec] text-[#197447] px-2 py-0.5 rounded-full">Live RecycleApp</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        ${liveItems.map(item => `
+                            <div class="flex items-center gap-2.5 p-2 rounded-xl border ${item.border} bg-stone-50/50">
+                                <div class="w-9 h-9 rounded-xl ${item.bg} ${item.text} flex items-center justify-center font-extrabold text-[10px] shrink-0">
+                                    ${item.short}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-[#1c2520] truncate">${item.stateValue}</p>
+                                    <p class="text-[10px] text-[#68736d] truncate">${item.label}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (appState.wasteEnabled) {
+                unlinked.classList.add('hidden');
+                linked.classList.remove('hidden');
+                linked.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-[#68736d]">AFVALKALENDER</span>
+                        <span class="text-xs text-[#197447] font-medium">${appState.wastePostal || 'Gekoppeld'}</span>
+                    </div>
+                    <div class="flex items-center gap-3 mt-1">
+                        <div class="w-11 h-11 rounded-xl bg-[#dcece3] text-[#1c643f] flex items-center justify-center font-bold text-xs shrink-0">
+                            ${appState.wasteType || 'GFT'}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">${appState.wasteDate || ''}</p>
+                            <p class="text-xs text-[#68736d]">${appState.wasteDesc || ''}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                unlinked.classList.remove('hidden');
+                linked.classList.add('hidden');
             }
         }
 
@@ -2650,6 +2985,9 @@
             document.getElementById('admAdviceText').value = appState.adviceText;
             document.getElementById('admAdviceBadge').value = appState.adviceBadge;
 
+            if (document.getElementById('admGcalUrl')) document.getElementById('admGcalUrl').value = appState.googleCalendarUrl || '';
+            if (document.getElementById('quickGcalInput')) document.getElementById('quickGcalInput').value = appState.googleCalendarUrl || '';
+
             document.getElementById('admWasteEnabled').checked = appState.wasteEnabled;
             document.getElementById('admWasteType').value = appState.wasteType;
             document.getElementById('admWastePostal').value = appState.wastePostal;
@@ -2660,14 +2998,16 @@
             document.getElementById('admHaUrl').value = appState.haUrl;
             document.getElementById('admHaToken').value = appState.haToken;
 
-            // Entity mappings invullen
             const em = appState.entityMap || {};
-            ['solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct','gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhExport','kwhSolar','priceSensor'].forEach(k => {
+            [
+                'solarW','houseW','gridW','gridImportW','gridExportW','batteryW','batteryPct',
+                'gasRate','gasToday','waterRate','waterTodayLiters','kwhImport','kwhExport',
+                'kwhSolar','priceSensor','statusLamp','waste_pmd','waste_gft','waste_papier','waste_rest','calendarEntity'
+            ].forEach(k => {
                 const el = document.getElementById('map_' + k);
                 if (el) el.value = em[k] || '';
             });
 
-            // Uurprijzen grid voor Vandaag of Morgen
             const targetPrices = adminEditPriceDay === 'tomorrow' ? appState.tomorrowPrices : appState.hourlyPrices;
             const hourlyGrid = document.getElementById('adminHourlyGrid');
             hourlyGrid.innerHTML = (targetPrices || []).map((p, h) => {
@@ -2966,7 +3306,7 @@
 
         function renderAdminLists() {
             const agendaHtml = !appState.agendaItems.length
-                ? `<p class="text-xs text-[#68736d] italic py-2">Geen afspraken ingesteld.</p>`
+                ? `<p class="text-xs text-[#68736d] italic py-2">Geen afspraken voor vandaag ingesteld.</p>`
                 : appState.agendaItems.map((item, idx) => `
                     <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
                         <span><strong>${item.time}</strong> – ${item.title}</span>
@@ -3002,6 +3342,13 @@
             document.getElementById('viewDisplay').classList.toggle('hidden', view !== 'display');
             document.getElementById('viewDisplay').classList.toggle('flex', view === 'display');
 
+            const vCal = document.getElementById('viewCalendar');
+            if (vCal) {
+                vCal.classList.toggle('hidden', view !== 'calendar');
+                vCal.classList.toggle('flex', view === 'calendar');
+                if (view === 'calendar') renderGoogleCalendarTab();
+            }
+
             document.getElementById('viewLogin').classList.toggle('hidden', view !== 'login');
             document.getElementById('viewLogin').classList.toggle('flex', view === 'login');
 
@@ -3009,6 +3356,7 @@
             document.getElementById('viewAdmin').classList.toggle('hidden', view !== 'admin');
 
             const btnDisplay = document.getElementById('navBtnDisplay');
+            const btnCal = document.getElementById('navBtnCalendar');
             const btnUser = document.getElementById('navBtnUserPortal');
             const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -3016,6 +3364,7 @@
             const inactiveClass = 'px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 cursor-pointer';
 
             btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
+            if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
             if (currentRole) btnUser.className = view === 'userPortal' ? activeClass : inactiveClass;
             if (currentRole === 'manager' || currentRole === 'admin') btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
 
@@ -3029,7 +3378,14 @@
                 window.switchView('login');
                 return;
             }
-            if (preferredSection === 'agenda' || currentRole === 'user') {
+            if (preferredSection === 'agenda' && currentRole === 'user') {
+                renderAdminLists();
+                window.switchView('userPortal');
+            } else if (preferredSection === 'agenda' && (currentRole === 'manager' || currentRole === 'admin')) {
+                updateAdminRolePermissionsUI();
+                window.switchAdminTab('agenda');
+                window.switchView('admin');
+            } else if (currentRole === 'user') {
                 renderAdminLists();
                 window.switchView('userPortal');
             } else if (currentRole === 'manager' || currentRole === 'admin') {
@@ -3183,10 +3539,20 @@
             appState.batteryCap = parseFloat(document.getElementById('admBatteryCap').value) || 0;
             appState.gasRate = parseFloat(document.getElementById('admGasRate').value) || 0;
 
+            const fallbackLampColorEl = document.getElementById('admLampFallbackColor');
+            if (fallbackLampColorEl && (!appState.entityMap?.statusLamp || !discoveredHaEntities.length)) {
+                appState.lampColorHex = fallbackLampColorEl.value;
+                appState.lampIsOn = true;
+            }
+
             appState.autoAdvice = document.getElementById('admAutoAdvice').checked;
             appState.rotateAdvice = document.getElementById('admRotateAdvice').checked;
             appState.adviceText = document.getElementById('admAdviceText').value;
             appState.adviceBadge = document.getElementById('admAdviceBadge').value;
+
+            if (document.getElementById('admGcalUrl')) {
+                appState.googleCalendarUrl = document.getElementById('admGcalUrl').value.trim();
+            }
 
             appState.wasteEnabled = document.getElementById('admWasteEnabled').checked;
             appState.wasteType = document.getElementById('admWasteType').value;
@@ -3372,25 +3738,23 @@
                 day: 'numeric',
                 month: 'long'
             });
-            document.getElementById('liveDate').textContent = formatter.format(now);
+            const formattedDate = formatter.format(now);
+            document.getElementById('liveDate').textContent = formattedDate;
+            const agendaSub = document.getElementById('agendaDateSub');
+            if (agendaSub) agendaSub.textContent = `Vandaag • ${formattedDate}`;
         }
 
-        // Zorgt dat alle niet-gekoppelde energie-onderdelen (Zon, Huis, Net, Batterij, Apparaten, Water & Dagtotalen)
-        // elke 2 seconden natuurlijk en realistisch veranderen, terwijl gekoppelde HA-sensoren 100% uit HA komen!
         function tickLiveEnergyMetrics() {
             const em = appState.entityMap || {};
 
-            // 1. Zonvermogen (als er geen actieve HA-sensor op zit)
             if (!em.solarW || !discoveredHaEntities.length) {
                 const deltaSolar = Math.round((Math.random() - 0.47) * 14);
                 const nextSolar = Math.max(15, Math.min(4200, (Number(appState.solarW) || 220) + deltaSolar));
                 if (nextSolar !== appState.solarW) flashElementOnUpdate('valSolar');
                 appState.solarW = nextSolar;
-                // Laat opgewekte zonne-energie vandaag heel subtiel meestijgen
                 appState.kwhSolar = Number((Number(appState.kwhSolar) + (appState.solarW / 1800000)).toFixed(2));
             }
 
-            // 2. Huisverbruik (als er geen actieve HA-sensor op zit)
             if (!em.houseW || !discoveredHaEntities.length) {
                 const deltaHouse = Math.round((Math.random() - 0.49) * 11);
                 const nextHouse = Math.max(45, Math.min(5500, (Number(appState.houseW) || 95) + deltaHouse));
@@ -3398,7 +3762,6 @@
                 appState.houseW = nextHouse;
             }
 
-            // 3. Netvermogen & Batterij vermogen dynamisch mee laten reageren
             if ((!em.gridImportW && !em.gridExportW && !em.gridW) || !discoveredHaEntities.length) {
                 const isDischarging = (appState.batteryMode || 'discharging') === 'discharging';
                 const batContribution = isDischarging ? Number(appState.batteryW) : -Number(appState.batteryW);
@@ -3422,7 +3785,6 @@
                 appState.batteryW = nextBatW;
             }
 
-            // 4. Actieve Slimme Apparaten (zoals Wasmachine) laten schommelen in wattage tijdens hun programma
             (appState.appliances || []).forEach(app => {
                 if (app.active && !app.entityId && Number(app.watts) > 0) {
                     const appDelta = Math.round((Math.random() - 0.48) * 9);
@@ -3430,7 +3792,6 @@
                 }
             });
 
-            // 5. Waterstroom subtiel laten variëren als de kraan openstaat
             if ((!em.waterRate || !discoveredHaEntities.length) && Number(appState.waterRate) > 0) {
                 const waterDelta = (Math.random() - 0.5) * 0.4;
                 appState.waterRate = Math.max(0.5, Number((Number(appState.waterRate) + waterDelta).toFixed(1)));
@@ -3447,27 +3808,21 @@
             updateClock();
             window.switchView('login');
 
-            // Haal direct bij het opstarten de echte EPEX Spotprijzen (Vandaag & Morgen) op
             window.fetchLiveEpexPrices(false);
 
-            // Klok elke seconde bijwerken voor een echte live ervaring
             setInterval(updateClock, 1000);
 
-            // Elke 2 seconden: vernieuw live de energie-getallen én de bewegende grafiek
             setInterval(async () => {
                 if (appState.haUrl && appState.haToken) {
-                    // Als WebSocket nog niet verbonden is, poll elke 2 seconden via REST
                     if (!haWsConnected) {
                         await window.fetchHomeAssistantEntities(true);
                     }
                 }
-                // Laat niet-gekoppelde sensoren ook elke 2 seconden live meebewegen
                 if (liveTickerEnabled) {
                     tickLiveEnergyMetrics();
                 }
             }, 2000);
 
-            // Live rotatie voor de Advies-banner (elke 10 sec)
             setInterval(() => {
                 if (appState.autoAdvice && appState.rotateAdvice) {
                     const pool = buildLiveAdvicePool();
