@@ -7,7 +7,10 @@
 function renderRobotsMaintenanceView() {
     const container = document.getElementById('robotsMaintenanceContainer');
     if (!container) return;
+    const active = document.activeElement;
+    if (active && container.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) return; // niet storen tijdens typen
     const robots = appState.robots || [];
+    const haMap = haStatesMap();
 
     const statusLabels = {
         cleaning: { text: "Aan het schoonmaken", pill: "bg-emerald-100 text-emerald-800" },
@@ -59,6 +62,9 @@ function renderRobotsMaintenanceView() {
                         </button>
                     </div>
 
+                    <!-- Extra entiteiten (bv. stofbak, waterreservoir) -->
+                    ${renderRobotExtrasHtml(rob, rIdx, haMap)}
+
                     <!-- Onderhoud Onderdelen & Vervangings-Tellers -->
                     <div class="space-y-3 pt-2">
                         <div class="flex items-center justify-between">
@@ -97,6 +103,108 @@ function renderRobotsMaintenanceView() {
         `;
     }).join('');
 }
+
+const ROBOT_EXTRA_PRESETS = [
+    { icon: '🗑️', label: 'Stofbak', keywords: ['bin', 'dust', 'stof'] },
+    { icon: '💧', label: 'Waterreservoir', keywords: ['water', 'tank'] },
+    { icon: '🧽', label: 'Filter', keywords: ['filter'] },
+    { icon: '🪥', label: 'Borstel', keywords: ['brush', 'borstel'] },
+    { icon: '🔋', label: 'Batterij', keywords: ['battery', 'batterij'] }
+];
+
+function renderRobotExtrasHtml(rob, rIdx, haMap) {
+    const extras = rob.extras || [];
+    const rows = extras.map((ex, eIdx) => {
+        const st = haStateObj(haMap, ex.entityId);
+        const fv = haFriendlyValue(st, ex.label);
+        let valueHtml = `<span class="text-xs font-bold text-[#68736d]">${haEscape(fv.text)}</span>`;
+        if (fv.kind !== 'none') {
+            const isPct = fv.kind === 'number' && fv.unit === '%';
+            const warnHigh = /stofbak|\bbin\b|dust|vuil|container|afval/i.test(ex.label || '');
+            let color = 'text-[#197447]', bar = 'bg-[#19975c]';
+            if (fv.kind === 'bad') { color = 'text-red-700'; bar = 'bg-red-500'; }
+            else if (fv.kind === 'warn') { color = 'text-amber-700'; bar = 'bg-amber-500'; }
+            else if (isPct) {
+                const bad = warnHigh ? fv.value >= 95 : fv.value <= 10;
+                const warn = warnHigh ? fv.value >= 80 : fv.value <= 25;
+                if (bad) { color = 'text-red-700'; bar = 'bg-red-500'; }
+                else if (warn) { color = 'text-amber-700'; bar = 'bg-amber-500'; }
+            } else if (fv.kind === 'text' || fv.kind === 'neutral' || fv.kind === 'number') {
+                color = 'text-[#1c2520]';
+            }
+            valueHtml = isPct
+                ? `<div class="w-24"><div class="flex justify-between text-[11px] font-extrabold ${color}"><span>${haEscape(fv.text)}</span></div>
+                       <div class="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-0.5"><div class="h-full ${bar}" style="width:${Math.max(0, Math.min(100, fv.value))}%"></div></div></div>`
+                : `<span class="text-xs font-extrabold ${color}">${haEscape(fv.text)}</span>`;
+        }
+        return `
+            <div class="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-[#f6f8f5] border border-stone-200/80">
+                <input type="text" value="${haEscape(ex.icon || '📊')}" maxlength="4" onchange="window.updateRobotExtra(${rIdx}, ${eIdx}, 'icon', this.value)" class="w-10 text-center px-1 py-1.5 rounded-lg bg-white border border-stone-200 text-sm">
+                <input type="text" value="${haEscape(ex.label || '')}" placeholder="Naam" onchange="window.updateRobotExtra(${rIdx}, ${eIdx}, 'label', this.value)" class="w-28 px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                <input type="text" list="haEntitiesDatalist" value="${haEscape(ex.entityId || '')}" placeholder="sensor.…" onchange="window.updateRobotExtra(${rIdx}, ${eIdx}, 'entityId', this.value)" class="flex-1 min-w-[150px] px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#152920]">
+                <div class="min-w-[70px] text-right">${valueHtml}</div>
+                <button onclick="window.removeRobotExtra(${rIdx}, ${eIdx})" title="Verwijderen" class="w-7 h-7 rounded-lg text-[#68736d] hover:bg-red-50 hover:text-red-600 text-sm cursor-pointer">✕</button>
+            </div>`;
+    }).join('');
+
+    const presetBtns = ROBOT_EXTRA_PRESETS.map((p, i) =>
+        `<button onclick="window.addRobotExtra(${rIdx}, ${i})" class="px-2.5 py-1 rounded-full bg-white border border-stone-200 hover:bg-[#e8f2ec] text-[11px] font-bold text-[#38443d] cursor-pointer">${p.icon} ${p.label}</button>`
+    ).join('');
+
+    return `
+        <div class="space-y-2.5 pt-1">
+            <div class="flex items-center justify-between">
+                <h4 class="text-sm font-extrabold text-[#1c2520]">📊 Extra entiteiten</h4>
+                <button onclick="window.addRobotExtra(${rIdx}, -1)" class="text-xs font-bold text-[#197447] hover:underline cursor-pointer">+ Eigen entiteit</button>
+            </div>
+            ${rows || '<p class="text-[11px] text-[#68736d] italic">Nog geen extra entiteiten. Kies hieronder een voorbeeld of voeg er zelf een toe.</p>'}
+            <div class="flex flex-wrap gap-1.5">${presetBtns}</div>
+        </div>`;
+}
+
+// Probeert een passende entiteit te vinden bij deze robot (bv. sensor.<robot>_dust_bin)
+function guessRobotExtraEntity(rob, preset) {
+    if (!preset || !rob.entityId || !(discoveredHaEntities || []).length) return '';
+    const base = rob.entityId.split('.')[1] || '';
+    if (!base) return '';
+    const hit = discoveredHaEntities.find(s => {
+        if (!/^(sensor|binary_sensor)\./.test(s.entity_id)) return false;
+        const id = s.entity_id.toLowerCase();
+        return id.includes(base.toLowerCase()) && preset.keywords.some(k => id.includes(k));
+    });
+    return hit ? hit.entity_id : '';
+}
+
+window.addRobotExtra = function(rIdx, presetIdx) {
+    const rob = appState.robots?.[rIdx];
+    if (!rob) return;
+    if (!rob.extras) rob.extras = [];
+    const preset = presetIdx >= 0 ? ROBOT_EXTRA_PRESETS[presetIdx] : null;
+    rob.extras.push({
+        id: 'rx_' + Date.now(),
+        icon: preset ? preset.icon : '📊',
+        label: preset ? preset.label : 'Nieuwe entiteit',
+        entityId: guessRobotExtraEntity(rob, preset)
+    });
+    renderRobotsMaintenanceView();
+    persistStateToFirestore(false);
+};
+
+window.updateRobotExtra = function(rIdx, eIdx, field, val) {
+    const ex = appState.robots?.[rIdx]?.extras?.[eIdx];
+    if (!ex) return;
+    ex[field] = String(val).trim();
+    renderRobotsMaintenanceView();
+    persistStateToFirestore(false);
+};
+
+window.removeRobotExtra = function(rIdx, eIdx) {
+    const rob = appState.robots?.[rIdx];
+    if (!rob?.extras) return;
+    rob.extras.splice(eIdx, 1);
+    renderRobotsMaintenanceView();
+    persistStateToFirestore(false);
+};
 
 window.updateRobotField = function(rIdx, field, val) {
     if (!appState.robots?.[rIdx]) return;
