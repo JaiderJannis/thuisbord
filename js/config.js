@@ -116,7 +116,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
         0.19, 0.21, 0.16, 0.11, 0.08, 0.07
     ],
     appliances: [
-        { id: "app1", icon: "🧺", name: "Wasmachine", watts: 65, active: true, entityId: "" },
+        { id: "app1", icon: "🫧", name: "Wasmachine", watts: 65, active: true, entityId: "" },
         { id: "app2", icon: "🍽️", name: "Vaatwasser", watts: 0, active: false, entityId: "" },
         { id: "app3", icon: "🚗", name: "Laadpaal EV", watts: 0, active: false, entityId: "" }
     ],
