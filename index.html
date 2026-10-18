@@ -1872,17 +1872,6 @@
             if (!silent) showToast("HomeWizard, Energie-, Lamp- en Recycle-sensoren automatisch gekoppeld!");
         };
 
-        function readNumericEntity(statesMap, entityId) {
-            if (!entityId) return null;
-            const found = statesMap.get(entityId.trim());
-            if (!found) return null;
-            const num = parseFloat(String(found.state).replace(',', '.'));
-            if (isNaN(num)) return null;
-            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
-            if (unit === 'kw') return num * 1000;
-            return num;
-        }
-
         // Leest een dag- of HomeWizard totaal-sensor uit (inclusief optionele T2 sensor en m³ -> Liter conversie voor water)
         function readDailyOrTotalMeterValue(statesMap, entityId1, entityId2 = "", isWaterLiters = false) {
             if (!entityId1) return null;
