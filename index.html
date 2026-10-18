@@ -143,39 +143,7 @@
     <!-- Slide-Over Hamburger Menu Drawer (Voor zowel Smartphone als Computer) -->
     <div id="hamburgerOverlay" onclick="toggleHamburgerMenu(false)" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden transition-opacity"></div>
     <aside id="hamburgerDrawer" class="fixed top-0 right-0 h-full w-full max-w-sm bg-[#152920] text-white z-50 translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-6 overflow-y-auto border-l border-white/10">
-        <div class="space-y-5">
-            <!-- Drawer Header -->
-            <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-8 h-8 rounded-xl shadow-xs shrink-0" viewBox="0 0 512 512">
-                        <rect width="512" height="512" rx="118" fill="#18261f" stroke="#5cd69c" stroke-width="18" stroke-opacity="0.4"/>
-                        <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" fill="none" stroke="#5cd69c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <div>
-                        <span class="font-extrabold text-base tracking-tight text-white block leading-none">Thuisbord</span>
-                        <span id="cloudSyncBadge" class="text-[#a3b8ae] text-[11px] font-medium">Verbinden...</span>
-                    </div>
-                </div>
-                <button onclick="toggleHamburgerMenu(false)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
-                    ✕
-                </button>
-            </div>
-
-            <!-- Ingelogde Rol & Gezin Switcher -->
-            <div class="space-y-2.5 bg-white/5 p-3.5 rounded-2xl border border-white/10">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] text-[#a3b8ae] font-semibold">Ingelogd als:</span>
-                    <span id="activeRoleBadge" class="hidden bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
-                </div>
-
-                <!-- Super Admin Gezinnen Switcher -->
-                <div id="superAdminHouseholdSwitcherWrap" class="hidden items-center justify-between gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
-                    <span class="text-xs text-[#dcece3] font-semibold">🏡 Actief Gezin:</span>
-                    <select id="superAdminHouseholdSelect" onchange="window.switchActiveHousehold(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"></select>
-                </div>
-            </div>
-
-            <!-- Navigatie Knoppen in Hamburger Menu -->
+                    <!-- Navigatie Knoppen in Hamburger Menu -->
             <div class="space-y-2">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Navigatie & Bediening</p>
 
@@ -185,8 +153,13 @@
                 </button>
 
                 <button id="navBtnRooms" onclick="switchView('shutters'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
-                    <span class="flex items-center gap-3"><span>🏠</span><span>Ruimtes: Rolluiken & Airco's</span></span>
+                    <span class="flex items-center gap-3"><span>🏠</span><span>Ruimtes: Lampen, Rolluiken & Airco</span></span>
                     <span id="menuShuttersCountBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">Live</span>
+                </button>
+
+                <button id="navBtnRobots" onclick="switchView('robots'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
+                    <span class="flex items-center gap-3"><span>🤖</span><span>Onderhoud: Maaier & Stofzuiger</span></span>
+                    <span id="menuRobotsBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">2</span>
                 </button>
 
                 <button id="navBtnCalendar" onclick="switchView('calendar'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-3 cursor-pointer text-sm">
@@ -208,6 +181,33 @@
             </button>
         </div>
     </aside>
+
+    <!-- Popup Modal: Welke Lampen Zijn Er Nu Aan? -->
+    <div id="activeLightsModalOverlay" onclick="window.toggleActiveLightsModal(false)" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-[28px] max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">💡</span>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-[#1c2520]">Verlichting Overzicht</h3>
+                        <p id="activeLightsModalSub" class="text-xs text-[#68736d]">Overzicht van welke lampen nu aan staan</p>
+                    </div>
+                </div>
+                <button onclick="window.toggleActiveLightsModal(false)" class="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-sm font-bold cursor-pointer">✕</button>
+            </div>
+
+            <div id="activeLightsModalList" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+
+            <div class="flex items-center justify-between gap-2 pt-3 border-t border-stone-100">
+                <button onclick="window.turnOffAllRoomLights()" class="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold cursor-pointer transition">
+                    ⏻ Alle Lampen Uitzetten
+                </button>
+                <button onclick="window.toggleActiveLightsModal(false); switchView('shutters');" class="px-4 py-2.5 rounded-xl bg-[#dcece3] hover:bg-[#c8e2d3] text-[#152920] text-xs font-bold cursor-pointer transition">
+                    Open Alle Ruimtes →
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Compacte Top Balk voor Sub-pagina's -->
     <nav id="topSystemNav" class="hidden bg-[#152920] text-white px-4 sm:px-8 py-3 items-center justify-between gap-3 text-xs sm:text-sm border-b border-white/10">
@@ -256,10 +256,23 @@
                         🏡 Huishouden: Familie Peeters
                     </span>
 
-                    <!-- Snelle knop naar Ruimtes (Rolluiken & Airco's) -->
-                    <button onclick="switchView('shutters')" title="Ruimtes: Rolluiken & Airco's bedienen" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                    <!-- Snelle knop naar Ruimtes (Rolluiken, Airco's & Lampen) -->
+                    <button onclick="switchView('shutters')" title="Ruimtes: Lampen, Rolluiken & Airco's bedienen" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
                         <span>🏠</span>
-                        <span class="hidden md:inline">Ruimtes (Rolluiken & Airco)</span>
+                        <span>Ruimtes (Rolluiken & Airco)</span>
+                    </button>
+
+                    <!-- NIEUW: Knop naast Ruimtes die toont hoeveel lampen en welke lampen er aan staan -->
+                    <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
+                        <span id="headerLightsDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span>💡</span>
+                        <span id="headerActiveLightsText">0 lampen aan</span>
+                    </button>
+
+                    <!-- NIEUW: Knop Onderhoud voor Robotmaaier & Robotstofzuiger -->
+                    <button onclick="switchView('robots')" title="Onderhoud & Bediening Robotmaaier en Robotstofzuiger" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                        <span>🤖</span>
+                        <span>Onderhoud</span>
                     </button>
 
                     <!-- Live Status Rechtsboven -->
@@ -687,8 +700,8 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="document.getElementById('gcalQuickSetupCollapse').classList.toggle('hidden')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
-                        ⚙️ Google `<iframe>` / Link Aanpassen
+                    <button onclick="document.getElementById('gcalQuickSetupCollapse').classList.toggle('hidden')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ⚙️ Google &lt;iframe&gt; / Link Instellen
                     </button>
                     <button onclick="switchView('display')" class="bg-[#dcece3] hover:bg-white text-[#152920] font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
                         ← Terug naar Wanddisplay
@@ -696,16 +709,16 @@
                 </div>
             </div>
 
-            <!-- Inklapbare Google Agenda Iframe/URL instelbalk -->
+            <!-- Inklapbare Google Agenda Iframe/URL instelbalk (VEILIG GEËSCAPED ZODAT HTML NIET BREEKT) -->
             <div id="gcalQuickSetupCollapse" class="hidden bg-white rounded-[22px] p-5 shadow-xs border border-[#8ebd9f] space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h3 class="text-sm font-bold text-[#1c2520]">🔗 Google Agenda `<iframe>` of Agenda-ID Koppelen</h3>
-                    <span class="text-[11px] text-[#197447] font-semibold">Tip: Zet in Google Agenda onder 'Agenda integreren' het vinkje 'Openbaar maken' aan of zorg dat je in deze browser bent ingelogd bij Google.</span>
+                    <h3 class="text-sm font-bold text-[#1c2520]">🔗 Google Agenda &lt;iframe&gt;-code of Insluitlink Koppelen</h3>
+                    <span class="text-[11px] text-[#197447] font-semibold">Tip: Ga in Google Agenda naar 'Instellingen → Agenda integreren' en kopieer het blokje onder 'Insluitcode' (&lt;iframe src="..."&gt;&lt;/iframe&gt;).</span>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input id="quickGcalInput" type="text" placeholder='Plak hier de volledige <iframe src="https://calendar.google.com/calendar/embed?..."></iframe> code of je Gmail-adres...' class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
-                    <button onclick="window.saveQuickGoogleCalendarUrl()" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shrink-0">
-                        💾 Opslaan & Toon Maandkalender
+                <div class="flex flex-col sm:flex-row gap-2 items-stretch">
+                    <textarea id="quickGcalInput" rows="2" placeholder="Plak hier je volledige &lt;iframe src=&quot;https://calendar.google.com/calendar/embed?...&quot;&gt;&lt;/iframe&gt; code of je Gmail-adres..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-mono focus:outline-none focus:border-[#152920]"></textarea>
+                    <button onclick="window.saveQuickGoogleCalendarUrl()" class="bg-[#152920] hover:bg-[#1f3b2e] text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shrink-0">
+                        💾 Opslaan &amp; Toon Maandkalender
                     </button>
                 </div>
             </div>
@@ -751,14 +764,17 @@
                             Ga in Google Agenda op je computer naar <strong>Instellingen → Instellingen voor mijn agenda's → Agenda integreren</strong> en kopieer de volledige <strong><code>&lt;iframe src="https://calendar.google.com/calendar/embed?..."&gt;&lt;/iframe&gt;</code></strong> code.
                         </p>
                         <button onclick="document.getElementById('gcalQuickSetupCollapse').classList.remove('hidden'); document.getElementById('quickGcalInput').focus();" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer">
-                            🔗 Nu `<iframe>` Code Plakken
+                            🔗 Nu &lt;iframe&gt; Code Plakken
                         </button>
                     </div>
 
                     <div id="googleCalendarIframeWrap" class="hidden w-full flex-1 flex flex-col">
                         <div class="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-stone-100 text-xs text-[#68736d]">
                             <span class="font-bold text-[#1c2520]">🗓️ Google Maandoverzicht</span>
-                            <a id="googleCalendarExternalLink" href="#" target="_blank" rel="noopener" class="text-[#197447] font-bold hover:underline">Open in nieuw tabblad ↗</a>
+                            <div class="flex items-center gap-3">
+                                <button onclick="document.getElementById('gcalQuickSetupCollapse').classList.toggle('hidden')" class="text-[#152920] font-semibold hover:underline cursor-pointer">Wijzig &lt;iframe&gt;</button>
+                                <a id="googleCalendarExternalLink" href="#" target="_blank" rel="noopener" class="text-[#197447] font-bold hover:underline">Open in nieuw tabblad ↗</a>
+                            </div>
                         </div>
                         <iframe id="googleCalendarIframe" class="w-full flex-1 min-h-[580px] rounded-2xl border-0 bg-stone-50" frameborder="0" scrolling="yes"></iframe>
                     </div>
@@ -768,36 +784,40 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- VIEW 5: RUIMTES (ROLLUIKEN & AIRCO'S SAMEN IN KAMERS + HERSCHIKKEN)   -->
+    <!-- VIEW 5: RUIMTES (INGEKLAPT STANDAARD + DRAG & DROP + LAMPEN/ROLLUIKEN)-->
     <!-- ===================================================================== -->
     <div id="viewShutters" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
         <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
-            <!-- Header met Filter (Samen per Ruimte / Alleen Rolluiken / Alleen Airco's) -->
+            <!-- Header met Filter -->
             <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
                 <div class="flex items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🏠</div>
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold">Ruimtes: Rolluiken & Airco's</h2>
-                        <p class="text-xs text-[#b3c7bd]">Bedien rolluiken (`cover.*`) en airco's (`climate.*`) samen per ruimte en wissel ze met <strong>↑ / ↓</strong> van plaats.</p>
+                        <h2 class="text-xl sm:text-2xl font-bold">Ruimtes: Lampen, Rolluiken &amp; Airco's</h2>
+                        <p class="text-xs text-[#b3c7bd]">Klik op een ruimte om deze open te klappen. Sleep kaarten of ruimtes bij het <strong>⠿ handvat</strong> om ze van plaats te wisselen!</p>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
                     <!-- Filter knoppen -->
                     <div class="inline-flex bg-white/10 p-1 rounded-xl border border-white/15 text-xs font-bold">
-                        <button id="roomFilterBtn_all" onclick="window.setRoomsFilter('all')" class="px-3 py-1.5 rounded-lg bg-[#5cd69c] text-[#152920] cursor-pointer transition">🏠 Per Ruimte (Samen)</button>
+                        <button id="roomFilterBtn_all" onclick="window.setRoomsFilter('all')" class="px-3 py-1.5 rounded-lg bg-[#5cd69c] text-[#152920] cursor-pointer transition">🏠 Per Ruimte</button>
+                        <button id="roomFilterBtn_lights" onclick="window.setRoomsFilter('lights')" class="px-3 py-1.5 rounded-lg text-white hover:bg-white/10 cursor-pointer transition">💡 Lampen</button>
                         <button id="roomFilterBtn_shutters" onclick="window.setRoomsFilter('shutters')" class="px-3 py-1.5 rounded-lg text-white hover:bg-white/10 cursor-pointer transition">🪟 Rolluiken</button>
                         <button id="roomFilterBtn_climate" onclick="window.setRoomsFilter('climate')" class="px-3 py-1.5 rounded-lg text-white hover:bg-white/10 cursor-pointer transition">❄️ Airco's</button>
                     </div>
 
+                    <button onclick="window.toggleAllRoomAccordions()" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ↕️ Alles Open / Dicht
+                    </button>
                     <button onclick="window.controlAllShutters('open_cover')" class="bg-[#5cd69c] hover:bg-[#4bc48b] text-[#152920] font-extrabold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
-                        ↑ Alle Rolluiken Open
+                        ↑ Rolluiken Open
                     </button>
                     <button onclick="window.controlAllShutters('close_cover')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
-                        ↓ Alles Dicht
+                        ↓ Rolluiken Dicht
                     </button>
-                    <button onclick="window.turnOffAllAircos()" class="bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/30 font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
-                        ⏻ Airco's Uit
+                    <button onclick="window.turnOffAllRoomLights()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-400/30 font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
+                        💡 Lampen Uit
                     </button>
                     <button onclick="openAuthorizedPortalOrLogin('shutters_admin')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer transition">
                         ⚙️ Wijzigen / Toevoegen
@@ -806,7 +826,34 @@
             </div>
 
             <!-- Dynamische Ruimtes & Apparaten Container -->
-            <div id="roomsCombinedContainer" class="space-y-6"></div>
+            <div id="roomsCombinedContainer" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 6: ONDERHOUD & BEDIENING ROBOTMAAIER & ROBOTSTOFZUIGER           -->
+    <!-- ===================================================================== -->
+    <div id="viewRobots" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🤖</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Onderhoud &amp; Status: Robotmaaier &amp; Robotstofzuiger</h2>
+                        <p class="text-xs text-[#b3c7bd]">Bedien jullie robots live via Home Assistant en houd bij wanneer borstels, filters, mesjes en sensoren vervangen of gereinigd moeten worden.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="window.autoDetectRobotsFromHa()" class="bg-[#5cd69c] hover:bg-[#4bc48b] text-[#152920] font-extrabold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ⚡ Auto-Zoek Robots in HA
+                    </button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ← Terug naar Wanddisplay
+                    </button>
+                </div>
+            </div>
+
+            <div id="robotsMaintenanceContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
         </div>
     </div>
 
@@ -1452,10 +1499,10 @@
             <!-- ================================================================= -->
             <div id="adminTab_agenda" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
-                    <h3 class="text-lg font-bold text-[#1c2520]">📅 Google Agenda & Vandaag</h3>
+                    <h3 class="text-lg font-bold text-[#1c2520]">📅 Google Agenda &amp; Vandaag</h3>
                     <div>
-                        <label class="block text-[11px] font-bold text-[#38443d] mb-1">Google Agenda `<iframe>` code of URL</label>
-                        <input id="admGcalUrl" type="text" placeholder='<iframe src="https://calendar.google.com/calendar/embed?..."></iframe>' oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
+                        <label class="block text-[11px] font-bold text-[#38443d] mb-1">Google Agenda &lt;iframe&gt;-code of URL</label>
+                        <textarea id="admGcalUrl" rows="3" placeholder="Plak hier je volledige &lt;iframe src=&quot;https://calendar.google.com/calendar/embed?...&quot;&gt;&lt;/iframe&gt; code..." oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono"></textarea>
                     </div>
                     <div class="pt-2 border-t border-stone-100">
                         <p class="text-xs font-bold text-[#38443d] mb-1.5">Afspraak voor vandaag toevoegen:</p>
@@ -1492,7 +1539,7 @@
             </div>
 
             <!-- ================================================================= -->
-            <!-- TAB 7: RUIMTES, ROLLUIKEN (COVER.*) & AIRCO'S (CLIMATE.*) BEHEREN -->
+            <!-- TAB 7: RUIMTES, LAMPEN, ROLLUIKEN & AIRCO'S BEHEREN               -->
             <!-- ================================================================= -->
             <div id="adminTab_rolluiken_airco" class="hidden space-y-6">
                 <!-- Ruimtes Beheer & Volgorde -->
@@ -1500,69 +1547,104 @@
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
-                                🏠 Ruimtes & Volgorde
+                                🏠 Ruimtes &amp; Sleep-Volgorde
                             </span>
-                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Ruimtes (Kamers) Beheren & Van Plaats Wisselen</h3>
-                            <p class="text-xs text-[#68736d]">Maak ruimtes aan (bijv. Woonkamer, Slaapkamer, Keuken) zodat je rolluiken en airco's per kamer samen kunt bedienen.</p>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Ruimtes (Kamers) Beheren</h3>
+                            <p class="text-xs text-[#68736d]">Maak ruimtes aan (bijv. Woonkamer, Slaapkamer, Keuken) zodat je lampen, rolluiken en airco's per kamer samen kunt bedienen.</p>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             <input id="newRoomNameInput" type="text" placeholder="Nieuwe ruimte (bijv. Veranda)" class="px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-semibold">
                             <button onclick="window.adminAddRoom()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">
                                 + Ruimte Toevoegen
                             </button>
                             <button onclick="window.autoDetectShuttersAndClimate()" class="px-3.5 py-2 rounded-xl bg-[#dcece3] hover:bg-[#c8e2d3] text-[#152920] font-bold text-xs cursor-pointer">
-                                ⚡ Auto-Zoek Rolluiken & Airco's in HA
+                                ⚡ Auto-Zoek Lampen, Rolluiken &amp; Airco's in HA
                             </button>
                         </div>
                     </div>
                     <div id="adminRoomsList" class="flex flex-wrap gap-2"></div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Left: Rolluiken Beheren (Volledig achteraf bewerkbaar + volgorde) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Kolom A: Lampen per Ruimte Beheren -->
+                    <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[11px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">
+                                    💡 Home Assistant `light.*`
+                                </span>
+                                <h3 class="text-lg font-bold text-[#1c2520] mt-1">Lampen in Ruimtes</h3>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-2 bg-amber-50/70 p-3 rounded-2xl border border-amber-200/60">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input id="newLightName" type="text" placeholder="Naam (bijv. Eettafel Lamp)" class="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold">
+                                <select id="newLightRoom" class="px-2.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"></select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input id="newLightEntity" list="haEntitiesDatalist" type="text" placeholder="light.woonkamer_eettafel" class="flex-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-mono">
+                                <button onclick="window.adminAddRoomLight()" class="bg-[#152920] text-white font-bold py-2 px-4 rounded-xl text-xs cursor-pointer shrink-0">
+                                    + Lamp
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="adminRoomLightsList" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- Kolom B: Rolluiken Beheren -->
                     <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
                                     🪟 Home Assistant `cover.*`
                                 </span>
-                                <h3 class="text-lg font-bold text-[#1c2520] mt-1">Rolluiken & Zonwering (Wijzigen & Herschikken)</h3>
+                                <h3 class="text-lg font-bold text-[#1c2520] mt-1">Rolluiken &amp; Zonwering</h3>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-[#f4f7f4] p-3 rounded-2xl">
-                            <input id="newShutterName" type="text" placeholder="Naam (bijv. Rolluik Voor)" class="sm:col-span-4 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold">
-                            <select id="newShutterRoom" class="sm:col-span-3 px-2.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"></select>
-                            <input id="newShutterEntity" list="haEntitiesDatalist" type="text" placeholder="cover.rolluik_woonkamer" class="sm:col-span-3 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-mono">
-                            <button onclick="window.adminAddShutter()" class="sm:col-span-2 bg-[#152920] text-white font-bold py-2 px-3 rounded-xl text-xs cursor-pointer">
-                                + Nieuw
-                            </button>
+                        <div class="grid grid-cols-1 gap-2 bg-[#f4f7f4] p-3 rounded-2xl">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input id="newShutterName" type="text" placeholder="Naam (bijv. Rolluik Voor)" class="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold">
+                                <select id="newShutterRoom" class="px-2.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"></select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input id="newShutterEntity" list="haEntitiesDatalist" type="text" placeholder="cover.rolluik_woonkamer" class="flex-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-mono">
+                                <button onclick="window.adminAddShutter()" class="bg-[#152920] text-white font-bold py-2 px-4 rounded-xl text-xs cursor-pointer shrink-0">
+                                    + Rolluik
+                                </button>
+                            </div>
                         </div>
 
                         <div id="adminShuttersList" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
                     </div>
 
-                    <!-- Right: Airco's Beheren (Volledig achteraf bewerkbaar + volgorde) -->
+                    <!-- Kolom C: Airco's Beheren -->
                     <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2.5 py-1 rounded-full">
                                     ❄️ Home Assistant `climate.*`
                                 </span>
-                                <h3 class="text-lg font-bold text-[#1c2520] mt-1">Airco's & Klimaat (Wijzigen & Herschikken)</h3>
+                                <h3 class="text-lg font-bold text-[#1c2520] mt-1">Airco's &amp; Klimaat</h3>
                             </div>
                             <button onclick="switchView('shutters')" class="px-3 py-1.5 rounded-xl bg-[#102a3b] text-white font-bold text-xs cursor-pointer">
-                                Bekijk Ruimtes →
+                                Open Ruimtes →
                             </button>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-[#f0f9ff] p-3 rounded-2xl">
-                            <input id="newClimateName" type="text" placeholder="Naam (bijv. Airco Living)" class="sm:col-span-4 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold">
-                            <select id="newClimateRoom" class="sm:col-span-3 px-2.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"></select>
-                            <input id="newClimateEntity" list="haEntitiesDatalist" type="text" placeholder="climate.airco_woonkamer" class="sm:col-span-3 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-mono">
-                            <button onclick="window.adminAddClimate()" class="sm:col-span-2 bg-[#152920] text-white font-bold py-2 px-3 rounded-xl text-xs cursor-pointer">
-                                + Nieuw
-                            </button>
+                        <div class="grid grid-cols-1 gap-2 bg-[#f0f9ff] p-3 rounded-2xl">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input id="newClimateName" type="text" placeholder="Naam (bijv. Airco Living)" class="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold">
+                                <select id="newClimateRoom" class="px-2.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"></select>
+                            </div>
+                            <div class="flex gap-2">
+                                <input id="newClimateEntity" list="haEntitiesDatalist" type="text" placeholder="climate.airco_woonkamer" class="flex-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-mono">
+                                <button onclick="window.adminAddClimate()" class="bg-[#152920] text-white font-bold py-2 px-4 rounded-xl text-xs cursor-pointer shrink-0">
+                                    + Airco
+                                </button>
+                            </div>
                         </div>
 
                         <div id="adminClimateList" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
@@ -1690,6 +1772,12 @@
                 { id: "app2", icon: "🍽️", name: "Vaatwasser", watts: 0, active: false, entityId: "" },
                 { id: "app3", icon: "🚗", name: "Laadpaal EV", watts: 0, active: false, entityId: "" }
             ],
+            roomLights: [
+                { id: "lt1", name: "Plafondlamp Zithoek", room: "Woonkamer", entityId: "", state: "on", brightnessPct: 80 },
+                { id: "lt2", name: "Sfeerverlichting TV", room: "Woonkamer", entityId: "", state: "on", brightnessPct: 45 },
+                { id: "lt3", name: "Werkblad Verlichting", room: "Keuken", entityId: "", state: "off", brightnessPct: 100 },
+                { id: "lt4", name: "Nachtlampje", room: "Slaapkamer", entityId: "", state: "off", brightnessPct: 30 }
+            ],
             shutters: [
                 { id: "sh1", name: "Rolluik Woonkamer Voor", room: "Woonkamer", entityId: "", state: "open", position: 100 },
                 { id: "sh2", name: "Rolluik Keuken / Tuin", room: "Keuken", entityId: "", state: "open", position: 80 },
@@ -1723,6 +1811,38 @@
                     hvacModes: ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
                     fanModes: ["auto", "low", "medium", "high"],
                     swingModes: ["off", "vertical", "horizontal", "both"]
+                }
+            ],
+            robots: [
+                {
+                    id: "rob_vacuum",
+                    type: "vacuum",
+                    icon: "🧹",
+                    name: "Robotstofzuiger",
+                    entityId: "",
+                    state: "docked",
+                    batteryPct: 100,
+                    lastRun: "Vandaag 09:15",
+                    tasks: [
+                        { id: "rt1", name: "Stofbak & Filter reinigen", usedHours: 8, maxHours: 15, lastReset: "12 okt" },
+                        { id: "rt2", name: "Zijborstel & Hoofdborstel nakijken", usedHours: 24, maxHours: 40, lastReset: "1 okt" },
+                        { id: "rt3", name: "Sensoren & Laadcontacten afvegen", usedHours: 14, maxHours: 30, lastReset: "5 okt" }
+                    ]
+                },
+                {
+                    id: "rob_mower",
+                    type: "mower",
+                    icon: "🌱",
+                    name: "Robotmaaier",
+                    entityId: "",
+                    state: "docked",
+                    batteryPct: 100,
+                    lastRun: "Gisteren 16:30",
+                    tasks: [
+                        { id: "rm1", name: "Maaimesjes vervangen / draaien", usedHours: 38, maxHours: 50, lastReset: "28 sep" },
+                        { id: "rm2", name: "Onderkant & Maaidek grasvrij maken", usedHours: 12, maxHours: 20, lastReset: "10 okt" },
+                        { id: "rm3", name: "Wielen & Laadstation reinigen", usedHours: 19, maxHours: 35, lastReset: "3 okt" }
+                    ]
                 }
             ],
             agendaItems: [],
@@ -1772,7 +1892,9 @@
         let lastHaWsUrl = "";
         let lastCloudBridgePushMs = 0;
         let lastMidnightHistorySyncDate = "";
-        let activeRoomsFilter = "all"; // 'all' | 'shutters' | 'climate'
+        let activeRoomsFilter = "all"; // 'all' | 'lights' | 'shutters' | 'climate'
+        let expandedRoomsSet = new Set(); // Standaard leeg = Alle ruimtes standaard dichtgeklapt!
+        let dragItemPayload = null;
         let liveTickerEnabled = true;
 
         let db = null;
@@ -1923,6 +2045,8 @@
                         s.entity_id.startsWith('switch.') ||
                         s.entity_id.startsWith('cover.') ||
                         s.entity_id.startsWith('climate.') ||
+                        s.entity_id.startsWith('vacuum.') ||
+                        s.entity_id.startsWith('lawn_mower.') ||
                         s.entity_id.startsWith('calendar.') ||
                         s.entity_id.startsWith('input_number.')
                     )
@@ -1997,6 +2121,7 @@
             }
             const coverEntities = discoveredHaEntities.filter(s => s.entity_id.startsWith('cover.'));
             const climateEntities = discoveredHaEntities.filter(s => s.entity_id.startsWith('climate.'));
+            const lightEntities = discoveredHaEntities.filter(s => s.entity_id.startsWith('light.'));
 
             const guessRoom = (friendlyName) => {
                 const lower = (friendlyName || '').toLowerCase();
@@ -2004,11 +2129,27 @@
                 for (const r of appState.rooms) {
                     if (lower.includes(r.toLowerCase())) return r;
                 }
-                if (lower.includes('living') || lower.includes('woon')) return 'Woonkamer';
-                if (lower.includes('keuken')) return 'Keuken';
+                if (lower.includes('living') || lower.includes('woon') || lower.includes('zit')) return 'Woonkamer';
+                if (lower.includes('keuken') || lower.includes('eet')) return 'Keuken';
                 if (lower.includes('slaap') || lower.includes('bed')) return 'Slaapkamer';
                 return appState.rooms[0] || 'Woonkamer';
             };
+
+            if (lightEntities.length > 0) {
+                appState.roomLights = lightEntities.map((lt, idx) => {
+                    const fname = lt.attributes?.friendly_name || lt.entity_id;
+                    const bri255 = lt.attributes?.brightness;
+                    const briPct = bri255 !== undefined ? Math.round((Number(bri255) / 255) * 100) : (lt.state === 'on' ? 100 : 0);
+                    return {
+                        id: 'lt_ha_' + idx,
+                        name: fname,
+                        room: guessRoom(fname),
+                        entityId: lt.entity_id,
+                        state: lt.state === 'on' ? 'on' : 'off',
+                        brightnessPct: briPct
+                    };
+                });
+            }
 
             if (coverEntities.length > 0) {
                 appState.shutters = coverEntities.map((c, idx) => {
@@ -2046,7 +2187,7 @@
             populateAdminInputs();
             renderAll();
             if (!silent) {
-                showToast(`${coverEntities.length} rolluiken en ${climateEntities.length} airco's gevonden in Home Assistant!`);
+                showToast(`${lightEntities.length} lampen, ${coverEntities.length} rolluiken en ${climateEntities.length} airco's gevonden!`);
             }
         };
 
@@ -2529,6 +2670,33 @@
                 }
             });
 
+            // 7. LIVE KAMER-LAMPEN (LIGHT.*) UITLEZEN
+            (appState.roomLights || []).forEach(lt => {
+                if (lt.entityId && statesMap.has(lt.entityId.trim())) {
+                    const stObj = statesMap.get(lt.entityId.trim());
+                    lt.state = stObj.state === 'on' ? 'on' : 'off';
+                    if (stObj.attributes?.brightness !== undefined) {
+                        lt.brightnessPct = Math.round((Number(stObj.attributes.brightness) / 255) * 100);
+                    } else if (lt.state === 'on' && !lt.brightnessPct) {
+                        lt.brightnessPct = 100;
+                    }
+                    anyUpdated = true;
+                }
+            });
+
+            // 8. LIVE ROBOTSTOFZUIGER & ROBOTMAAIER UITLEZEN
+            (appState.robots || []).forEach(rob => {
+                if (rob.entityId && statesMap.has(rob.entityId.trim())) {
+                    const stObj = statesMap.get(rob.entityId.trim());
+                    rob.state = stObj.state;
+                    const bat = stObj.attributes?.battery_level ?? stObj.attributes?.battery;
+                    if (bat !== undefined && !isNaN( parseFloat(bat) )) {
+                        rob.batteryPct = Math.round(parseFloat(bat));
+                    }
+                    anyUpdated = true;
+                }
+            });
+
             if (em.priceSensor && statesMap.has(em.priceSensor.trim())) {
                 const priceStateObj = statesMap.get(em.priceSensor.trim());
                 const attrs = priceStateObj.attributes || {};
@@ -2578,12 +2746,19 @@
             if (!appState.rooms || !Array.isArray(appState.rooms) || appState.rooms.length === 0) {
                 appState.rooms = ["Woonkamer", "Keuken", "Slaapkamer"];
             }
+            if (!appState.roomLights || !Array.isArray(appState.roomLights)) {
+                appState.roomLights = createDefaultHouseholdConfig(activeHouseholdName).roomLights;
+            }
             if (!appState.shutters || !Array.isArray(appState.shutters)) {
                 appState.shutters = createDefaultHouseholdConfig(activeHouseholdName).shutters;
             }
             if (!appState.climates || !Array.isArray(appState.climates)) {
                 appState.climates = createDefaultHouseholdConfig(activeHouseholdName).climates;
             }
+            if (!appState.robots || !Array.isArray(appState.robots)) {
+                appState.robots = createDefaultHouseholdConfig(activeHouseholdName).robots;
+            }
+            (appState.roomLights || []).forEach(lt => { if (!lt.room) lt.room = appState.rooms[0] || "Woonkamer"; });
             (appState.shutters || []).forEach(sh => { if (!sh.room) sh.room = appState.rooms[0] || "Woonkamer"; });
             (appState.climates || []).forEach(cl => { if (!cl.room) cl.room = appState.rooms[0] || "Woonkamer"; });
             if (!appState.liveWasteItems) appState.liveWasteItems = [];
@@ -3253,7 +3428,7 @@
         }
         window.setRoomsFilter = function(filterMode) {
             activeRoomsFilter = filterMode;
-            ['all', 'shutters', 'climate'].forEach(m => {
+            ['all', 'lights', 'shutters', 'climate'].forEach(m => {
                 const btn = document.getElementById('roomFilterBtn_' + m);
                 if (!btn) return;
                 if (m === filterMode) {
@@ -3265,6 +3440,129 @@
             renderShuttersView();
         };
 
+        window.toggleRoomAccordion = function(roomName) {
+            if (expandedRoomsSet.has(roomName)) {
+                expandedRoomsSet.delete(roomName);
+            } else {
+                expandedRoomsSet.add(roomName);
+            }
+            renderShuttersView();
+        };
+
+        window.toggleAllRoomAccordions = function() {
+            const rooms = (appState.rooms && appState.rooms.length) ? appState.rooms : ["Woonkamer", "Keuken", "Slaapkamer"];
+            if (expandedRoomsSet.size >= rooms.length) {
+                expandedRoomsSet.clear();
+            } else {
+                rooms.forEach(r => expandedRoomsSet.add(r));
+            }
+            renderShuttersView();
+        };
+
+        // =====================================================================
+        // DRAG & DROP HANDLERS VOOR RUIMTES, LAMPEN, ROLLUIKEN EN AIRCO'S
+        // =====================================================================
+        window.handleDeviceDragStart = function(ev, type, index) {
+            dragItemPayload = { type, index };
+            if (ev.dataTransfer) {
+                ev.dataTransfer.effectAllowed = 'move';
+                ev.dataTransfer.setData('text/plain', JSON.stringify(dragItemPayload));
+            }
+            ev.currentTarget.classList.add('opacity-50', 'scale-95');
+        };
+
+        window.handleDeviceDragEnd = function(ev) {
+            ev.currentTarget.classList.remove('opacity-50', 'scale-95');
+        };
+
+        window.handleDeviceDragOver = function(ev) {
+            ev.preventDefault();
+            if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+        };
+
+        window.handleDeviceDrop = function(ev, targetType, targetIndex, targetRoomName = null) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (!dragItemPayload) return;
+
+            const { type, index } = dragItemPayload;
+            dragItemPayload = null;
+
+            const listMap = {
+                room: appState.rooms,
+                light: appState.roomLights,
+                shutter: appState.shutters,
+                climate: appState.climates
+            };
+
+            // Als een apparaat op een andere Ruimte-balk wordt gesleept, verplaats het naar die kamer!
+            if (targetType === 'room_DropZone' && targetRoomName && type !== 'room') {
+                const arr = listMap[type];
+                if (arr && arr[index]) {
+                    arr[index].room = targetRoomName;
+                    expandedRoomsSet.add(targetRoomName);
+                    renderAdminShuttersAndClimateLists();
+                    renderShuttersView();
+                    persistStateToFirestore(true);
+                }
+                return;
+            }
+
+            if (type !== targetType || index === targetIndex) return;
+            const arr = listMap[type];
+            if (!arr || index < 0 || index >= arr.length || targetIndex < 0 || targetIndex >= arr.length) return;
+
+            // Als we binnen of tussen kamers slepen, neem ook de kamer van het doel-item over
+            if (type !== 'room' && targetRoomName) {
+                arr[index].room = targetRoomName;
+            }
+
+            const [movedItem] = arr.splice(index, 1);
+            arr.splice(targetIndex, 0, movedItem);
+
+            renderAdminShuttersAndClimateLists();
+            renderShuttersView();
+            persistStateToFirestore(true);
+        };
+
+        function renderRoomLightCardHtml(lt, idx) {
+            const isOn = lt.state === 'on';
+            const bri = Math.max(0, Math.min(100, Math.round(Number(lt.brightnessPct) ?? (isOn ? 100 : 0))));
+
+            return `
+                <div draggable="true"
+                     ondragstart="window.handleDeviceDragStart(event, 'light', ${idx})"
+                     ondragend="window.handleDeviceDragEnd(event)"
+                     ondragover="window.handleDeviceDragOver(event)"
+                     ondrop="window.handleDeviceDrop(event, 'light', ${idx}, '${lt.room || 'Woonkamer'}')"
+                     class="bg-white rounded-[24px] p-5 shadow-xs border ${isOn ? 'border-amber-300 bg-amber-50/20' : 'border-stone-200/90'} flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex items-start gap-2">
+                                <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
+                                <div>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider ${isOn ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-stone-600'} px-2 py-0.5 rounded-full">💡 Lamp • ${lt.room || 'Woonkamer'}</span>
+                                    <h4 class="text-base font-bold text-[#1c2520] mt-1">${lt.name}</h4>
+                                    <p class="text-[10px] font-mono text-[#68736d]">${lt.entityId || 'Lokale bediening'}</p>
+                                </div>
+                            </div>
+                            <button onclick="window.toggleSingleRoomLight(${idx})" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold cursor-pointer transition ${isOn ? 'bg-amber-400 text-[#152920] shadow-xs' : 'bg-stone-200 text-stone-700 hover:bg-stone-300'}">
+                                ${isOn ? '💡 AAN' : '⏻ UIT'}
+                            </button>
+                        </div>
+
+                        <div class="space-y-1 mt-2">
+                            <div class="flex justify-between text-[11px] font-bold text-[#55605a]">
+                                <span>Helderheid</span>
+                                <span>${isOn ? bri + '%' : 'Uit (0%)'}</span>
+                            </div>
+                            <input type="range" min="1" max="100" step="5" value="${bri}" onchange="window.setRoomLightBrightness(${idx}, this.value)" class="w-full accent-amber-500 cursor-pointer h-2 rounded-lg">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderShutterCardHtml(sh, idx) {
             const pos = Math.max(0, Math.min(100, Math.round(Number(sh.position) ?? 100)));
             const isClosed = pos === 0 || sh.state === 'closed';
@@ -3272,23 +3570,25 @@
             const closedHeightPct = 100 - pos;
 
             return `
-                <div class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4">
+                <div draggable="true"
+                     ondragstart="window.handleDeviceDragStart(event, 'shutter', ${idx})"
+                     ondragend="window.handleDeviceDragEnd(event)"
+                     ondragover="window.handleDeviceDragOver(event)"
+                     ondrop="window.handleDeviceDrop(event, 'shutter', ${idx}, '${sh.room || 'Woonkamer'}')"
+                     class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-3">
-                            <div>
-                                <div class="flex items-center gap-1.5">
+                            <div class="flex items-start gap-2">
+                                <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
+                                <div>
                                     <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2 py-0.5 rounded-full">🪟 Rolluik • ${sh.room || 'Woonkamer'}</span>
+                                    <h4 class="text-base font-bold text-[#1c2520] mt-1">${sh.name}</h4>
+                                    <p class="text-[10px] font-mono text-[#68736d]">${sh.entityId || 'Lokale bediening'}</p>
                                 </div>
-                                <h4 class="text-base font-bold text-[#1c2520] mt-1">${sh.name}</h4>
-                                <p class="text-[10px] font-mono text-[#68736d]">${sh.entityId || 'Lokale bediening'}</p>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="window.moveShutterOrder(${idx}, -1)" title="Verplaats naar voren" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-xs font-bold cursor-pointer">↑</button>
-                                <button onclick="window.moveShutterOrder(${idx}, 1)" title="Verplaats naar achteren" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-xs font-bold cursor-pointer">↓</button>
-                                <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${isClosed ? 'bg-stone-200 text-stone-700' : 'bg-[#dcece3] text-[#152920]'}">
-                                    ${statusLabel}
-                                </span>
-                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${isClosed ? 'bg-stone-200 text-stone-700' : 'bg-[#dcece3] text-[#152920]'}">
+                                ${statusLabel}
+                            </span>
                         </div>
 
                         <div class="relative h-24 rounded-2xl bg-gradient-to-b from-sky-100 to-emerald-50 border-2 border-stone-300 overflow-hidden mb-3">
@@ -3342,21 +3642,25 @@
             const swingList = cl.swingModes?.length ? cl.swingModes : ["off", "vertical", "horizontal", "both"];
 
             return `
-                <div class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4">
+                <div draggable="true"
+                     ondragstart="window.handleDeviceDragStart(event, 'climate', ${idx})"
+                     ondragend="window.handleDeviceDragEnd(event)"
+                     ondragover="window.handleDeviceDragOver(event)"
+                     ondrop="window.handleDeviceDrop(event, 'climate', ${idx}, '${cl.room || 'Woonkamer'}')"
+                     class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-3">
-                            <div>
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2 py-0.5 rounded-full">❄️ Airco / Klimaat • ${cl.room || 'Woonkamer'}</span>
-                                <h4 class="text-base font-bold text-[#1c2520] mt-1">${cl.name}</h4>
-                                <p class="text-[10px] font-mono text-[#68736d]">${cl.entityId || 'Lokale bediening'}</p>
+                            <div class="flex items-start gap-2">
+                                <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
+                                <div>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2 py-0.5 rounded-full">❄️ Airco / Klimaat • ${cl.room || 'Woonkamer'}</span>
+                                    <h4 class="text-base font-bold text-[#1c2520] mt-1">${cl.name}</h4>
+                                    <p class="text-[10px] font-mono text-[#68736d]">${cl.entityId || 'Lokale bediening'}</p>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <button onclick="window.moveClimateOrder(${idx}, -1)" title="Verplaats naar voren" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-xs font-bold cursor-pointer">↑</button>
-                                <button onclick="window.moveClimateOrder(${idx}, 1)" title="Verplaats naar achteren" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-xs font-bold cursor-pointer">↓</button>
-                                <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${meta.pill}">
-                                    ${meta.icon} ${meta.label}
-                                </span>
-                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${meta.pill}">
+                                ${meta.icon} ${meta.label}
+                            </span>
                         </div>
 
                         <div class="bg-[#f4f7f4] rounded-2xl p-3.5 flex items-center justify-between mb-3 border border-stone-200/60">
@@ -3401,16 +3705,131 @@
             `;
         }
 
+        function renderActiveLightsBadgeAndModal() {
+            const lights = appState.roomLights || [];
+            const activeLights = lights.map((lt, idx) => ({ ...lt, idx })).filter(lt => lt.state === 'on');
+
+            const textEl = document.getElementById('headerActiveLightsText');
+            const dotEl = document.getElementById('headerLightsDot');
+            const btnEl = document.getElementById('headerActiveLightsBtn');
+
+            if (textEl) {
+                if (activeLights.length === 0) {
+                    textEl.textContent = "Alle lampen uit";
+                } else if (activeLights.length === 1) {
+                    textEl.textContent = `1 lamp aan (${activeLights[0].name})`;
+                } else {
+                    const previewNames = activeLights.slice(0, 2).map(l => l.name).join(', ');
+                    textEl.textContent = `${activeLights.length} lampen aan (${previewNames}${activeLights.length > 2 ? '...' : ''})`;
+                }
+            }
+
+            if (dotEl && btnEl) {
+                if (activeLights.length > 0) {
+                    dotEl.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+                    btnEl.className = "bg-amber-50 hover:bg-amber-100/90 shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-300";
+                } else {
+                    dotEl.className = "w-2 h-2 rounded-full bg-stone-400";
+                    btnEl.className = "bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#55605a] transition cursor-pointer border border-black/5";
+                }
+            }
+
+            const modalList = document.getElementById('activeLightsModalList');
+            const modalSub = document.getElementById('activeLightsModalSub');
+            if (modalSub) {
+                modalSub.textContent = activeLights.length > 0
+                    ? `Er staan momenteel ${activeLights.length} van de ${lights.length} lampen aan:`
+                    : `Alle ${lights.length} gekoppelde lampen zijn momenteel uitgeschakeld.`;
+            }
+            if (modalList) {
+                if (lights.length === 0) {
+                    modalList.innerHTML = `<p class="text-xs text-[#68736d] italic py-4 text-center">Nog geen lampen gekoppeld.</p>`;
+                } else {
+                    modalList.innerHTML = lights.map((lt, idx) => {
+                        const isOn = lt.state === 'on';
+                        return `
+                            <div class="flex items-center justify-between p-3 rounded-2xl border ${isOn ? 'bg-amber-50/70 border-amber-300' : 'bg-stone-50 border-stone-200/70 opacity-70'}">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-xl ${isOn ? 'bg-amber-400 text-[#152920]' : 'bg-stone-200 text-stone-600'} flex items-center justify-center text-sm font-bold">💡</span>
+                                    <div>
+                                        <p class="text-xs font-extrabold text-[#1c2520]">${lt.name}</p>
+                                        <p class="text-[10px] text-[#68736d]">🏠 ${lt.room || 'Woonkamer'} • ${isOn ? (lt.brightnessPct ?? 100) + '% helderheid' : 'Uit'}</p>
+                                    </div>
+                                </div>
+                                <button onclick="window.toggleSingleRoomLight(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold cursor-pointer ${isOn ? 'bg-[#152920] text-white' : 'bg-stone-200 text-stone-700'}">
+                                    ${isOn ? 'Zet Uit' : 'Zet Aan'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        window.toggleActiveLightsModal = function(open) {
+            const modal = document.getElementById('activeLightsModalOverlay');
+            if (!modal) return;
+            renderActiveLightsBadgeAndModal();
+            modal.classList.toggle('hidden', !open);
+            modal.classList.toggle('flex', !!open);
+        };
+
+        window.toggleSingleRoomLight = async function(idx) {
+            const lt = appState.roomLights?.[idx];
+            if (!lt) return;
+            lt.state = lt.state === 'on' ? 'off' : 'on';
+            if (lt.state === 'on' && !lt.brightnessPct) lt.brightnessPct = 100;
+
+            if (lt.entityId) {
+                const service = lt.state === 'on' ? 'turn_on' : 'turn_off';
+                await window.callHomeAssistantService('light', service, { entity_id: lt.entityId });
+            }
+            renderActiveLightsBadgeAndModal();
+            renderShuttersView();
+            persistStateToFirestore(false);
+            showToast(`${lt.name}: ${lt.state === 'on' ? 'Aangezet 💡' : 'Uitgezet ⏻'}`);
+        };
+
+        window.setRoomLightBrightness = async function(idx, pctVal) {
+            const lt = appState.roomLights?.[idx];
+            if (!lt) return;
+            const pct = Math.max(1, Math.min(100, parseInt(pctVal, 10) || 100));
+            lt.brightnessPct = pct;
+            lt.state = 'on';
+
+            if (lt.entityId) {
+                await window.callHomeAssistantService('light', 'turn_on', {
+                    entity_id: lt.entityId,
+                    brightness_pct: pct
+                });
+            }
+            renderActiveLightsBadgeAndModal();
+            renderShuttersView();
+            persistStateToFirestore(false);
+            showToast(`${lt.name} helderheid: ${pct}%`);
+        };
+
+        window.turnOffAllRoomLights = async function() {
+            (appState.roomLights || []).forEach((lt, i) => {
+                if (lt.state === 'on') window.toggleSingleRoomLight(i);
+            });
+        };
+
         function renderShuttersView() {
             const container = document.getElementById('roomsCombinedContainer');
             const badge = document.getElementById('menuShuttersCountBadge');
+            const lights = appState.roomLights || [];
             const shutters = appState.shutters || [];
             const climates = appState.climates || [];
             const rooms = (appState.rooms && appState.rooms.length) ? appState.rooms : ["Woonkamer", "Keuken", "Slaapkamer"];
 
-            if (badge) badge.textContent = `${shutters.length + climates.length} units`;
+            if (badge) badge.textContent = `${lights.length + shutters.length + climates.length} units`;
             if (!container) return;
 
+            if (activeRoomsFilter === 'lights') {
+                container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">${lights.map((lt, i) => renderRoomLightCardHtml(lt, i)).join('')}</div>`;
+                return;
+            }
             if (activeRoomsFilter === 'shutters') {
                 container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">${shutters.map((sh, i) => renderShutterCardHtml(sh, i)).join('')}</div>`;
                 return;
@@ -3420,41 +3839,244 @@
                 return;
             }
 
-            // Verzamel alle ruimtes (inclusief eventuele ruimtes die op apparaten zijn ingevuld)
             const allRoomNames = [...rooms];
+            lights.forEach(l => { if (l.room && !allRoomNames.includes(l.room)) allRoomNames.push(l.room); });
             shutters.forEach(s => { if (s.room && !allRoomNames.includes(s.room)) allRoomNames.push(s.room); });
             climates.forEach(c => { if (c.room && !allRoomNames.includes(c.room)) allRoomNames.push(c.room); });
 
             container.innerHTML = allRoomNames.map((rName, rIdx) => {
+                const roomLights = lights.map((lt, i) => ({ lt, i })).filter(x => (x.lt.room || rooms[0]) === rName);
                 const roomShutters = shutters.map((sh, i) => ({ sh, i })).filter(x => (x.sh.room || rooms[0]) === rName);
                 const roomClimates = climates.map((cl, i) => ({ cl, i })).filter(x => (x.cl.room || rooms[0]) === rName);
 
-                if (roomShutters.length === 0 && roomClimates.length === 0) return '';
+                if (roomLights.length === 0 && roomShutters.length === 0 && roomClimates.length === 0) return '';
+
+                const isExpanded = expandedRoomsSet.has(rName);
+                const lightsOnCount = roomLights.filter(x => x.lt.state === 'on').length;
+                const activeClCount = roomClimates.filter(x => x.cl.hvacMode && x.cl.hvacMode !== 'off').length;
 
                 return `
-                    <section class="bg-white/60 rounded-[28px] p-5 border border-stone-200/80 space-y-4">
-                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200/70 pb-3">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-8 h-8 rounded-xl bg-[#152920] text-white flex items-center justify-center text-sm font-bold">🏠</span>
+                    <section draggable="true"
+                             ondragstart="window.handleDeviceDragStart(event, 'room', ${rIdx})"
+                             ondragend="window.handleDeviceDragEnd(event)"
+                             ondragover="window.handleDeviceDragOver(event)"
+                             ondrop="window.handleDeviceDrop(event, 'room_DropZone', ${rIdx}, '${rName}')"
+                             class="bg-white/80 rounded-[26px] border border-stone-200/90 shadow-2xs overflow-hidden transition">
+                        <!-- Klikbare Ruimte Header (Standaard Dichtgeklapt) -->
+                        <div onclick="window.toggleRoomAccordion('${rName}')" class="p-5 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-white transition select-none">
+                            <div class="flex items-center gap-3">
+                                <span title="Sleep ruimte om volgorde te wijzigen" onclick="event.stopPropagation()" class="text-stone-400 hover:text-stone-700 font-bold text-lg px-1 cursor-grab">⠿</span>
+                                <span class="w-10 h-10 rounded-2xl bg-[#152920] text-white flex items-center justify-center text-base font-bold">🏠</span>
                                 <div>
                                     <h3 class="text-lg font-extrabold text-[#1c2520]">${rName}</h3>
-                                    <p class="text-[11px] text-[#68736d]">${roomShutters.length} rolluik(en) • ${roomClimates.length} airco('s)</p>
+                                    <p class="text-xs text-[#68736d]">
+                                        ${roomLights.length} lamp(en) • ${roomShutters.length} rolluik(en) • ${roomClimates.length} airco('s)
+                                    </p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-1.5">
-                                <button onclick="window.moveRoomOrder(${rIdx}, -1)" class="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-xs font-bold hover:bg-stone-100 cursor-pointer">↑ Ruimte Omhoog</button>
-                                <button onclick="window.moveRoomOrder(${rIdx}, 1)" class="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-xs font-bold hover:bg-stone-100 cursor-pointer">↓ Ruimte Omlaag</button>
+
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${lightsOnCount > 0 ? `<span class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">💡 ${lightsOnCount} aan</span>` : `<span class="px-3 py-1 rounded-full bg-stone-100 text-stone-600 text-xs font-semibold">💡 Uit</span>`}
+                                ${activeClCount > 0 ? `<span class="px-3 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-extrabold">❄️ ${activeClCount} actief</span>` : ''}
+                                <span class="w-9 h-9 rounded-full bg-[#f4f7f4] text-[#152920] flex items-center justify-center font-extrabold text-sm transition-transform ${isExpanded ? 'rotate-180 bg-[#dcece3]' : ''}">
+                                    ▼
+                                </span>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                            ${roomClimates.map(x => renderClimateCardHtml(x.cl, x.i)).join('')}
-                            ${roomShutters.map(x => renderShutterCardHtml(x.sh, x.i)).join('')}
+                        <!-- Inhoud van de Ruimte (Alleen zichtbaar als uitgeklapt) -->
+                        <div class="${isExpanded ? 'block' : 'hidden'} p-5 pt-2 border-t border-stone-200/60 bg-[#f6f8f5]">
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                                ${roomLights.map(x => renderRoomLightCardHtml(x.lt, x.i)).join('')}
+                                ${roomClimates.map(x => renderClimateCardHtml(x.cl, x.i)).join('')}
+                                ${roomShutters.map(x => renderShutterCardHtml(x.sh, x.i)).join('')}
+                            </div>
                         </div>
                     </section>
                 `;
             }).join('');
         }
+
+        // =====================================================================
+        // ROBOTMAAIER & ROBOTSTOFZUIGER ONDERHOUD & BEDIENING
+        // =====================================================================
+        function renderRobotsMaintenanceView() {
+            const container = document.getElementById('robotsMaintenanceContainer');
+            if (!container) return;
+            const robots = appState.robots || [];
+
+            const statusLabels = {
+                cleaning: { text: "Aan het schoonmaken", pill: "bg-emerald-100 text-emerald-800" },
+                mowing: { text: "Aan het maaien", pill: "bg-emerald-100 text-emerald-800" },
+                docked: { text: "In laadstation (Opgeladen)", pill: "bg-stone-200 text-stone-700" },
+                returning: { text: "Keert terug naar dock", pill: "bg-sky-100 text-sky-800" },
+                paused: { text: "Gepauzeerd", pill: "bg-amber-100 text-amber-800" },
+                error: { text: "Controleer robot (Storing)", pill: "bg-red-100 text-red-800" }
+            };
+
+            container.innerHTML = robots.map((rob, rIdx) => {
+                const stMeta = statusLabels[rob.state] || { text: rob.state || "Gereed", pill: "bg-[#dcece3] text-[#152920]" };
+                const domain = rob.entityId?.startsWith('lawn_mower.') ? 'lawn_mower' : 'vacuum';
+
+                return `
+                    <div class="bg-white rounded-[28px] p-6 shadow-sm border border-stone-200/90 flex flex-col justify-between gap-5">
+                        <div class="space-y-4">
+                            <!-- Robot Header -->
+                            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-stone-100 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-14 h-14 rounded-2xl bg-[#e8f2ec] text-[#152920] flex items-center justify-center text-3xl shadow-2xs">
+                                        ${rob.icon || '🤖'}
+                                    </div>
+                                    <div>
+                                        <input type="text" value="${rob.name}" onchange="window.updateRobotField(${rIdx}, 'name', this.value)" class="text-xl font-extrabold text-[#1c2520] bg-transparent focus:outline-none focus:underline">
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${stMeta.pill}">${stMeta.text}</span>
+                                            <span class="text-xs font-bold text-[#197447]">🔋 ${rob.batteryPct ?? 100}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="w-full sm:w-auto">
+                                    <label class="block text-[10px] font-bold text-[#68736d] mb-0.5">Koppel HA Entiteit (${domain}.*)</label>
+                                    <input type="text" list="haEntitiesDatalist" value="${rob.entityId || ''}" onchange="window.updateRobotField(${rIdx}, 'entityId', this.value)" placeholder="${rob.type === 'mower' ? 'lawn_mower.robotmaaier' : 'vacuum.robotstofzuiger'}" class="w-full sm:w-56 px-3 py-1.5 rounded-xl bg-[#f4f7f4] border border-stone-200 text-xs font-mono text-[#152920]">
+                                </div>
+                            </div>
+
+                            <!-- Directe Bedieningsknoppen -->
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <button onclick="window.controlRobot(${rIdx}, 'start')" class="bg-[#152920] hover:bg-[#1f3b2e] text-white font-extrabold py-2.5 px-3 rounded-2xl text-xs cursor-pointer transition">
+                                    ▶ Start
+                                </button>
+                                <button onclick="window.controlRobot(${rIdx}, 'pause')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold py-2.5 px-3 rounded-2xl text-xs cursor-pointer transition">
+                                    ⏸ Pauze
+                                </button>
+                                <button onclick="window.controlRobot(${rIdx}, 'dock')" class="bg-[#e8f2ec] hover:bg-[#dcece3] text-[#152920] font-extrabold py-2.5 px-3 rounded-2xl text-xs cursor-pointer transition">
+                                    🏠 Naar Dock
+                                </button>
+                            </div>
+
+                            <!-- Onderhoud Onderdelen & Vervangings-Tellers -->
+                            <div class="space-y-3 pt-2">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-extrabold text-[#1c2520]">🛠️ Onderhoud &amp; Slijtage Onderdelen</h4>
+                                    <button onclick="window.addRobotMaintenanceTask(${rIdx})" class="text-xs font-bold text-[#197447] hover:underline cursor-pointer">+ Onderdeel toevoegen</button>
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    ${(rob.tasks || []).map((t, tIdx) => {
+                                        const pctUsed = Math.min(100, Math.round((Number(t.usedHours || 0) / Math.max(1, Number(t.maxHours || 50))) * 100));
+                                        const barColor = pctUsed >= 85 ? 'bg-red-500' : pctUsed >= 65 ? 'bg-amber-500' : 'bg-[#19975c]';
+                                        return `
+                                            <div class="p-3.5 rounded-2xl bg-[#f6f8f5] border border-stone-200/80 space-y-2">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <div>
+                                                        <p class="text-xs font-extrabold text-[#1c2520]">${t.name}</p>
+                                                        <p class="text-[11px] text-[#68736d]">Laatst gereinigd/vervangen: <strong>${t.lastReset || 'Onbekend'}</strong> • Draaiuren: <strong>${t.usedHours}u / ${t.maxHours}u</strong></p>
+                                                    </div>
+                                                    <div class="flex items-center gap-1.5">
+                                                        <button onclick="window.incrementRobotTaskHours(${rIdx}, ${tIdx}, 2)" title="Voeg 2 draaiuren toe" class="px-2 py-1 rounded-lg bg-white border border-stone-200 text-[11px] font-bold cursor-pointer hover:bg-stone-100">+2u</button>
+                                                        <button onclick="window.resetRobotMaintenanceTask(${rIdx}, ${tIdx})" class="px-3 py-1 rounded-lg bg-[#152920] text-white text-[11px] font-bold cursor-pointer hover:bg-[#233f31]">
+                                                            ✓ Gereinigd / Reset
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="w-full h-2 rounded-full bg-stone-200 overflow-hidden">
+                                                    <div class="h-full ${barColor} transition-all duration-300" style="width: ${pctUsed}%"></div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.updateRobotField = function(rIdx, field, val) {
+            if (!appState.robots?.[rIdx]) return;
+            appState.robots[rIdx][field] = val.trim();
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(true);
+        };
+
+        window.controlRobot = async function(rIdx, action) {
+            const rob = appState.robots?.[rIdx];
+            if (!rob) return;
+            const isMower = rob.entityId?.startsWith('lawn_mower.');
+            const domain = isMower ? 'lawn_mower' : 'vacuum';
+
+            if (action === 'start') {
+                rob.state = isMower ? 'mowing' : 'cleaning';
+                if (rob.entityId) await window.callHomeAssistantService(domain, isMower ? 'start_mowing' : 'start', { entity_id: rob.entityId });
+            } else if (action === 'pause') {
+                rob.state = 'paused';
+                if (rob.entityId) await window.callHomeAssistantService(domain, 'pause', { entity_id: rob.entityId });
+            } else if (action === 'dock') {
+                rob.state = 'returning';
+                if (rob.entityId) await window.callHomeAssistantService(domain, isMower ? 'dock' : 'return_to_base', { entity_id: rob.entityId });
+            }
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(false);
+            showToast(`${rob.name}: commando '${action}' verzonden`);
+        };
+
+        window.resetRobotMaintenanceTask = function(rIdx, tIdx) {
+            const task = appState.robots?.[rIdx]?.tasks?.[tIdx];
+            if (!task) return;
+            task.usedHours = 0;
+            const now = new Date();
+            task.lastReset = now.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(true);
+            showToast(`${task.name} gereset naar 0 uur!`);
+        };
+
+        window.incrementRobotTaskHours = function(rIdx, tIdx, addH) {
+            const task = appState.robots?.[rIdx]?.tasks?.[tIdx];
+            if (!task) return;
+            task.usedHours = Math.max(0, Number(task.usedHours || 0) + addH);
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(false);
+        };
+
+        window.addRobotMaintenanceTask = function(rIdx) {
+            const rob = appState.robots?.[rIdx];
+            if (!rob) return;
+            if (!rob.tasks) rob.tasks = [];
+            rob.tasks.push({
+                id: 'rt_' + Date.now(),
+                name: "Nieuw onderhoudspunt (bijv. Wielen / Sensor)",
+                usedHours: 0,
+                maxHours: 30,
+                lastReset: "Vandaag"
+            });
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(true);
+        };
+
+        window.autoDetectRobotsFromHa = function() {
+            if (!discoveredHaEntities || !discoveredHaEntities.length) {
+                showToast("Verbind eerst met Home Assistant in Tabblad 2.");
+                return;
+            }
+            const vac = discoveredHaEntities.find(s => s.entity_id.startsWith('vacuum.'));
+            const mow = discoveredHaEntities.find(s => s.entity_id.startsWith('lawn_mower.'));
+            if (vac && appState.robots?.[0]) {
+                appState.robots[0].entityId = vac.entity_id;
+                appState.robots[0].name = vac.attributes?.friendly_name || appState.robots[0].name;
+            }
+            if (mow && appState.robots?.[1]) {
+                appState.robots[1].entityId = mow.entity_id;
+                appState.robots[1].name = mow.attributes?.friendly_name || appState.robots[1].name;
+            }
+            applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderRobotsMaintenanceView();
+            persistStateToFirestore(true);
+            showToast("Robots gecontroleerd en gekoppeld vanuit Home Assistant!");
+        };
 
         function renderClimateView() {
             renderShuttersView();
@@ -3595,7 +4217,9 @@
             renderDisplayTasks();
             renderDisplayWaste();
             renderGoogleCalendarTab();
+            renderActiveLightsBadgeAndModal();
             renderShuttersView();
+            renderRobotsMaintenanceView();
         }
 
         window.controlSingleShutter = async function(idx, action) {
@@ -3711,43 +4335,79 @@
         function renderAdminShuttersAndClimateLists() {
             const rooms = (appState.rooms && appState.rooms.length) ? appState.rooms : ["Woonkamer", "Keuken", "Slaapkamer"];
             const roomsEl = document.getElementById('adminRoomsList');
+            const ltRoomSelect = document.getElementById('newLightRoom');
             const shRoomSelect = document.getElementById('newShutterRoom');
             const clRoomSelect = document.getElementById('newClimateRoom');
 
             const roomOptionsHtml = rooms.map(r => `<option value="${r}">🏠 ${r}</option>`).join('');
+            if (ltRoomSelect) ltRoomSelect.innerHTML = roomOptionsHtml;
             if (shRoomSelect) shRoomSelect.innerHTML = roomOptionsHtml;
             if (clRoomSelect) clRoomSelect.innerHTML = roomOptionsHtml;
 
             if (roomsEl) {
                 roomsEl.innerHTML = rooms.map((r, rIdx) => `
-                    <div class="inline-flex items-center gap-1.5 bg-[#f4f7f4] px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-[#152920]">
+                    <div draggable="true"
+                         ondragstart="window.handleDeviceDragStart(event, 'room', ${rIdx})"
+                         ondragend="window.handleDeviceDragEnd(event)"
+                         ondragover="window.handleDeviceDragOver(event)"
+                         ondrop="window.handleDeviceDrop(event, 'room', ${rIdx})"
+                         class="inline-flex items-center gap-1.5 bg-[#f4f7f4] px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-[#152920] cursor-grab">
+                        <span class="text-stone-400">⠿</span>
                         <input type="text" value="${r}" onchange="window.adminRenameRoom(${rIdx}, this.value)" class="bg-transparent font-bold text-xs w-28 focus:outline-none focus:underline">
-                        <button onclick="window.moveRoomOrder(${rIdx}, -1)" title="Links/Omhoog" class="px-1.5 py-0.5 rounded bg-white hover:bg-stone-200 text-[10px] cursor-pointer">←</button>
-                        <button onclick="window.moveRoomOrder(${rIdx}, 1)" title="Rechts/Omlaag" class="px-1.5 py-0.5 rounded bg-white hover:bg-stone-200 text-[10px] cursor-pointer">→</button>
                         ${rooms.length > 1 ? `<button onclick="window.adminRemoveRoom(${rIdx})" class="text-red-600 hover:underline px-1 cursor-pointer">✕</button>` : ''}
                     </div>
                 `).join('');
             }
 
+            const ltEl = document.getElementById('adminRoomLightsList');
             const shEl = document.getElementById('adminShuttersList');
             const clEl = document.getElementById('adminClimateList');
 
+            if (ltEl) {
+                ltEl.innerHTML = (appState.roomLights || []).map((lt, idx) => `
+                    <div draggable="true"
+                         ondragstart="window.handleDeviceDragStart(event, 'light', ${idx})"
+                         ondragend="window.handleDeviceDragEnd(event)"
+                         ondragover="window.handleDeviceDragOver(event)"
+                         ondrop="window.handleDeviceDrop(event, 'light', ${idx})"
+                         class="bg-[#f6f8f5] p-3 rounded-2xl border border-stone-200/80 space-y-2 cursor-grab">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-stone-400 font-bold text-xs">⠿ Sleep</span>
+                            <button onclick="window.adminRemoveRoomLight(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-2">
+                            <input type="text" value="${lt.name}" onchange="window.adminUpdateRoomLight(${idx}, 'name', this.value)" placeholder="Naam lamp" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select onchange="window.adminUpdateRoomLight(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
+                                    ${rooms.map(r => `<option value="${r}" ${(lt.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                                </select>
+                                <input type="text" list="haEntitiesDatalist" value="${lt.entityId || ''}" onchange="window.adminUpdateRoomLight(${idx}, 'entityId', this.value)" placeholder="light.lamp..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-amber-800">
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
             if (shEl) {
                 shEl.innerHTML = (appState.shutters || []).map((sh, idx) => `
-                    <div class="bg-[#f6f8f5] p-3 rounded-2xl border border-stone-200/80 space-y-2">
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                            <input type="text" value="${sh.name}" onchange="window.adminUpdateShutter(${idx}, 'name', this.value)" placeholder="Naam rolluik" class="sm:col-span-4 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
-                            <select onchange="window.adminUpdateShutter(${idx}, 'room', this.value)" class="sm:col-span-3 px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
-                                ${rooms.map(r => `<option value="${r}" ${(sh.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
-                            </select>
-                            <input type="text" list="haEntitiesDatalist" value="${sh.entityId || ''}" onchange="window.adminUpdateShutter(${idx}, 'entityId', this.value)" placeholder="cover.rolluik..." class="sm:col-span-5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#197447]">
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] pt-1">
-                            <div class="flex items-center gap-1">
-                                <button onclick="window.moveShutterOrder(${idx}, -1)" class="px-2 py-0.5 rounded bg-white border border-stone-200 font-bold cursor-pointer">↑ Omhoog</button>
-                                <button onclick="window.moveShutterOrder(${idx}, 1)" class="px-2 py-0.5 rounded bg-white border border-stone-200 font-bold cursor-pointer">↓ Omlaag</button>
-                            </div>
+                    <div draggable="true"
+                         ondragstart="window.handleDeviceDragStart(event, 'shutter', ${idx})"
+                         ondragend="window.handleDeviceDragEnd(event)"
+                         ondragover="window.handleDeviceDragOver(event)"
+                         ondrop="window.handleDeviceDrop(event, 'shutter', ${idx})"
+                         class="bg-[#f6f8f5] p-3 rounded-2xl border border-stone-200/80 space-y-2 cursor-grab">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-stone-400 font-bold text-xs">⠿ Sleep</span>
                             <button onclick="window.adminRemoveShutter(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-2">
+                            <input type="text" value="${sh.name}" onchange="window.adminUpdateShutter(${idx}, 'name', this.value)" placeholder="Naam rolluik" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select onchange="window.adminUpdateShutter(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
+                                    ${rooms.map(r => `<option value="${r}" ${(sh.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                                </select>
+                                <input type="text" list="haEntitiesDatalist" value="${sh.entityId || ''}" onchange="window.adminUpdateShutter(${idx}, 'entityId', this.value)" placeholder="cover.rolluik..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#197447]">
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -3755,34 +4415,62 @@
 
             if (clEl) {
                 clEl.innerHTML = (appState.climates || []).map((cl, idx) => `
-                    <div class="bg-[#f6f8f5] p-3 rounded-2xl border border-stone-200/80 space-y-2">
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                            <input type="text" value="${cl.name}" onchange="window.adminUpdateClimate(${idx}, 'name', this.value)" placeholder="Naam airco" class="sm:col-span-4 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
-                            <select onchange="window.adminUpdateClimate(${idx}, 'room', this.value)" class="sm:col-span-3 px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
-                                ${rooms.map(r => `<option value="${r}" ${(cl.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
-                            </select>
-                            <input type="text" list="haEntitiesDatalist" value="${cl.entityId || ''}" onchange="window.adminUpdateClimate(${idx}, 'entityId', this.value)" placeholder="climate.airco..." class="sm:col-span-5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#0369a1]">
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] pt-1">
-                            <div class="flex items-center gap-1">
-                                <button onclick="window.moveClimateOrder(${idx}, -1)" class="px-2 py-0.5 rounded bg-white border border-stone-200 font-bold cursor-pointer">↑ Omhoog</button>
-                                <button onclick="window.moveClimateOrder(${idx}, 1)" class="px-2 py-0.5 rounded bg-white border border-stone-200 font-bold cursor-pointer">↓ Omlaag</button>
-                            </div>
+                    <div draggable="true"
+                         ondragstart="window.handleDeviceDragStart(event, 'climate', ${idx})"
+                         ondragend="window.handleDeviceDragEnd(event)"
+                         ondragover="window.handleDeviceDragOver(event)"
+                         ondrop="window.handleDeviceDrop(event, 'climate', ${idx})"
+                         class="bg-[#f6f8f5] p-3 rounded-2xl border border-stone-200/80 space-y-2 cursor-grab">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-stone-400 font-bold text-xs">⠿ Sleep</span>
                             <button onclick="window.adminRemoveClimate(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-2">
+                            <input type="text" value="${cl.name}" onchange="window.adminUpdateClimate(${idx}, 'name', this.value)" placeholder="Naam airco" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select onchange="window.adminUpdateClimate(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
+                                    ${rooms.map(r => `<option value="${r}" ${(cl.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                                </select>
+                                <input type="text" list="haEntitiesDatalist" value="${cl.entityId || ''}" onchange="window.adminUpdateClimate(${idx}, 'entityId', this.value)" placeholder="climate.airco..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#0369a1]">
+                            </div>
                         </div>
                     </div>
                 `).join('');
             }
         }
 
-        window.adminAddRoom = function() {
-            const input = document.getElementById('newRoomNameInput');
-            const name = (input?.value || '').trim();
-            if (!name) return;
-            if (!appState.rooms) appState.rooms = ["Woonkamer", "Keuken", "Slaapkamer"];
-            if (!appState.rooms.includes(name)) appState.rooms.push(name);
-            input.value = '';
+        window.adminAddRoomLight = function() {
+            const name = document.getElementById('newLightName').value.trim();
+            const room = document.getElementById('newLightRoom')?.value || (appState.rooms?.[0] || 'Woonkamer');
+            const entityId = document.getElementById('newLightEntity').value.trim();
+            if (!name) {
+                showToast("Geef de lamp een naam.");
+                return;
+            }
+            if (!appState.roomLights) appState.roomLights = [];
+            appState.roomLights.push({ id: 'lt_' + Date.now(), name, room, entityId, state: 'off', brightnessPct: 100 });
+            document.getElementById('newLightName').value = '';
+            document.getElementById('newLightEntity').value = '';
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
             renderAdminShuttersAndClimateLists();
+            renderActiveLightsBadgeAndModal();
+            renderShuttersView();
+            persistStateToFirestore(true);
+        };
+
+        window.adminUpdateRoomLight = function(idx, field, val) {
+            if (!appState.roomLights?.[idx]) return;
+            appState.roomLights[idx][field] = val.trim();
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderActiveLightsBadgeAndModal();
+            renderShuttersView();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveRoomLight = function(idx) {
+            appState.roomLights.splice(idx, 1);
+            renderAdminShuttersAndClimateLists();
+            renderActiveLightsBadgeAndModal();
             renderShuttersView();
             persistStateToFirestore(true);
         };
@@ -4674,6 +5362,13 @@
                 if (view === 'shutters') renderShuttersView();
             }
 
+            const vRobots = document.getElementById('viewRobots');
+            if (vRobots) {
+                vRobots.classList.toggle('hidden', view !== 'robots');
+                vRobots.classList.toggle('flex', view === 'robots');
+                if (view === 'robots') renderRobotsMaintenanceView();
+            }
+
             document.getElementById('viewLogin').classList.toggle('hidden', view !== 'login');
             document.getElementById('viewLogin').classList.toggle('flex', view === 'login');
 
@@ -4688,6 +5383,7 @@
 
             const btnDisplay = document.getElementById('navBtnDisplay');
             const btnRooms = document.getElementById('navBtnRooms');
+            const btnRobots = document.getElementById('navBtnRobots');
             const btnCal = document.getElementById('navBtnCalendar');
             const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -4696,6 +5392,7 @@
 
             if (btnDisplay) btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
             if (btnRooms) btnRooms.className = view === 'shutters' ? activeClass : inactiveClass;
+            if (btnRobots) btnRobots.className = view === 'robots' ? activeClass : inactiveClass;
             if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
             if ((currentRole === 'manager' || currentRole === 'admin') && btnAdmin) btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
 
