@@ -58,37 +58,68 @@ function renderLiveMovingGraph() {
 function renderDisplayAppliancesFlow() {
     const container = document.getElementById('appliancesFlowContainer');
     const countBadge = document.getElementById('activeAppliancesCount');
+    if (!container) return;
     const list = appState.appliances || [];
-    const activeCount = list.filter(a => a.active && Number(a.watts) > 0).length;
-    countBadge.textContent = `${activeCount} actief`;
+    const isRunning = (a) => !!a.active && Number(a.watts) > 0;
+    const activeCount = list.filter(isRunning).length;
+    if (countBadge) countBadge.textContent = `${activeCount} actief`;
 
     if (list.length === 0) {
         container.innerHTML = `<p class="text-[11px] text-[#68736d] italic">Geen extra apparaten gekoppeld.</p>`;
         return;
     }
 
-    container.innerHTML = list.map((app) => {
-        const isRunning = app.active && Number(app.watts) > 0;
-        return `
-            <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl border ${isRunning ? 'bg-[#f4fbf7] border-[#bce3ce]' : 'bg-stone-50/70 border-stone-200/60 opacity-65'}">
-                <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-sm">${app.icon || '🔌'}</span>
-                    <span class="text-xs font-bold text-[#1c2520] truncate">${app.name}</span>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    ${isRunning ? `
-                        <div class="w-10 flex items-center relative">
-                            <div class="h-[2px] w-full bg-[#8ebd9f]"></div>
-                            <span class="w-2 h-2 rounded-full bg-[#19975c] absolute left-1/2 dot-flow-right"></span>
-                        </div>
-                        <span class="text-xs font-extrabold text-[#197447]">${app.watts} W</span>
-                    ` : `
-                        <span class="text-[11px] font-medium text-[#68736d]">Uit (0 W)</span>
-                    `}
-                </div>
+    const totalW = list.filter(isRunning).reduce((sum, a) => sum + Number(a.watts || 0), 0);
+    const lineOn = '#8ebd9f';
+    const lineOff = '#d9e0dc';
+    const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // Huis-knooppunt bovenaan: van hieruit vertakt de stroom naar de apparaten
+    const houseNode = `
+        <div class="flex flex-col items-center">
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcece3] text-[#1c643f] border-2 border-white shadow-2xs">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/></svg>
+                <span class="text-[11px] font-extrabold">${totalW > 0 ? `${totalW} W naar apparaten` : 'Huis'}</span>
             </div>
-        `;
+            <div class="relative w-[2px] h-3.5" style="background:${totalW > 0 ? lineOn : lineOff}">
+                ${totalW > 0 ? '<span class="absolute -left-[3px] top-1/2 w-2 h-2 rounded-full bg-[#19975c] dot-flow-down"></span>' : ''}
+            </div>
+        </div>`;
+
+    // Rijen van maximaal 4 apparaten, elk met een eigen "bus" (horizontale verdeellijn)
+    const perRow = 4;
+    const rows = [];
+    for (let i = 0; i < list.length; i += perRow) rows.push(list.slice(i, i + perRow));
+
+    const rowsHtml = rows.map((row, rowIdx) => {
+        const n = row.length;
+        const anyRunning = row.some(isRunning);
+        const busInset = `calc(100% / ${n * 2})`;
+        const chips = row.map((app) => {
+            const on = isRunning(app);
+            return `
+                <div class="flex flex-col items-center min-w-0">
+                    <div class="relative w-[2px] h-4" style="background:${on ? lineOn : lineOff}">
+                        ${on ? '<span class="absolute -left-[3px] top-1/2 w-2 h-2 rounded-full bg-[#19975c] dot-flow-down"></span>' : ''}
+                    </div>
+                    <div class="w-full flex flex-col items-center text-center px-1 py-1.5 rounded-xl border ${on ? 'bg-[#f4fbf7] border-[#bce3ce]' : 'bg-stone-50/70 border-stone-200/60 opacity-70'}">
+                        <span class="text-base leading-none">${esc(app.icon || '🔌')}</span>
+                        <span class="text-[10px] font-bold text-[#1c2520] w-full truncate mt-0.5" title="${esc(app.name)}">${esc(app.name)}</span>
+                        ${on
+                            ? `<span class="text-[11px] font-extrabold text-[#197447] leading-tight">${Number(app.watts)} W</span>`
+                            : `<span class="text-[10px] font-medium text-[#68736d] leading-tight">Uit</span>`}
+                    </div>
+                </div>`;
+        }).join('');
+        return `
+            <div class="${rowIdx > 0 ? 'mt-2' : ''}">
+                ${rowIdx > 0 ? `<div class="flex justify-center"><div class="w-[2px] h-2" style="background:${lineOff}"></div></div>` : ''}
+                <div class="h-[2px] rounded-full" style="margin: 0 ${busInset}; background:${anyRunning ? lineOn : lineOff}"></div>
+                <div class="grid gap-1" style="grid-template-columns: repeat(${n}, minmax(0, 1fr));">${chips}</div>
+            </div>`;
     }).join('');
+
+    container.innerHTML = houseNode + rowsHtml;
 }
 
 function tickLiveEnergyMetrics() {
