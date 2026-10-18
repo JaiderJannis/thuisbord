@@ -284,6 +284,26 @@ window.adminRemoveRoomLight = function(idx) {
     persistStateToFirestore(true);
 };
 
+window.adminAddRoom = function() {
+    const input = document.getElementById('newRoomNameInput');
+    const name = (input?.value || '').trim();
+    if (!name) {
+        showToast("Geef de ruimte een naam.");
+        return;
+    }
+    if (!appState.rooms) appState.rooms = [];
+    if (appState.rooms.some(r => r.toLowerCase() === name.toLowerCase())) {
+        showToast("Deze ruimte bestaat al.");
+        return;
+    }
+    appState.rooms.push(name);
+    if (input) input.value = '';
+    renderAdminShuttersAndClimateLists();
+    renderActiveLightsBadgeAndModal();
+    renderShuttersView();
+    persistStateToFirestore(true);
+};
+
 window.adminRenameRoom = function(rIdx, newName) {
     const clean = (newName || '').trim();
     if (!clean || !appState.rooms?.[rIdx]) return;
