@@ -140,52 +140,106 @@
         <span id="toastMessage">Wijzigingen opgeslagen in Firebase!</span>
     </div>
 
-    <!-- Top System Bar (STRICTLY HIDDEN WHEN NOT LOGGED IN) -->
-    <nav id="topSystemNav" class="hidden bg-[#152920] text-white px-4 sm:px-8 py-2.5 flex-wrap items-center justify-between gap-3 text-xs sm:text-sm border-b border-white/10">
-        <div class="flex items-center gap-3 flex-wrap">
-            <span class="font-bold tracking-tight text-white flex items-center gap-2">
+    <!-- Slide-Over Hamburger Menu Drawer (Voor zowel Smartphone als Computer) -->
+    <div id="hamburgerOverlay" onclick="toggleHamburgerMenu(false)" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden transition-opacity"></div>
+    <aside id="hamburgerDrawer" class="fixed top-0 right-0 h-full w-full max-w-sm bg-[#152920] text-white z-50 translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-6 overflow-y-auto border-l border-white/10">
+        <div class="space-y-5">
+            <!-- Drawer Header -->
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-8 h-8 rounded-xl shadow-xs shrink-0" viewBox="0 0 512 512">
+                        <rect width="512" height="512" rx="118" fill="#18261f" stroke="#5cd69c" stroke-width="18" stroke-opacity="0.4"/>
+                        <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" fill="none" stroke="#5cd69c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div>
+                        <span class="font-extrabold text-base tracking-tight text-white block leading-none">Thuisbord</span>
+                        <span id="cloudSyncBadge" class="text-[#a3b8ae] text-[11px] font-medium">Verbinden...</span>
+                    </div>
+                </div>
+                <button onclick="toggleHamburgerMenu(false)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Ingelogde Rol & Gezin Switcher -->
+            <div class="space-y-2.5 bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] text-[#a3b8ae] font-semibold">Ingelogd als:</span>
+                    <span id="activeRoleBadge" class="hidden bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
+                </div>
+
+                <!-- Super Admin Gezinnen Switcher -->
+                <div id="superAdminHouseholdSwitcherWrap" class="hidden items-center justify-between gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
+                    <span class="text-xs text-[#dcece3] font-semibold">🏡 Actief Gezin:</span>
+                    <select id="superAdminHouseholdSelect" onchange="window.switchActiveHousehold(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"></select>
+                </div>
+            </div>
+
+            <!-- Navigatie Knoppen in Hamburger Menu -->
+            <div class="space-y-2">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Navigatie & Bediening</p>
+
+                <button id="navBtnDisplay" onclick="switchView('display'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-bold bg-white text-[#152920] transition flex items-center gap-3 cursor-pointer text-sm">
+                    <span>📺</span>
+                    <span>Wanddisplay</span>
+                </button>
+
+                <button id="navBtnShutters" onclick="switchView('shutters'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
+                    <span class="flex items-center gap-3"><span>🪟</span><span>Rolluiken Bedienen</span></span>
+                    <span id="menuShuttersCountBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">Live</span>
+                </button>
+
+                <button id="navBtnClimate" onclick="switchView('climate'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
+                    <span class="flex items-center gap-3"><span>❄️</span><span>Airco's & Klimaat</span></span>
+                    <span id="menuClimateCountBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">Live</span>
+                </button>
+
+                <button id="navBtnCalendar" onclick="switchView('calendar'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-3 cursor-pointer text-sm">
+                    <span>🗓️</span>
+                    <span>Maandkalender</span>
+                </button>
+
+                <button id="navBtnUserPortal" onclick="switchView('userPortal'); toggleHamburgerMenu(false);" class="hidden w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-3 cursor-pointer text-sm">
+                    <span>📅</span>
+                    <span>Agenda & Taken</span>
+                </button>
+
+                <button id="navBtnAdmin" onclick="switchView('admin'); toggleHamburgerMenu(false);" class="hidden w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-3 cursor-pointer text-sm">
+                    <span id="adminNavIcon">🏡</span>
+                    <span id="adminNavLabel">Gezinsbeheer</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-white/10">
+            <button id="navBtnLogout" onclick="logoutSession(); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-bold bg-red-500/20 hover:bg-red-500/30 text-red-200 transition cursor-pointer text-sm flex items-center justify-center gap-2">
+                <span>🚪</span>
+                <span>Uitloggen</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Compacte Top Balk voor Sub-pagina's (Zodat je op Maandkalender, Rolluiken, Airco en Beheer ook altijd de Hamburger-knop hebt) -->
+    <nav id="topSystemNav" class="hidden bg-[#152920] text-white px-4 sm:px-8 py-3 items-center justify-between gap-3 text-xs sm:text-sm border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <button onclick="switchView('display')" class="font-bold tracking-tight text-white flex items-center gap-2 cursor-pointer">
                 <svg class="w-6 h-6 rounded-lg shadow-xs shrink-0" viewBox="0 0 512 512">
                     <rect width="512" height="512" rx="118" fill="#18261f" stroke="#5cd69c" stroke-width="16" stroke-opacity="0.3"/>
                     <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" fill="none" stroke="#5cd69c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Thuisbord
-            </span>
-            <span id="cloudSyncBadge" class="bg-white/10 text-[#dcece3] px-2.5 py-0.5 rounded-full text-[11px]">
-                Verbinden...
-            </span>
-            <span id="activeRoleBadge" class="hidden bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
-            </span>
-
-            <!-- Super Admin Gezinnen Switcher -->
-            <div id="superAdminHouseholdSwitcherWrap" class="hidden items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-xl border border-white/15">
-                <span class="text-[11px] text-[#dcece3] font-semibold">🏡 Actief Gezin:</span>
-                <select id="superAdminHouseholdSelect" onchange="window.switchActiveHousehold(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"></select>
-            </div>
+                <span>Thuisbord</span>
+            </button>
+            <span id="subNavCurrentPageTitle" class="text-xs bg-white/10 text-[#dcece3] px-3 py-1 rounded-full font-semibold">Menu</span>
         </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-            <button id="navBtnDisplay" onclick="switchView('display')" class="px-3.5 py-1.5 rounded-xl font-semibold bg-white text-[#152920] transition flex items-center gap-1.5 cursor-pointer">
-                <span>📺</span>
-                <span>Wanddisplay</span>
+        <div class="flex items-center gap-2">
+            <button onclick="switchView('display')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs cursor-pointer">
+                ← Wanddisplay
             </button>
-
-            <button id="navBtnCalendar" onclick="switchView('calendar')" class="px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 cursor-pointer">
-                <span>🗓️</span>
-                <span>Maandkalender</span>
-            </button>
-
-            <button id="navBtnUserPortal" onclick="switchView('userPortal')" class="hidden px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-1.5 cursor-pointer">
-                <span>📅</span>
-                <span>Agenda & Taken</span>
-            </button>
-
-            <button id="navBtnAdmin" onclick="switchView('admin')" class="hidden px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-1.5 cursor-pointer">
-                <span id="adminNavIcon">🏡</span>
-                <span id="adminNavLabel">Gezinsbeheer</span>
-            </button>
-
-            <button id="navBtnLogout" onclick="logoutSession()" class="px-3 py-1.5 rounded-xl font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-200 transition cursor-pointer">
-                Uitloggen
+            <button onclick="toggleHamburgerMenu(true)" class="px-3.5 py-1.5 rounded-xl bg-[#5cd69c] text-[#152920] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+                <span>Menu</span>
             </button>
         </div>
     </nav>
@@ -198,30 +252,49 @@
 
             <!-- Header Bar -->
             <header class="flex flex-wrap items-center justify-between gap-4 mb-5 px-1">
-                <div class="flex items-baseline gap-4">
+                <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
                     <button onclick="toggleFullScreen()" title="Volledig scherm" class="p-2 -ml-2 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m8-16h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3"/>
                         </svg>
                     </button>
                     <h1 id="liveClock" class="text-4xl sm:text-[42px] font-bold tracking-tight text-[#1c2520]">14:21</h1>
-                    <span id="liveDate" class="text-lg sm:text-xl text-[#5a655e] font-normal">zaterdag 17 oktober</span>
+                    <span id="liveDate" class="text-lg sm:text-xl text-[#5a655e] font-normal">zondag 18 oktober</span>
+
+                    <!-- Hamburger Menu Knop direct naast de datum (zoals gevraagd!) -->
+                    <button onclick="toggleHamburgerMenu(true)" title="Open Navigatiemenu" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-2 text-xs sm:text-sm font-bold text-[#152920] transition cursor-pointer border border-black/5">
+                        <svg class="w-5 h-5 text-[#152920]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <span class="hidden sm:inline">Menu</span>
+                    </button>
                 </div>
 
-                <div class="flex items-center gap-3 flex-wrap">
+                <div class="flex items-center gap-2.5 flex-wrap">
                     <span id="householdNamePill" class="inline-flex items-center gap-1.5 bg-white/70 px-3.5 py-2 rounded-full text-xs font-bold text-[#152920] border border-black/5">
                         🏡 Huishouden: Familie Peeters
                     </span>
 
+                    <!-- Snelle knoppen voor Rolluiken & Airco op het Wanddisplay -->
+                    <button onclick="switchView('shutters')" title="Rolluiken bedienen" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                        <span>🪟</span>
+                        <span class="hidden md:inline">Rolluiken</span>
+                    </button>
+                    <button onclick="switchView('climate')" title="Airco's bedienen" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#0369a1] transition cursor-pointer border border-black/5">
+                        <span>❄️</span>
+                        <span class="hidden md:inline">Airco's</span>
+                    </button>
+
                     <!-- Live Status & Pulse Lamp Badge Rechtsboven -->
-                    <div onclick="openAuthorizedPortalOrLogin()" class="bg-white/95 hover:bg-white shadow-sm px-4 py-2.5 rounded-full flex items-center gap-2.5 text-sm font-medium text-[#3b463f] transition cursor-pointer border border-black/5">
+                    <div onclick="toggleHamburgerMenu(true)" class="bg-white/95 hover:bg-white shadow-sm px-4 py-2.5 rounded-full flex items-center gap-2.5 text-sm font-medium text-[#3b463f] transition cursor-pointer border border-black/5">
                         <span id="haStatusDot" class="w-3 h-3 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
                         <span id="haStatusText">Live via Home Assistant</span>
                     </div>
 
-                    <button onclick="openAuthorizedPortalOrLogin()" title="Inloggen / Beheer" class="bg-white/95 hover:bg-white shadow-sm w-10 h-10 rounded-full flex items-center justify-center text-[#3b463f] transition cursor-pointer border border-black/5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    <!-- Ronde Instelknop rechtsboven opent nu ook het Hamburger Menu -->
+                    <button onclick="toggleHamburgerMenu(true)" title="Menu & Beheer" class="bg-white/95 hover:bg-white shadow-sm w-10 h-10 rounded-full flex items-center justify-center text-[#3b463f] transition cursor-pointer border border-black/5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                     </button>
                 </div>
@@ -662,7 +735,7 @@
                         Ga in Google Agenda op je computer naar <strong>Instellingen → Instellingen voor mijn agenda's → Agenda integreren</strong> en kopieer het <strong>Agenda-ID</strong> (bijv. <code>familie@gmail.com</code>) of de <strong>Insluit-URL (`https://calendar.google.com/calendar/embed?src=...`)</strong>.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                        <input id="quickGcalInput" type="text" placeholder="Plak Google Agenda e-mailadres of embed-URL..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
+                        <input id="quickGcalInput" type="text" placeholder="Plak hier je <iframe src=...> code of Google Agenda URL..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
                         <button onclick="window.saveQuickGoogleCalendarUrl()" class="bg-[#152920] text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shrink-0">
                             Koppel Maandkalender
                         </button>
@@ -671,6 +744,66 @@
 
                 <iframe id="googleCalendarIframe" class="hidden w-full flex-1 min-h-[600px] rounded-2xl border-0" frameborder="0" scrolling="no"></iframe>
             </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 5: ROLLUIKEN BEDIENING TABBLAD (LIVE HOME ASSISTANT COVER.*)     -->
+    <!-- ===================================================================== -->
+    <div id="viewShutters" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🪟</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Rolluiken & Zonwering Bediening</h2>
+                        <p class="text-xs text-[#b3c7bd]">Bedien al je gekoppelde Home Assistant rolluiken (`cover.*`) live per kamer of allemaal tegelijk.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="window.controlAllShutters('open_cover')" class="bg-[#5cd69c] hover:bg-[#4bc48b] text-[#152920] font-extrabold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        ↑ Alles Openen
+                    </button>
+                    <button onclick="window.controlAllShutters('stop_cover')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        ⏹ Alles Stop
+                    </button>
+                    <button onclick="window.controlAllShutters('close_cover')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-bold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        ↓ Alles Sluiten
+                    </button>
+                    <button onclick="openAuthorizedPortalOrLogin('shutters_admin')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-3.5 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        + Rolluik Koppelen
+                    </button>
+                </div>
+            </div>
+
+            <div id="shuttersGridContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 6: AIRCO & KLIMAAT BEDIENING TABBLAD (LIVE HA CLIMATE.*)         -->
+    <!-- ===================================================================== -->
+    <div id="viewClimate" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#102a3b] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-sky-400/20 flex items-center justify-center text-2xl">❄️</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Airco's & Klimaatregeling</h2>
+                        <p class="text-xs text-sky-200/80">Stel per ruimte de temperatuur, modus (Koelen, Verwarmen, Auto, Droog), ventilatorsnelheid en swing in.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="window.turnOffAllAircos()" class="bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 font-bold px-4 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        ⏻ Alle Airco's Uitzetten
+                    </button>
+                    <button onclick="openAuthorizedPortalOrLogin('climate_admin')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-3.5 py-2.5 rounded-xl text-xs cursor-pointer transition">
+                        + Airco Koppelen
+                    </button>
+                </div>
+            </div>
+
+            <div id="climateGridContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
         </div>
     </div>
 
@@ -828,6 +961,9 @@
                 </button>
                 <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
                     📅 6. Google Agenda, Taken & Afval
+                </button>
+                <button id="adminTabBtn_rolluiken_airco" onclick="switchAdminTab('rolluiken_airco')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    🪟❄️ 7. Rolluiken & Airco's
                 </button>
             </div>
 
@@ -1341,14 +1477,14 @@
                         <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
                             🗓️ Google Agenda Koppeling
                         </span>
-                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Maandkalender & Agenda Vandaag</h3>
+                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Maandkalender (`<iframe ...>` code)</h3>
                         <p class="text-xs text-[#68736d] mt-0.5">
-                            Plak je Google Agenda e-mailadres (of de volledige <code>https://calendar.google.com/calendar/embed?src=...</code> URL) voor het aparte tabblad <strong>Maandkalender</strong>.
+                            Plak hieronder rechtstreeks de volledige <strong><code>&lt;iframe src="https://calendar.google.com/calendar/embed?..."&gt;&lt;/iframe&gt;</code></strong> insluitcode uit Google Agenda (of je agenda e-mailadres).
                         </p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-[#38443d] mb-1">Google Agenda ID of Embed-URL</label>
-                        <input id="admGcalUrl" type="text" placeholder="familie@gmail.com of https://calendar.google.com/..." oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono">
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Google Agenda `<iframe>` Code of Embed-URL</label>
+                        <textarea id="admGcalUrl" rows="3" placeholder='<iframe src="https://calendar.google.com/calendar/embed?src=..." style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>' oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#8ebd9f] bg-[#f4fbf7] text-xs font-mono"></textarea>
                     </div>
 
                     <div class="pt-3 border-t border-stone-100 space-y-2">
@@ -1387,6 +1523,67 @@
                     <input id="admWastePostal" type="text" placeholder="Postcode & Plaats" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
                     <input id="admWasteDate" type="text" placeholder="Ophaaldag (bijv. Dinsdag 20 oktober)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
                     <input id="admWasteDesc" type="text" placeholder="Omschrijving" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 7: ROLLUIKEN (COVER.*) & AIRCO'S (CLIMATE.*) KOPPELEN         -->
+            <!-- ================================================================= -->
+            <div id="adminTab_rolluiken_airco" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left: Rolluiken Beheren -->
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
+                                🪟 Home Assistant `cover.*`
+                            </span>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Rolluiken & Zonwering Koppelen</h3>
+                        </div>
+                        <button onclick="window.autoDetectShuttersAndClimate()" class="px-3 py-1.5 rounded-xl bg-[#dcece3] hover:bg-[#c8e2d3] text-[#152920] font-bold text-xs cursor-pointer">
+                            ⚡ Auto-Zoek in HA
+                        </button>
+                    </div>
+                    <p class="text-xs text-[#68736d]">
+                        Voeg je rolluiken toe met hun Home Assistant `cover.*` entiteit. Je kunt ze daarna live openen, stoppen, sluiten en op een percentage zetten.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <input id="newShutterName" type="text" placeholder="Naam (bijv. Rolluik Woonkamer)" class="sm:col-span-5 px-3 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newShutterEntity" list="haEntitiesDatalist" type="text" placeholder="cover.rolluik_woonkamer" class="sm:col-span-5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
+                        <button onclick="window.adminAddShutter()" class="sm:col-span-2 bg-[#152920] text-white font-bold py-2.5 px-3 rounded-xl text-xs cursor-pointer">
+                            + Voeg toe
+                        </button>
+                    </div>
+
+                    <div id="adminShuttersList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+                </div>
+
+                <!-- Right: Airco's Beheren -->
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2.5 py-1 rounded-full">
+                                ❄️ Home Assistant `climate.*`
+                            </span>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Airco's & Warmtepompen Koppelen</h3>
+                        </div>
+                        <button onclick="switchView('climate')" class="px-3 py-1.5 rounded-xl bg-[#102a3b] text-white font-bold text-xs cursor-pointer">
+                            Open Airco Scherm →
+                        </button>
+                    </div>
+                    <p class="text-xs text-[#68736d]">
+                        Voeg je airco-units toe met hun Home Assistant `climate.*` entiteit om temperatuur, modus (Koelen/Verwarmen), ventilator en swing volledig te bedienen.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <input id="newClimateName" type="text" placeholder="Naam (bijv. Airco Slaapkamer)" class="sm:col-span-5 px-3 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newClimateEntity" list="haEntitiesDatalist" type="text" placeholder="climate.airco_slaapkamer" class="sm:col-span-5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
+                        <button onclick="window.adminAddClimate()" class="sm:col-span-2 bg-[#152920] text-white font-bold py-2.5 px-3 rounded-xl text-xs cursor-pointer">
+                            + Voeg toe
+                        </button>
+                    </div>
+
+                    <div id="adminClimateList" class="space-y-2 max-h-80 overflow-y-auto"></div>
                 </div>
             </div>
 
@@ -1498,6 +1695,39 @@
                 { id: "app1", icon: "🧺", name: "Wasmachine", watts: 65, active: true, entityId: "" },
                 { id: "app2", icon: "🍽️", name: "Vaatwasser", watts: 0, active: false, entityId: "" },
                 { id: "app3", icon: "🚗", name: "Laadpaal EV", watts: 0, active: false, entityId: "" }
+            ],
+            shutters: [
+                { id: "sh1", name: "Rolluik Woonkamer Voor", entityId: "", state: "open", position: 100 },
+                { id: "sh2", name: "Rolluik Keuken / Tuin", entityId: "", state: "open", position: 80 },
+                { id: "sh3", name: "Rolluik Grote Slaapkamer", entityId: "", state: "closed", position: 0 }
+            ],
+            climates: [
+                {
+                    id: "cl1",
+                    name: "Airco Woonkamer",
+                    entityId: "",
+                    hvacMode: "cool",
+                    currentTemp: 21.5,
+                    targetTemp: 20.0,
+                    fanMode: "auto",
+                    swingMode: "off",
+                    hvacModes: ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
+                    fanModes: ["auto", "low", "medium", "high"],
+                    swingModes: ["off", "vertical", "horizontal", "both"]
+                },
+                {
+                    id: "cl2",
+                    name: "Airco Slaapkamer",
+                    entityId: "",
+                    hvacMode: "off",
+                    currentTemp: 19.5,
+                    targetTemp: 18.5,
+                    fanMode: "low",
+                    swingMode: "off",
+                    hvacModes: ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
+                    fanModes: ["auto", "low", "medium", "high"],
+                    swingModes: ["off", "vertical", "horizontal", "both"]
+                }
             ],
             agendaItems: [],
             tasks: [
@@ -1697,6 +1927,8 @@
                         s.entity_id.startsWith('sensor.') ||
                         s.entity_id.startsWith('light.') ||
                         s.entity_id.startsWith('switch.') ||
+                        s.entity_id.startsWith('cover.') ||
+                        s.entity_id.startsWith('climate.') ||
                         s.entity_id.startsWith('calendar.') ||
                         s.entity_id.startsWith('input_number.')
                     )
@@ -1707,6 +1939,102 @@
                     }).join('');
             }
         }
+
+        window.toggleHamburgerMenu = function(open) {
+            const overlay = document.getElementById('hamburgerOverlay');
+            const drawer = document.getElementById('hamburgerDrawer');
+            if (!overlay || !drawer) return;
+            if (open) {
+                overlay.classList.remove('hidden');
+                drawer.classList.remove('translate-x-full');
+            } else {
+                overlay.classList.add('hidden');
+                drawer.classList.add('translate-x-full');
+            }
+        };
+
+        let wsServiceCallId = 100;
+        window.callHomeAssistantService = async function(domain, service, serviceData = {}) {
+            // 1. Als WebSocket open staat, stuur direct razendsnel via WebSocket
+            if (haWebSocket && haWsConnected) {
+                try {
+                    wsServiceCallId++;
+                    haWebSocket.send(JSON.stringify({
+                        id: wsServiceCallId,
+                        type: 'call_service',
+                        domain,
+                        service,
+                        service_data: serviceData
+                    }));
+                    return true;
+                } catch (e) {
+                    console.warn("WS call_service fout:", e);
+                }
+            }
+
+            // 2. Anders via REST API POST /api/services/<domain>/<service>
+            const baseUrl = getCleanHaUrl();
+            const token = (appState.haToken || "").trim();
+            if (!baseUrl || !token) return false;
+
+            try {
+                const res = await fetch(`${baseUrl}/api/services/${domain}/${service}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(serviceData)
+                });
+                if (res.ok) {
+                    setTimeout(() => window.fetchHomeAssistantEntities(true), 600);
+                    return true;
+                }
+            } catch (err) {
+                console.warn("HA REST service call error:", err);
+            }
+            return false;
+        };
+
+        window.autoDetectShuttersAndClimate = function(silent = false) {
+            if (!discoveredHaEntities || !discoveredHaEntities.length) {
+                if (!silent) showToast("Verbind eerst met Home Assistant in Tabblad 2.");
+                return;
+            }
+            const coverEntities = discoveredHaEntities.filter(s => s.entity_id.startsWith('cover.'));
+            const climateEntities = discoveredHaEntities.filter(s => s.entity_id.startsWith('climate.'));
+
+            if (coverEntities.length > 0) {
+                appState.shutters = coverEntities.map((c, idx) => ({
+                    id: 'sh_ha_' + idx,
+                    name: c.attributes?.friendly_name || c.entity_id,
+                    entityId: c.entity_id,
+                    state: c.state || 'open',
+                    position: c.attributes?.current_position ?? (c.state === 'closed' ? 0 : 100)
+                }));
+            }
+            if (climateEntities.length > 0) {
+                appState.climates = climateEntities.map((cl, idx) => ({
+                    id: 'cl_ha_' + idx,
+                    name: cl.attributes?.friendly_name || cl.entity_id,
+                    entityId: cl.entity_id,
+                    hvacMode: cl.state || 'off',
+                    currentTemp: cl.attributes?.current_temperature ?? 21,
+                    targetTemp: cl.attributes?.temperature ?? 20,
+                    fanMode: cl.attributes?.fan_mode || 'auto',
+                    swingMode: cl.attributes?.swing_mode || 'off',
+                    hvacModes: cl.attributes?.hvac_modes || ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
+                    fanModes: cl.attributes?.fan_modes || ["auto", "low", "medium", "high"],
+                    swingModes: cl.attributes?.swing_modes || ["off", "vertical", "horizontal", "both"]
+                }));
+            }
+
+            populateAdminInputs();
+            renderAll();
+            if (!silent) {
+                showToast(`${coverEntities.length} rolluiken en ${climateEntities.length} airco's gevonden in Home Assistant!`);
+            }
+        };
 
         window.autoDetectAndMapHaEntities = function(silent = false) {
             if (!discoveredHaEntities || discoveredHaEntities.length === 0) {
@@ -1975,6 +2303,40 @@
                 }
             });
 
+            // 5. LIVE ROLLUIKEN (COVER.*) UITLEZEN
+            (appState.shutters || []).forEach(sh => {
+                if (sh.entityId && statesMap.has(sh.entityId.trim())) {
+                    const stObj = statesMap.get(sh.entityId.trim());
+                    sh.state = stObj.state;
+                    if (stObj.attributes?.current_position !== undefined) {
+                        sh.position = Number(stObj.attributes.current_position);
+                    } else {
+                        sh.position = stObj.state === 'closed' ? 0 : 100;
+                    }
+                    anyUpdated = true;
+                }
+            });
+
+            // 6. LIVE AIRCO'S (CLIMATE.*) UITLEZEN
+            (appState.climates || []).forEach(cl => {
+                if (cl.entityId && statesMap.has(cl.entityId.trim())) {
+                    const stObj = statesMap.get(cl.entityId.trim());
+                    cl.hvacMode = stObj.state;
+                    if (stObj.attributes?.current_temperature !== undefined) {
+                        cl.currentTemp = Number(stObj.attributes.current_temperature);
+                    }
+                    if (stObj.attributes?.temperature !== undefined) {
+                        cl.targetTemp = Number(stObj.attributes.temperature);
+                    }
+                    if (stObj.attributes?.fan_mode) cl.fanMode = stObj.attributes.fan_mode;
+                    if (stObj.attributes?.swing_mode) cl.swingMode = stObj.attributes.swing_mode;
+                    if (Array.isArray(stObj.attributes?.hvac_modes)) cl.hvacModes = stObj.attributes.hvac_modes;
+                    if (Array.isArray(stObj.attributes?.fan_modes)) cl.fanModes = stObj.attributes.fan_modes;
+                    if (Array.isArray(stObj.attributes?.swing_modes)) cl.swingModes = stObj.attributes.swing_modes;
+                    anyUpdated = true;
+                }
+            });
+
             if (em.priceSensor && statesMap.has(em.priceSensor.trim())) {
                 const priceStateObj = statesMap.get(em.priceSensor.trim());
                 const attrs = priceStateObj.attributes || {};
@@ -2020,6 +2382,12 @@
             }
             if (!appState.powerHistory || !Array.isArray(appState.powerHistory)) {
                 appState.powerHistory = createDefaultHouseholdConfig(activeHouseholdName).powerHistory;
+            }
+            if (!appState.shutters || !Array.isArray(appState.shutters)) {
+                appState.shutters = createDefaultHouseholdConfig(activeHouseholdName).shutters;
+            }
+            if (!appState.climates || !Array.isArray(appState.climates)) {
+                appState.climates = createDefaultHouseholdConfig(activeHouseholdName).climates;
             }
             if (!appState.liveWasteItems) appState.liveWasteItems = [];
             if (!appState.haTodayEvents) appState.haTodayEvents = [];
@@ -2659,6 +3027,11 @@
         function normalizeGoogleCalendarEmbedUrl(rawInput) {
             const val = (rawInput || "").trim();
             if (!val) return "";
+            // Als de gebruiker een volledige <iframe src="..."></iframe> code heeft geplakt, haal de src-link eruit!
+            const iframeSrcMatch = val.match(/src=["']([^"']+)["']/i);
+            if (iframeSrcMatch && iframeSrcMatch[1]) {
+                return iframeSrcMatch[1].replace(/&amp;/g, '&');
+            }
             if (val.startsWith("http://") || val.startsWith("https://")) {
                 return val;
             }
@@ -2828,7 +3201,373 @@
             renderDisplayTasks();
             renderDisplayWaste();
             renderGoogleCalendarTab();
+            renderShuttersView();
+            renderClimateView();
         }
+
+        function renderShuttersView() {
+            const container = document.getElementById('shuttersGridContainer');
+            const badge = document.getElementById('menuShuttersCountBadge');
+            const shutters = appState.shutters || [];
+            if (badge) badge.textContent = `${shutters.length} units`;
+            if (!container) return;
+
+            if (shutters.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full bg-white rounded-[26px] p-8 text-center space-y-3">
+                        <p class="text-lg font-bold text-[#1c2520]">Nog geen rolluiken gekoppeld</p>
+                        <p class="text-xs text-[#68736d]">Voeg je Home Assistant <code>cover.*</code> entiteiten toe in het Beheerpaneel (Tabblad 7).</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = shutters.map((sh, idx) => {
+                const pos = Math.max(0, Math.min(100, Math.round(Number(sh.position) ?? 100)));
+                const isClosed = pos === 0 || sh.state === 'closed';
+                const statusLabel = isClosed ? 'Gesloten (0%)' : pos === 100 ? 'Volledig Open (100%)' : `Geopend (${pos}%)`;
+                const closedHeightPct = 100 - pos;
+
+                return `
+                    <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/80 flex flex-col justify-between gap-5">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#1c2520]">🪟 ${sh.name}</h3>
+                                    <p class="text-[11px] font-mono text-[#68736d]">${sh.entityId || 'Lokale bediening / Demo'}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-extrabold ${isClosed ? 'bg-stone-200 text-stone-700' : 'bg-[#dcece3] text-[#152920]'}">
+                                    ${statusLabel}
+                                </span>
+                            </div>
+
+                            <!-- Visuele Raam & Rolluik Lamellen Weergave -->
+                            <div class="relative h-28 rounded-2xl bg-gradient-to-b from-sky-100 to-emerald-50 border-2 border-stone-300 overflow-hidden mb-4">
+                                <div class="w-full bg-[#38443d] transition-all duration-500 flex flex-col justify-end" style="height: ${closedHeightPct}%; background-image: repeating-linear-gradient(0deg, #2c3630, #2c3630 6px, #435149 6px, #435149 8px);">
+                                    <div class="h-1.5 w-full bg-[#152920]"></div>
+                                </div>
+                                <div class="absolute bottom-2 right-3 bg-white/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-[#152920] shadow-2xs">
+                                    ${pos}% open
+                                </div>
+                            </div>
+
+                            <!-- Positie Slider -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold text-[#55605a]">
+                                    <span>Dicht (0%)</span>
+                                    <span>Stand: ${pos}%</span>
+                                    <span>Open (100%)</span>
+                                </div>
+                                <input type="range" min="0" max="100" step="5" value="${pos}" onchange="window.setShutterPosition(${idx}, this.value)" class="w-full accent-[#152920] cursor-pointer h-2 rounded-lg">
+                            </div>
+                        </div>
+
+                        <!-- Bedieningsknoppen: Omhoog, Stop, Omlaag -->
+                        <div class="grid grid-cols-3 gap-2.5 pt-2 border-t border-stone-100">
+                            <button onclick="window.controlSingleShutter(${idx}, 'open_cover')" class="bg-[#e8f2ec] hover:bg-[#dcece3] text-[#152920] font-extrabold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
+                                <span class="text-base">↑</span>
+                                <span>Openen</span>
+                            </button>
+                            <button onclick="window.controlSingleShutter(${idx}, 'stop_cover')" class="bg-stone-100 hover:bg-stone-200 text-[#1c2520] font-bold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
+                                <span class="text-base">⏹</span>
+                                <span>Stop</span>
+                            </button>
+                            <button onclick="window.controlSingleShutter(${idx}, 'close_cover')" class="bg-[#152920] hover:bg-[#233d30] text-white font-extrabold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
+                                <span class="text-base">↓</span>
+                                <span>Sluiten</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.controlSingleShutter = async function(idx, action) {
+            const sh = appState.shutters?.[idx];
+            if (!sh) return;
+            if (action === 'open_cover') { sh.state = 'open'; sh.position = 100; }
+            if (action === 'close_cover') { sh.state = 'closed'; sh.position = 0; }
+
+            if (sh.entityId) {
+                await window.callHomeAssistantService('cover', action, { entity_id: sh.entityId });
+            }
+            renderShuttersView();
+            persistStateToFirestore(false);
+            showToast(`${sh.name}: ${action === 'open_cover' ? 'Openen ↑' : action === 'close_cover' ? 'Sluiten ↓' : 'Gestopt ⏹'}`);
+        };
+
+        window.setShutterPosition = async function(idx, positionVal) {
+            const sh = appState.shutters?.[idx];
+            if (!sh) return;
+            const pos = Math.max(0, Math.min(100, parseInt(positionVal, 10) || 0));
+            sh.position = pos;
+            sh.state = pos === 0 ? 'closed' : 'open';
+
+            if (sh.entityId) {
+                await window.callHomeAssistantService('cover', 'set_cover_position', {
+                    entity_id: sh.entityId,
+                    position: pos
+                });
+            }
+            renderShuttersView();
+            persistStateToFirestore(false);
+            showToast(`${sh.name} ingesteld op ${pos}%`);
+        };
+
+        window.controlAllShutters = async function(action) {
+            (appState.shutters || []).forEach((sh, i) => {
+                window.controlSingleShutter(i, action);
+            });
+        };
+
+        function renderClimateView() {
+            const container = document.getElementById('climateGridContainer');
+            const badge = document.getElementById('menuClimateCountBadge');
+            const climates = appState.climates || [];
+            if (badge) badge.textContent = `${climates.length} airco's`;
+            if (!container) return;
+
+            const modeMeta = {
+                off: { label: "Uit", icon: "⏻", pill: "bg-stone-200 text-stone-700", activeBtn: "bg-stone-700 text-white" },
+                cool: { label: "Koelen", icon: "❄️", pill: "bg-sky-100 text-sky-800", activeBtn: "bg-sky-600 text-white" },
+                heat: { label: "Verwarmen", icon: "🔥", pill: "bg-orange-100 text-orange-800", activeBtn: "bg-orange-600 text-white" },
+                heat_cool: { label: "Auto", icon: "🔄", pill: "bg-emerald-100 text-emerald-800", activeBtn: "bg-emerald-700 text-white" },
+                auto: { label: "Auto", icon: "🔄", pill: "bg-emerald-100 text-emerald-800", activeBtn: "bg-emerald-700 text-white" },
+                dry: { label: "Drogen", icon: "💧", pill: "bg-amber-100 text-amber-800", activeBtn: "bg-amber-600 text-white" },
+                fan_only: { label: "Ventilator", icon: "🌀", pill: "bg-teal-100 text-teal-800", activeBtn: "bg-teal-700 text-white" }
+            };
+
+            container.innerHTML = climates.map((cl, idx) => {
+                const mode = cl.hvacMode || 'off';
+                const meta = modeMeta[mode] || modeMeta.off;
+                const modesList = ["off", "cool", "heat", "heat_cool", "dry", "fan_only"];
+                const fanList = cl.fanModes?.length ? cl.fanModes : ["auto", "low", "medium", "high"];
+                const swingList = cl.swingModes?.length ? cl.swingModes : ["off", "vertical", "horizontal", "both"];
+
+                return `
+                    <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/80 flex flex-col justify-between gap-5">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#1c2520]">${meta.icon} ${cl.name}</h3>
+                                    <p class="text-[11px] font-mono text-[#68736d]">${cl.entityId || 'Lokale bediening / Demo'}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-extrabold ${meta.pill}">
+                                    ${meta.icon} ${meta.label}
+                                </span>
+                            </div>
+
+                            <!-- Grote Temperatuur Regelaar (- / +) -->
+                            <div class="bg-[#f4f7f4] rounded-2xl p-4 flex items-center justify-between mb-4 border border-stone-200/60">
+                                <button onclick="window.adjustAircoTemp(${idx}, -0.5)" class="w-12 h-12 rounded-2xl bg-white hover:bg-stone-100 shadow-xs text-xl font-extrabold text-[#152920] cursor-pointer transition">
+                                    −
+                                </button>
+                                <div class="text-center">
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-[#68736d]">Doeltemperatuur</p>
+                                    <p class="text-3xl font-extrabold text-[#1c2520] mt-0.5">${formatNum(cl.targetTemp ?? 20, 1)} °C</p>
+                                    <p class="text-xs font-semibold text-[#197447] mt-0.5">Nu in kamer: ${formatNum(cl.currentTemp ?? 21, 1)} °C</p>
+                                </div>
+                                <button onclick="window.adjustAircoTemp(${idx}, 0.5)" class="w-12 h-12 rounded-2xl bg-white hover:bg-stone-100 shadow-xs text-xl font-extrabold text-[#152920] cursor-pointer transition">
+                                    +
+                                </button>
+                            </div>
+
+                            <!-- Modus Knoppen (Uit, Koelen, Verwarmen, Auto, Droog, Ventilator) -->
+                            <div class="mb-4">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-[#68736d] mb-2">Modus kiezen</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    ${modesList.map(m => {
+                                        const mInfo = modeMeta[m] || modeMeta.off;
+                                        const isActive = mode === m;
+                                        return `
+                                            <button onclick="window.setAircoHvacMode(${idx}, '${m}')" class="py-2 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${isActive ? mInfo.activeBtn + ' shadow-xs' : 'bg-stone-100 hover:bg-stone-200 text-[#38443d]'}">
+                                                <span>${mInfo.icon}</span>
+                                                <span>${mInfo.label}</span>
+                                            </button>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ventilatorsnelheid & Swing Lamellen -->
+                        <div class="grid grid-cols-2 gap-3 pt-3 border-t border-stone-100">
+                            <div>
+                                <label class="block text-[11px] font-bold text-[#55605a] mb-1">🌀 Ventilator</label>
+                                <select onchange="window.setAircoFanMode(${idx}, this.value)" class="w-full px-3 py-2 rounded-xl bg-[#f4f7f4] border border-stone-200 text-xs font-bold text-[#1c2520] cursor-pointer">
+                                    ${fanList.map(f => `<option value="${f}" ${cl.fanMode === f ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-[#55605a] mb-1">↕️ Swing (Lamellen)</label>
+                                <select onchange="window.setAircoSwingMode(${idx}, this.value)" class="w-full px-3 py-2 rounded-xl bg-[#f4f7f4] border border-stone-200 text-xs font-bold text-[#1c2520] cursor-pointer">
+                                    ${swingList.map(sw => `<option value="${sw}" ${cl.swingMode === sw ? 'selected' : ''}>${sw.toUpperCase()}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.adjustAircoTemp = async function(idx, delta) {
+            const cl = appState.climates?.[idx];
+            if (!cl) return;
+            const nextTemp = Math.max(16, Math.min(30, Number((Number(cl.targetTemp || 20) + delta).toFixed(1))));
+            cl.targetTemp = nextTemp;
+            if (cl.hvacMode === 'off') cl.hvacMode = 'cool';
+
+            if (cl.entityId) {
+                await window.callHomeAssistantService('climate', 'set_temperature', {
+                    entity_id: cl.entityId,
+                    temperature: nextTemp
+                });
+            }
+            renderClimateView();
+            persistStateToFirestore(false);
+            showToast(`${cl.name} ingesteld op ${formatNum(nextTemp, 1)} °C`);
+        };
+
+        window.setAircoHvacMode = async function(idx, newMode) {
+            const cl = appState.climates?.[idx];
+            if (!cl) return;
+            cl.hvacMode = newMode;
+
+            if (cl.entityId) {
+                await window.callHomeAssistantService('climate', 'set_hvac_mode', {
+                    entity_id: cl.entityId,
+                    hvac_mode: newMode
+                });
+            }
+            renderClimateView();
+            persistStateToFirestore(false);
+            showToast(`${cl.name} modus: ${newMode.toUpperCase()}`);
+        };
+
+        window.setAircoFanMode = async function(idx, newFan) {
+            const cl = appState.climates?.[idx];
+            if (!cl) return;
+            cl.fanMode = newFan;
+
+            if (cl.entityId) {
+                await window.callHomeAssistantService('climate', 'set_fan_mode', {
+                    entity_id: cl.entityId,
+                    fan_mode: newFan
+                });
+            }
+            renderClimateView();
+            persistStateToFirestore(false);
+            showToast(`${cl.name} ventilator: ${newFan}`);
+        };
+
+        window.setAircoSwingMode = async function(idx, newSwing) {
+            const cl = appState.climates?.[idx];
+            if (!cl) return;
+            cl.swingMode = newSwing;
+
+            if (cl.entityId) {
+                await window.callHomeAssistantService('climate', 'set_swing_mode', {
+                    entity_id: cl.entityId,
+                    swing_mode: newSwing
+                });
+            }
+            renderClimateView();
+            persistStateToFirestore(false);
+            showToast(`${cl.name} swing: ${newSwing}`);
+        };
+
+        window.turnOffAllAircos = async function() {
+            (appState.climates || []).forEach((cl, i) => {
+                window.setAircoHvacMode(i, 'off');
+            });
+        };
+
+        function renderAdminShuttersAndClimateLists() {
+            const shEl = document.getElementById('adminShuttersList');
+            const clEl = document.getElementById('adminClimateList');
+            if (shEl) {
+                shEl.innerHTML = (appState.shutters || []).map((sh, idx) => `
+                    <div class="flex items-center justify-between gap-2 bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl border border-stone-200/70">
+                        <div>
+                            <p class="text-xs font-bold text-[#1c2520]">🪟 ${sh.name}</p>
+                            <p class="text-[10px] font-mono text-[#197447]">${sh.entityId || 'Geen HA cover.* gekoppeld'}</p>
+                        </div>
+                        <button onclick="window.adminRemoveShutter(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+            }
+            if (clEl) {
+                clEl.innerHTML = (appState.climates || []).map((cl, idx) => `
+                    <div class="flex items-center justify-between gap-2 bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl border border-stone-200/70">
+                        <div>
+                            <p class="text-xs font-bold text-[#1c2520]">❄️ ${cl.name}</p>
+                            <p class="text-[10px] font-mono text-[#0369a1]">${cl.entityId || 'Geen HA climate.* gekoppeld'}</p>
+                        </div>
+                        <button onclick="window.adminRemoveClimate(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        window.adminAddShutter = function() {
+            const name = document.getElementById('newShutterName').value.trim();
+            const entityId = document.getElementById('newShutterEntity').value.trim();
+            if (!name) {
+                showToast("Geef het rolluik een naam.");
+                return;
+            }
+            if (!appState.shutters) appState.shutters = [];
+            appState.shutters.push({ id: 'sh_' + Date.now(), name, entityId, state: 'open', position: 100 });
+            document.getElementById('newShutterName').value = '';
+            document.getElementById('newShutterEntity').value = '';
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderAdminShuttersAndClimateLists();
+            renderShuttersView();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveShutter = function(idx) {
+            appState.shutters.splice(idx, 1);
+            renderAdminShuttersAndClimateLists();
+            renderShuttersView();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddClimate = function() {
+            const name = document.getElementById('newClimateName').value.trim();
+            const entityId = document.getElementById('newClimateEntity').value.trim();
+            if (!name) {
+                showToast("Geef de airco een naam.");
+                return;
+            }
+            if (!appState.climates) appState.climates = [];
+            appState.climates.push({
+                id: 'cl_' + Date.now(),
+                name,
+                entityId,
+                hvacMode: 'off',
+                currentTemp: 21.0,
+                targetTemp: 20.0,
+                fanMode: 'auto',
+                swingMode: 'off',
+                hvacModes: ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
+                fanModes: ["auto", "low", "medium", "high"],
+                swingModes: ["off", "vertical", "horizontal", "both"]
+            });
+            document.getElementById('newClimateName').value = '';
+            document.getElementById('newClimateEntity').value = '';
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderAdminShuttersAndClimateLists();
+            renderClimateView();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveClimate = function(idx) {
+            appState.climates.splice(idx, 1);
+            renderAdminShuttersAndClimateLists();
+            renderClimateView();
+            persistStateToFirestore(true);
+        };
 
         function renderDisplayAppliancesFlow() {
             const container = document.getElementById('appliancesFlowContainer');
@@ -3168,11 +3907,11 @@
             renderCustomAdviceList();
             renderAdminLists();
             renderAdminAppliancesList();
+            renderAdminShuttersAndClimateLists();
             updateAdminRolePermissionsUI();
         }
 
         function updateNavigationAndRoleVisibility() {
-            const topSystemNav = document.getElementById('topSystemNav');
             const navBtnUserPortal = document.getElementById('navBtnUserPortal');
             const navBtnAdmin = document.getElementById('navBtnAdmin');
             const adminNavIcon = document.getElementById('adminNavIcon');
@@ -3181,15 +3920,11 @@
             const householdSwitcherWrap = document.getElementById('superAdminHouseholdSwitcherWrap');
 
             if (!currentRole) {
-                topSystemNav.classList.add('hidden');
-                topSystemNav.classList.remove('flex');
                 roleBadge.classList.add('hidden');
                 householdSwitcherWrap.classList.add('hidden');
                 return;
             }
 
-            topSystemNav.classList.remove('hidden');
-            topSystemNav.classList.add('flex');
             roleBadge.classList.remove('hidden');
 
             if (currentRole === 'user') {
@@ -3491,24 +4226,50 @@
                 if (view === 'calendar') renderGoogleCalendarTab();
             }
 
+            const vShutters = document.getElementById('viewShutters');
+            if (vShutters) {
+                vShutters.classList.toggle('hidden', view !== 'shutters');
+                vShutters.classList.toggle('flex', view === 'shutters');
+                if (view === 'shutters') renderShuttersView();
+            }
+
+            const vClimate = document.getElementById('viewClimate');
+            if (vClimate) {
+                vClimate.classList.toggle('hidden', view !== 'climate');
+                vClimate.classList.toggle('flex', view === 'climate');
+                if (view === 'climate') renderClimateView();
+            }
+
             document.getElementById('viewLogin').classList.toggle('hidden', view !== 'login');
             document.getElementById('viewLogin').classList.toggle('flex', view === 'login');
 
             document.getElementById('viewUserPortal').classList.toggle('hidden', view !== 'userPortal');
             document.getElementById('viewAdmin').classList.toggle('hidden', view !== 'admin');
 
+            // Op het Wanddisplay en Login is de bovenbalk verborgen (alles zit achter het Hamburger-menu naast 18 oktober & rechtsboven)
+            const topSystemNav = document.getElementById('topSystemNav');
+            if (topSystemNav) {
+                const showSubBar = currentRole && view !== 'display' && view !== 'login';
+                topSystemNav.classList.toggle('hidden', !showSubBar);
+                topSystemNav.classList.toggle('flex', !!showSubBar);
+            }
+
             const btnDisplay = document.getElementById('navBtnDisplay');
+            const btnShutters = document.getElementById('navBtnShutters');
+            const btnClimate = document.getElementById('navBtnClimate');
             const btnCal = document.getElementById('navBtnCalendar');
             const btnUser = document.getElementById('navBtnUserPortal');
             const btnAdmin = document.getElementById('navBtnAdmin');
 
-            const activeClass = 'px-3.5 py-1.5 rounded-xl font-semibold bg-white text-[#152920] transition flex items-center gap-1.5 cursor-pointer';
-            const inactiveClass = 'px-3.5 py-1.5 rounded-xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1.5 cursor-pointer';
+            const activeClass = 'w-full px-4 py-3 rounded-2xl font-bold bg-white text-[#152920] transition flex items-center gap-3 cursor-pointer text-sm';
+            const inactiveClass = 'w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-3 cursor-pointer text-sm';
 
-            btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
+            if (btnDisplay) btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
+            if (btnShutters) btnShutters.className = view === 'shutters' ? activeClass : inactiveClass;
+            if (btnClimate) btnClimate.className = view === 'climate' ? activeClass : inactiveClass;
             if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
-            if (currentRole) btnUser.className = view === 'userPortal' ? activeClass : inactiveClass;
-            if (currentRole === 'manager' || currentRole === 'admin') btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
+            if (currentRole && btnUser) btnUser.className = view === 'userPortal' ? activeClass : inactiveClass;
+            if ((currentRole === 'manager' || currentRole === 'admin') && btnAdmin) btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
 
             updateNavigationAndRoleVisibility();
         };
@@ -3518,6 +4279,12 @@
                 document.getElementById('loginErrorMsg').classList.add('hidden');
                 document.getElementById('googleAccountChooserBox').classList.add('hidden');
                 window.switchView('login');
+                return;
+            }
+            if ((preferredSection === 'shutters_admin' || preferredSection === 'climate_admin') && (currentRole === 'manager' || currentRole === 'admin')) {
+                updateAdminRolePermissionsUI();
+                window.switchAdminTab('rolluiken_airco');
+                window.switchView('admin');
                 return;
             }
             if (preferredSection === 'agenda' && currentRole === 'user') {
@@ -3637,7 +4404,7 @@
         };
 
         window.switchAdminTab = function(tabName) {
-            const tabs = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda'];
+            const tabs = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco'];
             tabs.forEach(t => {
                 const tabEl = document.getElementById('adminTab_' + t);
                 if (tabEl) tabEl.classList.toggle('hidden', t !== tabName);
