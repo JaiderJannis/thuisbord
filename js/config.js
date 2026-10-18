@@ -14,12 +14,57 @@ const MIJN_EIGEN_FIREBASE_CONFIG = {
 // URL van je Cloudflare Worker voor de EPEX-prijzen (zie ../cloudflare-worker/README.md).
 // Voorbeeld: "https://thuisbord-prijzen.jouwnaam.workers.dev"  (zonder slash op het einde)
 // Leeg laten = direct bij Energy-Charts ophalen (wordt door de browser geblokkeerd via CORS).
-const EPEX_PROXY_URL = "";
+const EPEX_PROXY_URL = "https://thuisbord-prijzen.jaiderjannis.workers.dev/";
 
 // Opslag-indeling in Firestore:
 //   "v2"     = aparte documenten per gezin en per account (aanbevolen, zie FIREBASE.md)
 //   "legacy" = alles in één document (oude manier, enkel als terugvaloptie)
 const FIRESTORE_LAYOUT = "v2";
+
+// Voorbeeld-entiteiten van "Smart Jaider" (uit de Home Assistant smart-ev-card).
+// Sleutels = de velden van de kaart zonder het achtervoegsel "_entity".
+const DEFAULT_SMART_EV_ENTITIES = {
+    status: "sensor.smart_jaider_charger_connected",
+    charge_status: "sensor.smart_jaider_charging_status",
+    time_remaining: "sensor.smart_jaider_charging_time_remaining",
+    battery: "sensor.smart_jaider_battery",
+    range: "sensor.smart_jaider_range",
+    odometer: "sensor.smart_jaider_odometer",
+    interior_temp: "sensor.smart_jaider_interior_temperature",
+    motor: "sensor.smart_jaider_motor",
+    lock: "lock.smart_jaider_door_lock",
+    defrost: "switch.smart_jaider_front_defrost",
+    charge_control: "switch.smart_jaider_charging_control",
+    power: "sensor.smart_jaider_charging_power",
+    charge_current: "sensor.smart_jaider_charging_current",
+    service: "sensor.smart_days_to_service",
+    central_lock: "binary_sensor.smart_jaider_central_locking_status",
+    door_df: "binary_sensor.smart_door_lock_status_driver",
+    door_pf: "binary_sensor.smart_door_lock_status_passenger",
+    door_dr: "binary_sensor.smart_door_lock_status_driver_rear",
+    door_pr: "binary_sensor.smart_door_lock_status_passenger_rear",
+    door_open_df: "binary_sensor.smart_door_open_status_driver",
+    door_open_pf: "binary_sensor.smart_door_open_status_passenger",
+    door_open_dr: "binary_sensor.smart_door_open_status_driver_rear",
+    door_open_pr: "binary_sensor.smart_door_open_status_passenger_rear",
+    tp_df: "sensor.smart_jaider_tire_pressure_driver_front",
+    tp_pf: "sensor.smart_jaider_tire_pressure_passenger_front",
+    tp_dr: "sensor.smart_jaider_tire_pressure_driver_rear",
+    tp_pr: "sensor.smart_jaider_tire_pressure_passenger_rear",
+    tt_df: "sensor.smart_tire_temperature_driver_front",
+    tt_pf: "sensor.smart_tire_temperature_passenger_front",
+    tt_dr: "sensor.smart_tire_temperature_driver_rear",
+    tt_pr: "sensor.smart_tire_temperature_passenger_rear"
+};
+
+function createDefaultCars(householdName) {
+    // De voorbeeld-entiteiten horen bij het eerste gezin van de eigenaar; andere gezinnen starten leeg.
+    const prefill = householdName === "Jannis - Bellens";
+    return [
+        { id: "car1", name: "Smart Jaider", model: "Smart #1", lockOnMeans: "unlocked", entities: prefill ? { ...DEFAULT_SMART_EV_ENTITIES } : {} },
+        { id: "car2", name: "Smart Partner", model: "Smart #1", lockOnMeans: "unlocked", entities: {} }
+    ];
+}
 
 const EIGENAAR_SUPER_ADMIN_EMAIL = "jaiderjannis@gmail.com";
 
@@ -47,6 +92,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
         waterToday: null
     },
     rooms: ["Woonkamer", "Keuken", "Slaapkamer"],
+    cars: createDefaultCars(name),
     entityMap: {
         solarW: "",
         houseW: "",
@@ -64,6 +110,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
         kwhExport: "",
         kwhExportT2: "",
         kwhSolar: "",
+        monthlyPeakW: "",
         priceSensor: "",
         statusLamp: "",
         waste_pmd: "",
@@ -89,6 +136,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
     batteryCap: 15.0,
     gasRate: 0.06,
     gasToday: 0.42,
+    monthlyPeakW: 0,
     gasPricePerM3: 1.32,
     waterRate: 4.5,
     waterTodayLiters: 118,
@@ -168,6 +216,9 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
             icon: "🧹",
             name: "Robotstofzuiger",
             entityId: "",
+            extras: [
+                { id: "rx_bin", icon: "🗑️", label: "Stofbak", entityId: "" }
+            ],
             state: "docked",
             batteryPct: 100,
             lastRun: "Vandaag 09:15",
