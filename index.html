@@ -17,6 +17,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>:root{--bg-sage:#eef2ed}body{background-color:var(--bg-sage)}</style>
+    <script>try{var c=localStorage.getItem('thuisbord_bg');if(c&&/^#[0-9a-f]{6}$/i.test(c))document.documentElement.style.setProperty('--bg-sage',c)}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none">
@@ -871,6 +873,9 @@
                 <button id="adminTabBtn_rolluiken_airco" onclick="switchAdminTab('rolluiken_airco')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
                     🪟❄️ 7. Rolluiken & Airco's
                 </button>
+                <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
+                    🎨 8. Weergave
+                </button>
             </div>
 
             <!-- ================================================================= -->
@@ -1441,6 +1446,20 @@
             </div>
 
             <!-- ================================================================= -->
+            <!-- TAB 8: WEERGAVE (ACHTERGRONDKLEUR)                                -->
+            <!-- ================================================================= -->
+            <div id="adminTab_weergave" class="hidden space-y-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div>
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">🎨 Weergave</span>
+                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Achtergrondkleur</h3>
+                        <p class="text-xs text-[#68736d] mt-0.5">Kies een kleur voor de achtergrond van dit gezin. De keuze wordt automatisch opgeslagen.</p>
+                    </div>
+                    <div id="bgColorPicker"></div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
             <!-- TAB 7: RUIMTES, LAMPEN, ROLLUIKEN & AIRCO'S BEHEREN               -->
             <!-- ================================================================= -->
             <div id="adminTab_rolluiken_airco" class="hidden space-y-6">
@@ -1562,7 +1581,10 @@
     <script defer src="js/config.js"></script>
     <script defer src="js/state.js"></script>
     <script defer src="js/ui.js"></script>
+    <script defer src="js/theme.js"></script>
     <script defer src="js/firebase.js"></script>
+    <script defer src="js/firestore-legacy.js"></script>
+    <script defer src="js/firestore-v2.js"></script>
     <script defer src="js/ha-connection.js"></script>
     <script defer src="js/ha-entities.js"></script>
     <script defer src="js/prices.js"></script>
