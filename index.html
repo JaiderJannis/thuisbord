@@ -143,7 +143,39 @@
     <!-- Slide-Over Hamburger Menu Drawer (Voor zowel Smartphone als Computer) -->
     <div id="hamburgerOverlay" onclick="toggleHamburgerMenu(false)" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden transition-opacity"></div>
     <aside id="hamburgerDrawer" class="fixed top-0 right-0 h-full w-full max-w-sm bg-[#152920] text-white z-50 translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-6 overflow-y-auto border-l border-white/10">
-                    <!-- Navigatie Knoppen in Hamburger Menu -->
+        <div class="space-y-5">
+            <!-- Drawer Header -->
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-8 h-8 rounded-xl shadow-xs shrink-0" viewBox="0 0 512 512">
+                        <rect width="512" height="512" rx="118" fill="#18261f" stroke="#5cd69c" stroke-width="18" stroke-opacity="0.4"/>
+                        <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" fill="none" stroke="#5cd69c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div>
+                        <span class="font-extrabold text-base tracking-tight text-white block leading-none">Thuisbord</span>
+                        <span id="cloudSyncBadge" class="text-[#a3b8ae] text-[11px] font-medium">Verbinden...</span>
+                    </div>
+                </div>
+                <button onclick="toggleHamburgerMenu(false)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Ingelogde Rol & Gezin Switcher -->
+            <div class="space-y-2.5 bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] text-[#a3b8ae] font-semibold">Ingelogd als:</span>
+                    <span id="activeRoleBadge" class="hidden bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold"></span>
+                </div>
+
+                <!-- Super Admin Gezinnen Switcher -->
+                <div id="superAdminHouseholdSwitcherWrap" class="hidden items-center justify-between gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
+                    <span class="text-xs text-[#dcece3] font-semibold">🏡 Actief Gezin:</span>
+                    <select id="superAdminHouseholdSelect" onchange="window.switchActiveHousehold(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer"></select>
+                </div>
+            </div>
+
+            <!-- Navigatie Knoppen in Hamburger Menu -->
             <div class="space-y-2">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Navigatie & Bediening</p>
 
@@ -891,23 +923,6 @@
                 </svg>
                 <span>Doorgaan met Google</span>
             </button>
-
-            <div id="googleAccountChooserBox" class="hidden mt-5 pt-5 border-t border-stone-200/80 space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-[#1c2520]">Kies een Google-account</span>
-                    <span class="text-[11px] text-[#68736d]">Google SSO</span>
-                </div>
-                <div id="googleChooserAccountsList" class="space-y-1.5 max-h-52 overflow-y-auto"></div>
-                <form onsubmit="submitGoogleEmailSignIn(event)" class="pt-2 border-t border-stone-100 space-y-2">
-                    <label class="block text-[11px] font-semibold text-[#55605a]">Of log in met een ander Google e-mailadres:</label>
-                    <div class="flex gap-2">
-                        <input id="customGoogleEmailInput" type="email" placeholder="naam@gmail.com" required class="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 focus:outline-none focus:border-[#152920] text-xs font-medium">
-                        <button type="submit" class="bg-[#152920] hover:bg-[#1e3a2d] text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer shrink-0">
-                            Inloggen
-                        </button>
-                    </div>
-                </form>
-            </div>
 
             <p id="loginErrorMsg" class="text-xs font-semibold text-red-600 hidden text-center mt-4 bg-red-50 p-3 rounded-xl border border-red-100">
                 Dit Google-account heeft geen toegang tot dit Thuisbord. Vraag de beheerder van je gezin om je Google e-mailadres uit te nodigen.
@@ -1660,7 +1675,7 @@
     <!-- ===================================================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // JOUW FIREBASE CONFIGURATIE
@@ -1676,7 +1691,7 @@
         const EIGENAAR_SUPER_ADMIN_EMAIL = "jaiderjannis@gmail.com";
 
         // Standaard template voor een Gezin / Huishouden
-        const createDefaultHouseholdConfig = (name = "Familie Peeters") => ({
+        const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
             householdName: name,
             statusText: "Live via Home Assistant",
             haUrl: "",
@@ -1860,21 +1875,16 @@
             ]
         });
 
-        const getDefaultPlatformState = () => ({
+        // Geen nep-accounts meer: enkel jouw eigen Super Admin account als basis, de rest komt live uit Firebase!
+        let platformState = {
             accounts: [
-                { id: "u1", name: "Jaider Jannis (Super Admin)", email: EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase(), role: "admin", household: "Familie Peeters" },
-                { id: "u2", name: "Tom Peeters", email: "tom@familiepeeters.be", role: "manager", household: "Familie Peeters" },
-                { id: "u3", name: "Sanne Peeters", email: "sanne@familiepeeters.be", role: "user", household: "Familie Peeters" },
-                { id: "u4", name: "Lucas Peeters", email: "lucas@familiepeeters.be", role: "user", household: "Familie Peeters" }
+                { id: "u_super", name: "Jaider Jannis", email: EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase(), role: "admin", household: "Jannis - Bellens" }
             ],
             households: {
-                "Familie Peeters": createDefaultHouseholdConfig("Familie Peeters"),
-                "Familie Janssens": createDefaultHouseholdConfig("Familie Janssens")
+                "Jannis - Bellens": createDefaultHouseholdConfig("Jannis - Bellens")
             }
-        });
-
-        let platformState = getDefaultPlatformState();
-        let activeHouseholdName = "Familie Peeters";
+        };
+        let activeHouseholdName = "Jannis - Bellens";
         let appState = platformState.households[activeHouseholdName];
 
         let currentSelectedHour = new Date().getHours();
@@ -2727,12 +2737,11 @@
         }
 
         function syncActiveHouseholdPointer() {
-            if (!platformState.households) platformState.households = {};
+            if (!platformState.households || Object.keys(platformState.households).length === 0) {
+                platformState.households = { "Jannis - Bellens": createDefaultHouseholdConfig("Jannis - Bellens") };
+            }
             if (!platformState.households[activeHouseholdName]) {
-                const firstKey = Object.keys(platformState.households)[0] || "Familie Peeters";
-                if (!platformState.households[firstKey]) {
-                    platformState.households[firstKey] = createDefaultHouseholdConfig(firstKey);
-                }
+                const firstKey = Object.keys(platformState.households)[0];
                 activeHouseholdName = firstKey;
             }
             appState = platformState.households[activeHouseholdName];
@@ -2778,7 +2787,7 @@
                 }
 
                 if (!firebaseConfig) {
-                    badge.textContent = "Lokale Modus";
+                    if (badge) badge.textContent = "Lokale Modus";
                     syncActiveHouseholdPointer();
                     renderAll();
                     populateAdminInputs();
@@ -2789,9 +2798,19 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
+                // Verwerk eventuele Google Redirect-login (bijv. vanaf iPhone Safari)
+                try {
+                    const redirectRes = await getRedirectResult(auth);
+                    if (redirectRes && redirectRes.user && redirectRes.user.email) {
+                        completeGoogleSignInWithEmail(redirectRes.user.email, redirectRes.user.displayName);
+                    }
+                } catch (redirErr) {
+                    console.warn("Redirect result check:", redirErr);
+                }
+
                 if (!hasCustomConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                } else if (!hasCustomConfig) {
+                } else if (!hasCustomConfig && !auth.currentUser) {
                     await signInAnonymously(auth);
                 }
 
@@ -2799,8 +2818,9 @@
                     currentUser = user;
                     if (!user) return;
 
-                    document.getElementById('firebaseUidBadge').textContent = `Cloud ID: ${user.uid.substring(0, 8)}`;
-                    badge.textContent = "☁️ Live verbonden met Firebase";
+                    const uidEl = document.getElementById('firebaseUidBadge');
+                    if (uidEl) uidEl.textContent = `Cloud ID: ${user.uid.substring(0, 8)}`;
+                    if (badge) badge.textContent = "☁️ Live verbonden met Firebase";
 
                     const configDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'thuisbord_settings', 'main_dashboard');
 
@@ -2814,6 +2834,7 @@
                                 }
                                 if (cloudData.householdsJson) {
                                     const parsedHouseholds = JSON.parse(cloudData.householdsJson);
+                                    platformState.households = {};
                                     Object.keys(parsedHouseholds).forEach(hName => {
                                         platformState.households[hName] = {
                                             ...createDefaultHouseholdConfig(hName),
@@ -2827,12 +2848,13 @@
                                 }
                                 const hasSuperAdmin = (platformState.accounts || []).some(a => (a.email || "").toLowerCase() === EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase());
                                 if (!hasSuperAdmin) {
+                                    const firstHousehold = Object.keys(platformState.households)[0] || "Jannis - Bellens";
                                     platformState.accounts.unshift({
                                         id: "u_super",
                                         name: "Jaider Jannis",
                                         email: EIGENAAR_SUPER_ADMIN_EMAIL.toLowerCase(),
                                         role: "admin",
-                                        household: "Familie Peeters"
+                                        household: firstHousehold
                                     });
                                 }
                                 syncActiveHouseholdPointer();
@@ -2849,13 +2871,13 @@
                         },
                         (error) => {
                             console.error("Firestore Listener Error:", error);
-                            badge.textContent = "⚠️ Cloud leesfout";
+                            if (badge) badge.textContent = "⚠️ Cloud leesfout";
                         }
                     );
                 });
             } catch (err) {
                 console.error("Firebase init error:", err);
-                badge.textContent = "Offline Modus";
+                if (badge) badge.textContent = "Offline Modus";
             }
         }
 
@@ -4964,39 +4986,41 @@
             const householdSwitcherWrap = document.getElementById('superAdminHouseholdSwitcherWrap');
 
             if (!currentRole) {
-                roleBadge.classList.add('hidden');
-                householdSwitcherWrap.classList.add('hidden');
+                if (roleBadge) roleBadge.classList.add('hidden');
+                if (householdSwitcherWrap) householdSwitcherWrap.classList.add('hidden');
                 return;
             }
 
-            roleBadge.classList.remove('hidden');
+            if (roleBadge) roleBadge.classList.remove('hidden');
 
             if (currentRole === 'user') {
-                roleBadge.textContent = `${currentLoggedUserName} (${activeHouseholdName})`;
+                if (roleBadge) roleBadge.textContent = `${currentLoggedUserName} (${activeHouseholdName})`;
                 if (navBtnAdmin) {
                     navBtnAdmin.classList.add('hidden');
                     navBtnAdmin.classList.remove('flex');
                 }
-                householdSwitcherWrap.classList.add('hidden');
+                if (householdSwitcherWrap) householdSwitcherWrap.classList.add('hidden');
             } else if (currentRole === 'manager') {
-                roleBadge.textContent = `${currentLoggedUserName} (${activeHouseholdName})`;
+                if (roleBadge) roleBadge.textContent = `${currentLoggedUserName} (${activeHouseholdName})`;
                 if (navBtnAdmin) {
                     navBtnAdmin.classList.remove('hidden');
                     navBtnAdmin.classList.add('flex');
                 }
-                adminNavIcon.textContent = '🏡';
-                adminNavLabel.textContent = 'Gezinsbeheer';
-                householdSwitcherWrap.classList.add('hidden');
+                if (adminNavIcon) adminNavIcon.textContent = '🏡';
+                if (adminNavLabel) adminNavLabel.textContent = 'Gezinsbeheer';
+                if (householdSwitcherWrap) householdSwitcherWrap.classList.add('hidden');
             } else if (currentRole === 'admin') {
-                roleBadge.textContent = `👑 ${currentLoggedUserName}`;
+                if (roleBadge) roleBadge.textContent = `👑 ${currentLoggedUserName}`;
                 if (navBtnAdmin) {
                     navBtnAdmin.classList.remove('hidden');
                     navBtnAdmin.classList.add('flex');
                 }
-                adminNavIcon.textContent = '👑';
-                adminNavLabel.textContent = 'Platform & Gezinnen Beheer';
-                householdSwitcherWrap.classList.remove('hidden');
-                householdSwitcherWrap.classList.add('flex');
+                if (adminNavIcon) adminNavIcon.textContent = '👑';
+                if (adminNavLabel) adminNavLabel.textContent = 'Platform & Gezinnen Beheer';
+                if (householdSwitcherWrap) {
+                    householdSwitcherWrap.classList.remove('hidden');
+                    householdSwitcherWrap.classList.add('flex');
+                }
             }
         }
 
@@ -5401,8 +5425,8 @@
 
         window.openAuthorizedPortalOrLogin = function(preferredSection = null) {
             if (!currentRole) {
-                document.getElementById('loginErrorMsg').classList.add('hidden');
-                document.getElementById('googleAccountChooserBox').classList.add('hidden');
+                const errEl = document.getElementById('loginErrorMsg');
+                if (errEl) errEl.classList.add('hidden');
                 window.switchView('login');
                 return;
             }
@@ -5429,11 +5453,11 @@
             );
 
             if (!matchedAccount) {
-                errEl.classList.remove('hidden');
+                if (errEl) errEl.classList.remove('hidden');
                 return;
             }
 
-            errEl.classList.add('hidden');
+            if (errEl) errEl.classList.add('hidden');
             currentRole = matchedAccount.role;
             currentLoggedUserName = matchedAccount.name || displayName || cleanEmail;
             currentLoggedUserEmail = matchedAccount.email;
@@ -5461,61 +5485,37 @@
             }
         }
 
-        function renderGoogleAccountChooser() {
-            const box = document.getElementById('googleAccountChooserBox');
-            const listEl = document.getElementById('googleChooserAccountsList');
-            box.classList.remove('hidden');
-
-            const accounts = platformState.accounts || [];
-            listEl.innerHTML = accounts.map((acc) => `
-                <button type="button" onclick="window.selectGoogleChooserAccount('${acc.email}')" class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#f4f7f4] border border-stone-200/80 transition text-left cursor-pointer">
-                    <div class="w-8 h-8 rounded-full bg-[#152920] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                        ${(acc.name || 'G').charAt(0).toUpperCase()}
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-bold text-[#1c2520] truncate">${acc.name}</p>
-                        <p class="text-[11px] text-[#68736d] truncate">${acc.email} • ${acc.household || ''}</p>
-                    </div>
-                </button>
-            `).join('');
-        }
-
-        window.selectGoogleChooserAccount = function(email) {
-            completeGoogleSignInWithEmail(email);
-        };
-
-        window.submitGoogleEmailSignIn = function(e) {
-            e.preventDefault();
-            const email = document.getElementById('customGoogleEmailInput').value;
-            completeGoogleSignInWithEmail(email);
-        };
-
         window.triggerGoogleSignIn = async function() {
-            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
-                try {
-                    const provider = new GoogleAuthProvider();
-                    const result = await signInWithPopup(auth, provider);
-                    if (result && result.user && result.user.email) {
-                        completeGoogleSignInWithEmail(result.user.email, result.user.displayName);
-                        return;
-                    }
-                } catch (popupErr) {
-                    console.warn("Google OAuth Popup kon niet worden geopend, overschakelen naar accountkiezer:", popupErr);
-                    renderGoogleAccountChooser();
-                    return;
+            if (!auth) {
+                showToast("Firebase verbinding wordt gestart, probeer het over een seconde opnieuw.");
+                return;
+            }
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            try {
+                const result = await signInWithPopup(auth, provider);
+                if (result && result.user && result.user.email) {
+                    completeGoogleSignInWithEmail(result.user.email, result.user.displayName);
+                }
+            } catch (popupErr) {
+                console.warn("Popup geblokkeerd of geannuleerd, probeer redirect:", popupErr);
+                if (popupErr.code === 'auth/popup-blocked') {
+                    await signInWithRedirect(auth, provider);
+                } else if (popupErr.code === 'auth/unauthorized-domain') {
+                    showToast("Voeg dit domein toe bij Firebase Console -> Authentication -> Settings -> Authorized domains");
+                } else {
+                    showToast("Google inloggen geannuleerd of mislukt.");
                 }
             }
-            renderGoogleAccountChooser();
         };
 
         window.logoutSession = async function() {
-            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
+            if (auth) {
                 try { await signOut(auth); } catch (e) {}
             }
             currentRole = null;
             currentLoggedUserName = "";
             currentLoggedUserEmail = "";
-            document.getElementById('googleAccountChooserBox').classList.add('hidden');
             updateNavigationAndRoleVisibility();
             window.switchView('login');
             showToast("Je bent uitgelogd");
