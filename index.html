@@ -813,6 +813,42 @@
     <!-- Legacy ViewClimate & ViewUserPortal kept hidden for compatibility -->
     <div id="viewClimate" class="hidden"></div>
     <div id="viewUserPortal" class="hidden"></div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: GOOGLE SSO INLOGSCHERM (STANDAARD ZICHTBAAR BIJ START)        -->
+    <!-- ===================================================================== -->
+    <div id="viewLogin" class="flex flex-1 items-center justify-center p-4 min-h-screen">
+        <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-lg border border-black/5">
+            <div class="w-16 h-16 rounded-2xl bg-[#18261f] flex items-center justify-center mb-4 mx-auto shadow-md border border-[#5cd69c]/30">
+                <svg class="w-11 h-11" viewBox="0 0 512 512" fill="none">
+                    <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" stroke="#5cd69c" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="text-center mb-6">
+                <span class="inline-flex items-center gap-1.5 bg-[#e8f2ec] text-[#1c643f] text-[11px] font-extrabold px-3 py-1 rounded-full mb-2">
+                    🔒 Beveiligde Gezinsomgeving
+                </span>
+                <h2 class="text-2xl font-bold text-[#1c2520]">Welkom bij Thuisbord</h2>
+                <p class="text-xs text-[#68736d] mt-1.5 leading-relaxed">
+                    Log in met je persoonlijke Google-account om het wanddisplay en jouw gezinsomgeving te openen.
+                </p>
+            </div>
+
+            <!-- Official Google Sign-In Button -->
+            <button type="button" onclick="triggerGoogleSignIn()" class="w-full bg-white hover:bg-stone-50 text-[#1c2520] font-bold py-3.5 px-4 rounded-2xl border border-stone-300 transition cursor-pointer shadow-xs flex items-center justify-center gap-3 text-sm">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+                </svg>
+                <span>Doorgaan met Google</span>
+            </button>
+
+            <div id="googleAccountChooserBox" class="hidden mt-5 pt-5 border-t border-stone-200/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-[#1c2520]">Kies een Google-account</span>
+                    <span class="text-[11px] text-[#68736d]">Google SSO</span>
                 </div>
                 <div id="googleChooserAccountsList" class="space-y-1.5 max-h-52 overflow-y-auto"></div>
                 <form onsubmit="submitGoogleEmailSignIn(event)" class="pt-2 border-t border-stone-100 space-y-2">
@@ -829,56 +865,6 @@
             <p id="loginErrorMsg" class="text-xs font-semibold text-red-600 hidden text-center mt-4 bg-red-50 p-3 rounded-xl border border-red-100">
                 Dit Google-account heeft geen toegang tot dit Thuisbord. Vraag de beheerder van je gezin om je Google e-mailadres uit te nodigen.
             </p>
-        </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- VIEW 2B: GEZINSPORTAAL (VOOR GEWONE GEZINSLEDEN - ENKEL AGENDA/TAKEN) -->
-    <!-- ===================================================================== -->
-    <div id="viewUserPortal" class="hidden flex-1 p-4 sm:p-6 lg:p-8">
-        <div class="max-w-4xl w-full mx-auto">
-            <div class="bg-[#1f4e37] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-                <div>
-                    <span id="userPortalBadgeText" class="bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full">🏡 Familie Agenda & Taken</span>
-                    <h2 class="text-2xl font-bold mt-2">Agenda Vandaag & Taken</h2>
-                    <p class="text-sm text-[#dcece3] mt-0.5">Voeg hier afspraken voor vandaag en huishoudtaken toe voor op het wanddisplay.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="switchView('calendar')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
-                        🗓️ Maandkalender
-                    </button>
-                    <button onclick="switchView('display')" class="bg-white text-[#152920] font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer">
-                        ← Bekijk Wanddisplay
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-[26px] p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Afspraak voor Vandaag Toevoegen</h3>
-                    <p class="text-xs text-[#68736d] mb-4">Komt direct onder 'Agenda vandaag' op het wanddisplay te staan.</p>
-                    <div class="flex flex-col sm:flex-row gap-2 mb-4">
-                        <input id="userNewAgendaTime" type="text" placeholder="Tijd (bijv. 14:00)" class="sm:w-28 px-3 py-2 rounded-xl border border-stone-200 text-sm">
-                        <input id="userNewAgendaTitle" type="text" placeholder="Afspraak (bijv. Tandarts)" class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
-                        <button onclick="userAddAgendaItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-sm cursor-pointer">
-                            + Zet erin
-                        </button>
-                    </div>
-                    <div id="userPortalAgendaList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-                </div>
-
-                <div class="bg-white rounded-[26px] p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-[#1c2520] mb-1">✅ Taken Vandaag</h3>
-                    <p class="text-xs text-[#68736d] mb-4">Voeg een huishoudtaak toe of verwijder afgeronde taken.</p>
-                    <div class="flex gap-2 mb-4">
-                        <input id="userNewTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
-                        <button onclick="userAddTaskItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-sm cursor-pointer">
-                            + Taak
-                        </button>
-                    </div>
-                    <div id="userPortalTaskList" class="space-y-2 max-h-64 overflow-y-auto"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1091,7 +1077,37 @@
 
                     <div id="haCorsHelpBox" class="p-4 rounded-2xl bg-[#f4f7f4] text-[11px] text-[#38443d] space-y-2 border border-stone-200/80">
                         <div class="flex items-center justify-between">
-                            <p class="font-bold text-[#152920]">📱 Waarom blokkeert iPhone/Smartphone `http://192.168...`?</p>
+                            <p class="font-bold text-[#152920]">🛠️ Oplossing voor CORS & Tailscale HTTPS (`configuration.yaml`):</p>
+                            <button type="button" onclick="window.copyCorsYamlSnippet()" class="px-2.5 py-1 rounded-lg bg-[#152920] text-white font-bold text-[10px] cursor-pointer">
+                                📋 Kopieer YAML
+                            </button>
+                        </div>
+                        <pre id="corsYamlCode" class="bg-[#152920] text-[#dcece3] p-2.5 rounded-xl font-mono text-[10px] overflow-x-auto select-all">http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+  cors_allowed_origins:
+    - https://jaiderjannis.github.io
+    - http://localhost:8000</pre>
+                        <p class="text-[10px] text-[#55605a]">Gebruik bij voorkeur je Tailscale HTTPS-link (bijv. <code>https://homeassistant.tailfda0ad.ts.net</code>) voor directe WebSocket-verbinding op zowel pc als smartphone!</p>
+                    </div>
+                </div>
+
+                <!-- Right: Entity Picker per metric -->
+                <div class="lg:col-span-7 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">
+                                Stap 2 • Energie, Lamp & Afval Entiteiten
+                            </span>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-1">Kies jouw Sensoren uit Home Assistant</h3>
+                        </div>
+                        <span id="haEntitiesCountBadge" class="text-xs font-bold bg-[#f4f7f4] text-[#152920] px-3 py-1 rounded-full">0 entiteiten geladen</span>
+                    </div>
+
+                    <datalist id="haEntitiesDatalist"></datalist>
+
                     <div id="entityMappingGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1">
                         <!-- LIVE PULSE LAMP ENTITEIT -->
                         <div class="sm:col-span-2 bg-[#fdf8ec] p-3 rounded-2xl border border-[#f5d78e]">
@@ -1241,6 +1257,237 @@
                             Entiteiten Opslaan in Firebase
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 3: LIVE TARIEVEN, BTW, VASTE KOSTEN & VANDAAG/MORGEN PRIJZEN  -->
+            <!-- ================================================================= -->
+            <div id="adminTab_tarieven" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-5 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-[#1c2520]">Live EPEX Spotprijzen & BTW</h3>
+                        <button onclick="window.fetchLiveEpexPrices(true)" class="px-3 py-1.5 rounded-xl bg-[#152920] text-white text-xs font-bold cursor-pointer">
+                            🌐 Haal Nu Live EPEX Prijzen Op
+                        </button>
+                    </div>
+                    <p id="epexSyncStatusText" class="text-xs text-[#197447] font-medium">
+                        Haalt automatisch de officiële Day-Ahead uurprijzen van vandaag én morgen op.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Prijszone (EPEX)</label>
+                            <select id="admBznZone" onchange="window.fetchLiveEpexPrices(true)" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold bg-white">
+                                <option value="BE">🇧🇪 België (BE)</option>
+                                <option value="NL">🇳🇱 Nederland (NL)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">BTW Percentage (%)</label>
+                            <input id="admVatPercent" type="number" step="1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Vaste Kosten (€ / dag)</label>
+                            <input id="admFixedDailyCost" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Energiebelasting (€/kWh)</label>
+                            <input id="admTaxPerKwh" type="number" step="0.001" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Inkoopopslag (€/kWh)</label>
+                            <input id="admMarkupPerKwh" type="number" step="0.001" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Gasprijs (€ / m³)</label>
+                            <input id="admGasPrice" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Waterprijs (€ / m³)</label>
+                            <input id="admWaterPrice" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[#38443d] mb-1">Batterij Capaciteit (kWh)</label>
+                            <input id="admBatteryCap" type="number" step="0.5" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-bold">
+                        </div>
+                    </div>
+
+                    <label class="flex items-center gap-2.5 p-3 rounded-xl bg-[#f4f7f4] cursor-pointer text-xs font-semibold text-[#1c2520]">
+                        <input id="admApplyFormulaToHours" type="checkbox" onchange="applyAdminChangesLive()" class="w-4 h-4 accent-[#152920]">
+                        <span>Tel energiebelasting, opslag & BTW automatisch bovenop de kale spotprijzen</span>
+                    </label>
+                </div>
+
+                <div class="lg:col-span-7 bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-[#1c2520]">24-Uurs Tarieven Bewerken: Vandaag & Morgen</h3>
+                            <p class="text-xs text-[#68736d]">Schakel tussen Vandaag en Morgen om alle 24 uurtarieven te bekijken of handmatig bij te sturen.</p>
+                        </div>
+                        <div class="inline-flex bg-[#f4f7f4] p-1 rounded-xl border border-stone-200 text-xs font-bold">
+                            <button id="admBtnEditToday" onclick="window.switchAdminEditPriceDay('today')" class="px-3 py-1.5 rounded-lg bg-[#152920] text-white cursor-pointer">Vandaag (24u)</button>
+                            <button id="admBtnEditTomorrow" onclick="window.switchAdminEditPriceDay('tomorrow')" class="px-3 py-1.5 rounded-lg text-[#55605a] cursor-pointer">Morgen (24u)</button>
+                        </div>
+                    </div>
+
+                    <div id="adminHourlyGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+
+                    <div class="pt-3 border-t border-stone-100">
+                        <label class="block text-xs font-bold text-[#38443d] mb-1">Snel 24 uurprijzen plakken voor de geselecteerde dag (komma of spatie):</label>
+                        <div class="flex gap-2">
+                            <input id="bulkPricesInput" type="text" placeholder="0.08, 0.07, 0.06, 0.05..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-xs">
+                            <button onclick="importBulkHourlyPrices()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">Inladen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 4: SLIMME APPARATEN (MET ENTITEITEN) & SENSOR FALLBACKS       -->
+            <!-- ================================================================= -->
+            <div id="adminTab_apparaten" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Slimme Apparaten (Wijzigen, Herschikken & Entiteiten)</h3>
+                    <p class="text-xs text-[#68736d]">Voeg slimme stekkers of apparaten toe en pas hun naam, icoon of Home Assistant `sensor.*_power` entiteit achteraf altijd aan.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <select id="newAppIcon" class="sm:col-span-3 px-3 py-2.5 rounded-xl border border-stone-200 text-sm bg-white">
+                            <option value="🧺">🧺 Wasmachine</option>
+                            <option value="🍽️">🍽️ Vaatwasser</option>
+                            <option value="🚗">🚗 Laadpaal EV</option>
+                            <option value="🔥">🔥 Warmtepomp</option>
+                            <option value="👕">👕 Wasdroger</option>
+                            <option value="❄️">❄️ Airco</option>
+                            <option value="🔌">🔌 Stekker</option>
+                        </select>
+                        <input id="newAppName" type="text" placeholder="Naam (bijv. Wasmachine)" class="sm:col-span-4 px-3 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newAppEntityId" list="haEntitiesDatalist" type="text" placeholder="HA sensor.wasmachine_power" class="sm:col-span-5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-mono">
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="newAppWatts" type="number" placeholder="Handmatig Watt indien geen sensor (bijv. 850)" class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-xs">
+                        <button onclick="adminAddAppliance()" class="bg-[#152920] text-white font-bold px-5 py-2 rounded-xl text-xs cursor-pointer">
+                            + Apparaat Toevoegen
+                        </button>
+                    </div>
+
+                    <div id="adminAppliancesList" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Actuele Waardes & Handmatige Correctie</h3>
+                    <p class="text-xs text-[#68736d]">Worden automatisch overschreven zodra een gekoppelde Home Assistant entiteit live data stuurt.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div><label class="block text-[11px] font-bold mb-1">☀️ Zon (W)</label><input id="admSolarW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">🏠 Huis (W)</label><input id="admHouseW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold text-[#274b7a] mb-1">⚡ Net Import (W)</label><input id="admGridImportW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#cfe0f5] bg-[#f8fbff] text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold text-[#197447] mb-1">⚡ Net Export (W)</label><input id="admGridExportW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-[#c7ead6] bg-[#f4fbf7] text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">🔋 Batterij (W)</label><input id="admBatteryW" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div>
+                            <label class="block text-[11px] font-bold mb-1">🔋 Batterij Status</label>
+                            <select id="admBatteryMode" onchange="applyAdminChangesLive()" class="w-full px-2.5 py-2 rounded-xl border text-xs font-bold bg-white">
+                                <option value="discharging">↑ Ontladen (Batterij → Huis)</option>
+                                <option value="charging">↓ Opladen (Huis → Batterij)</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-[11px] font-bold mb-1">🔋 Batterij (%)</label><input id="admBatteryPct" type="number" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">🔥 Gas nu (m³/u)</label><input id="admGasRate" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">💧 Water (L/min)</label><input id="admWaterRate" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">💧 Water Vandaag (L)</label><input id="admWaterToday" type="number" step="1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">📥 Afname (kWh)</label><input id="admKwhImport" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">📤 Export (kWh)</label><input id="admKwhExport" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">☀️ Zon (kWh)</label><input id="admKwhSolar" type="number" step="0.1" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                        <div><label class="block text-[11px] font-bold mb-1">🔥 Gas Vandaag (m³)</label><input id="admGasToday" type="number" step="0.01" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border text-sm font-bold"></div>
+                    </div>
+                    <input id="admGridW" type="hidden" value="8">
+                    <input id="admCostElec" type="hidden" value="0">
+                    <input id="admCostGas" type="hidden" value="0">
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 5: LIVE "ADVIES VOOR NU" ENGINE & BERICHTEN                   -->
+            <!-- ================================================================= -->
+            <div id="adminTab_advies" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Slimme "Advies voor nu"-Engine</h3>
+                    <label class="flex items-center justify-between p-3.5 rounded-2xl bg-[#f4f7f4] cursor-pointer">
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">Slimme Live Advies-Engine Actief</p>
+                            <p class="text-xs text-[#68736d]">Genereert automatisch adviezen op basis van uurprijs (vandaag & morgen), zon en actief verbruik</p>
+                        </div>
+                        <input id="admAutoAdvice" type="checkbox" onchange="applyAdminChangesLive()" class="w-5 h-5 accent-[#152920]">
+                    </label>
+
+                    <label class="flex items-center justify-between p-3.5 rounded-2xl bg-[#f4f7f4] cursor-pointer">
+                        <div>
+                            <p class="text-sm font-bold text-[#1c2520]">Automatisch rouleren tussen live berichten (elke 10 sec)</p>
+                            <p class="text-xs text-[#68736d]">Wisselt live af tussen tariefadvies, morgen-voorspelling, zonne-overschot en gezinsmeldingen</p>
+                        </div>
+                        <input id="admRotateAdvice" type="checkbox" onchange="applyAdminChangesLive()" class="w-5 h-5 accent-[#152920]">
+                    </label>
+
+                    <div class="pt-2 border-t border-stone-100 space-y-3">
+                        <p class="text-xs font-bold text-[#38443d]">Handmatige tekst (als de automatische engine uit staat):</p>
+                        <input id="admAdviceText" type="text" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                        <input id="admAdviceBadge" type="text" oninput="applyAdminChangesLive()" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-[#1c2520]">Eigen Gezinsberichten in de Live Rotatie</h3>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input id="newCustomAdviceText" type="text" placeholder="Melding voor het gezin..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <input id="newCustomAdviceBadge" type="text" placeholder="Badge (bijv. Tip)" class="sm:w-36 px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="addCustomAdviceMessage()" class="bg-[#152920] text-white font-bold px-4 py-2.5 rounded-xl text-sm cursor-pointer shrink-0">
+                            + Toevoegen
+                        </button>
+                    </div>
+                    <div id="customAdviceListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- TAB 6: GOOGLE AGENDA, TAKEN & AFVALKALENDER                       -->
+            <!-- ================================================================= -->
+            <div id="adminTab_agenda" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">📅 Google Agenda & Vandaag</h3>
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#38443d] mb-1">Google Agenda `<iframe>` code of URL</label>
+                        <input id="admGcalUrl" type="text" placeholder='<iframe src="https://calendar.google.com/calendar/embed?..."></iframe>' oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono">
+                    </div>
+                    <div class="pt-2 border-t border-stone-100">
+                        <p class="text-xs font-bold text-[#38443d] mb-1.5">Afspraak voor vandaag toevoegen:</p>
+                        <div class="flex gap-2">
+                            <input id="newAgendaTime" type="text" placeholder="14:00" class="w-20 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                            <input id="newAgendaTitle" type="text" placeholder="Afspraak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                            <button onclick="adminAddAgendaItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                        </div>
+                    </div>
+                    <div id="adminAgendaList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">✅ Taken Vandaag</h3>
+                    <div class="flex gap-2">
+                        <input id="newTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                        <button onclick="adminAddTaskItem()" class="bg-[#152920] text-white font-bold px-3.5 py-2 rounded-xl text-sm cursor-pointer">+</button>
+                    </div>
+                    <div id="adminTaskList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-3">
+                    <h3 class="text-lg font-bold text-[#1c2520]">♻️ Handmatige Afvalkalender (Fallback)</h3>
+                    <p class="text-[11px] text-[#68736d]">Als je in Tabblad 2 RecycleApp sensoren hebt gekoppeld, worden die automatisch getoond.</p>
+                    <label class="flex items-center gap-2 text-xs font-bold text-[#1c2520] cursor-pointer">
+                        <input id="admWasteEnabled" type="checkbox" onchange="applyAdminChangesLive()" class="w-4 h-4 accent-[#152920]">
+                        <span>Handmatige afvalkalender tonen</span>
+                    </label>
+                    <input id="admWasteType" type="text" placeholder="Type (bijv. GFT of PMD)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWastePostal" type="text" placeholder="Postcode & Plaats" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWasteDate" type="text" placeholder="Ophaaldag (bijv. Dinsdag 20 oktober)" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
+                    <input id="admWasteDesc" type="text" placeholder="Omschrijving" oninput="applyAdminChangesLive()" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm">
                 </div>
             </div>
 
@@ -1539,13 +1786,9 @@
         }
 
         function pushLiveTelemetryToCloudBridge() {
-            // Alleen het apparaat dat rechtstreeks verbonden is met Home Assistant pusht elke 3.5 sec de live sensordata naar Firebase voor smartphones
-            if (!haWsConnected && !haDirectRestConnected) return;
-            const nowMs = Date.now();
-            if (nowMs - lastCloudBridgePushMs < 3500) return;
-            lastCloudBridgePushMs = nowMs;
-            appState.lastBridgeSyncAt = new Date().toISOString();
-            persistStateToFirestore(false);
+            // Uitgeschakeld voor het gratis Firebase Spark-plan (max 20.000 writes/dag).
+            // Gebruik de directe Home Assistant WebSocket (via Tailscale HTTPS) voor onbeperkte realtime updates!
+            return;
         }
 
         function updateConnectionBadgesForCloudBridge() {
@@ -1872,6 +2115,17 @@
             if (!silent) showToast("HomeWizard, Energie-, Lamp- en Recycle-sensoren automatisch gekoppeld!");
         };
 
+        function readNumericEntity(statesMap, entityId) {
+            if (!entityId) return null;
+            const found = statesMap.get(entityId.trim());
+            if (!found) return null;
+            const num = parseFloat(String(found.state).replace(',', '.'));
+            if (isNaN(num)) return null;
+            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
+            if (unit === 'kw') return num * 1000;
+            return num;
+        }
+
         // Leest een dag- of HomeWizard totaal-sensor uit (inclusief optionele T2 sensor en m³ -> Liter conversie voor water)
         function readDailyOrTotalMeterValue(statesMap, entityId1, entityId2 = "", isWaterLiters = false) {
             if (!entityId1) return null;
@@ -1979,78 +2233,6 @@
                 console.warn("Kon 00:00 history niet ophalen, gebruikt lokale start-baseline:", e);
             }
         };
-
-        window.autoDetectAndMapHaEntities = function(silent = false) {
-            if (!discoveredHaEntities || discoveredHaEntities.length === 0) {
-                if (!silent) showToast("Haal eerst je entiteiten op met knop 1.");
-                return;
-            }
-            if (!appState.entityMap) appState.entityMap = {};
-            const em = appState.entityMap;
-
-            const findEntity = (domainPrefix, keywords, unitFilter = null) => {
-                for (const kw of keywords) {
-                    const match = discoveredHaEntities.find(s => {
-                        if (domainPrefix && !s.entity_id.startsWith(domainPrefix)) return false;
-                        const idAndName = (s.entity_id + ' ' + (s.attributes?.friendly_name || '')).toLowerCase();
-                        const unit = (s.attributes?.unit_of_measurement || '').toLowerCase();
-                        const unitOk = !unitFilter || unitFilter.some(u => unit === u.toLowerCase());
-                        return unitOk && kw.every(word => idAndName.includes(word));
-                    });
-                    if (match) return match.entity_id;
-                }
-                return "";
-            };
-
-            if (!em.solarW) em.solarW = findEntity('sensor.', [['solar', 'power'], ['zon', 'vermogen'], ['pv', 'power'], ['inverter', 'power'], ['zonnepanelen']], ['w', 'kw']);
-            if (!em.houseW) em.houseW = findEntity('sensor.', [['active_power'], ['power_consumption'], ['huis', 'vermogen'], ['actueel', 'verbruik']], ['w', 'kw']);
-            if (!em.gridImportW) em.gridImportW = findEntity('sensor.', [['power_import'], ['import_power'], ['afname', 'vermogen'], ['grid_import']], ['w', 'kw']);
-            if (!em.gridExportW) em.gridExportW = findEntity('sensor.', [['power_export'], ['export_power'], ['injectie', 'vermogen'], ['teruglevering', 'vermogen'], ['grid_export']], ['w', 'kw']);
-            if (!em.gridW) em.gridW = findEntity('sensor.', [['grid', 'power'], ['net', 'vermogen'], ['p1', 'power']], ['w', 'kw']);
-            if (!em.batteryW) em.batteryW = findEntity('sensor.', [['battery', 'power'], ['batterij', 'vermogen'], ['thuisbatterij', 'power']], ['w', 'kw']);
-            if (!em.batteryPct) em.batteryPct = findEntity('sensor.', [['battery', 'soc'], ['battery', 'level'], ['batterij', 'percentage'], ['thuisbatterij']], ['%']);
-            if (!em.gasToday) em.gasToday = findEntity('sensor.', [['gas', 'today'], ['gas', 'vandaag'], ['gas', 'daily']], ['m³', 'm3']);
-            if (!em.waterRate) em.waterRate = findEntity('sensor.', [['water', 'active'], ['water', 'flow'], ['water', 'liter']], ['l/min', 'l/m']);
-            if (!em.waterTodayLiters) em.waterTodayLiters = findEntity('sensor.', [['water', 'today'], ['water', 'vandaag'], ['water', 'daily']], ['l', 'm³', 'm3']);
-            if (!em.kwhSolar) em.kwhSolar = findEntity('sensor.', [['solar', 'today'], ['zon', 'vandaag'], ['pv', 'daily'], ['energy_production_today']], ['kwh']);
-            if (!em.priceSensor) em.priceSensor = findEntity('sensor.', [['nordpool'], ['entsoe'], ['epex'], ['electricity_price'], ['stroomprijs']], null);
-
-            // Auto-detect Pulse Lamp (light.*)
-            if (!em.statusLamp) {
-                em.statusLamp = findEntity('light.', [['pulse'], ['energie'], ['glow'], ['status'], ['woonkamer'], ['living'], ['lamp'], ['led']], null);
-                if (!em.statusLamp) {
-                    const anyLight = discoveredHaEntities.find(s => s.entity_id.startsWith('light.'));
-                    if (anyLight) em.statusLamp = anyLight.entity_id;
-                }
-            }
-
-            // Auto-detect RecycleApp / Afvalbeheer sensoren
-            if (!em.waste_pmd) em.waste_pmd = findEntity('sensor.', [['pmd']], null);
-            if (!em.waste_gft) em.waste_gft = findEntity('sensor.', [['gft'], ['groente']], null);
-            if (!em.waste_papier) em.waste_papier = findEntity('sensor.', [['papier'], ['karton'], ['paper']], null);
-            if (!em.waste_rest) em.waste_rest = findEntity('sensor.', [['restafval'], ['rest'], ['residual']], null);
-
-            // Auto-detect Calendar
-            if (!em.calendarEntity) {
-                const anyCal = discoveredHaEntities.find(s => s.entity_id.startsWith('calendar.'));
-                if (anyCal) em.calendarEntity = anyCal.entity_id;
-            }
-
-            populateAdminInputs();
-            applyLiveStatesFromHomeAssistant(discoveredHaEntities);
-            if (!silent) showToast("Energie-, Lamp- en Recycle-sensoren automatisch herkend en gekoppeld!");
-        };
-
-        function readNumericEntity(statesMap, entityId) {
-            if (!entityId) return null;
-            const found = statesMap.get(entityId.trim());
-            if (!found) return null;
-            const num = parseFloat(String(found.state).replace(',', '.'));
-            if (isNaN(num)) return null;
-            const unit = (found.attributes?.unit_of_measurement || '').toLowerCase();
-            if (unit === 'kw') return num * 1000;
-            return num;
-        }
 
         function flashElementOnUpdate(elId) {
             const el = document.getElementById(elId);
@@ -3278,6 +3460,57 @@
             renderShuttersView();
         }
 
+        function renderAll() {
+            syncActiveHouseholdPointer();
+            document.getElementById('haStatusText').textContent = appState.statusText || 'Live via Home Assistant';
+            document.getElementById('householdNamePill').textContent = `🏡 Huishouden: ${appState.householdName || activeHouseholdName}`;
+            const adminHouseholdBadge = document.getElementById('activeAdminHouseholdBadge');
+            if (adminHouseholdBadge) adminHouseholdBadge.textContent = `🏡 Gezin: ${activeHouseholdName}`;
+
+            renderPulseLampBadges();
+
+            document.getElementById('valSolar').textContent = appState.solarW;
+            document.getElementById('valHouse').textContent = appState.houseW;
+
+            const gridImportW = Number(appState.gridImportW ?? appState.gridW ?? 0);
+            const gridExportW = Number(appState.gridExportW ?? 0);
+            const isExportingToGrid = gridExportW > gridImportW;
+            const activeGridW = isExportingToGrid ? gridExportW : gridImportW;
+
+            document.getElementById('valGrid').textContent = activeGridW;
+            const gridImpSub = document.getElementById('valGridImportSub');
+            const gridExpSub = document.getElementById('valGridExportSub');
+            if (gridImpSub) gridImpSub.textContent = gridImportW;
+            if (gridExpSub) gridExpSub.textContent = gridExportW;
+
+            const netArrowEl = document.getElementById('netArrow');
+            const netStatusLabel = document.getElementById('netStatusLabel');
+            const arrowLeftToHouse = document.getElementById('gridArrowLeftToHouse');
+            const arrowRightToGrid = document.getElementById('gridArrowRightToGrid');
+            const gridDot1 = document.getElementById('gridDot1');
+            const gridDot2 = document.getElementById('gridDot2');
+            const gridLineTrack = document.getElementById('gridLineTrack');
+
+            if (isExportingToGrid) {
+                netArrowEl.textContent = '↑';
+                netArrowEl.className = 'text-[#19975c] font-bold';
+                if (netStatusLabel) netStatusLabel.textContent = 'Net (Export)';
+                if (arrowLeftToHouse) arrowLeftToHouse.classList.add('hidden');
+                if (arrowRightToGrid) arrowRightToGrid.classList.remove('hidden');
+                if (gridLineTrack) gridLineTrack.className = 'h-[2px] w-full bg-[#bce3ce]';
+                if (gridDot1) gridDot1.className = 'w-2 h-2 rounded-full bg-[#19975c] dot-flow-right';
+                if (gridDot2) gridDot2.className = 'w-2 h-2 rounded-full bg-[#19975c] dot-flow-right';
+            } else {
+                netArrowEl.textContent = '↓';
+                netArrowEl.className = 'text-[#3b6998] font-bold';
+                if (netStatusLabel) netStatusLabel.textContent = 'Net (Import)';
+                if (arrowLeftToHouse) arrowLeftToHouse.classList.remove('hidden');
+                if (arrowRightToGrid) arrowRightToGrid.classList.add('hidden');
+                if (gridLineTrack) gridLineTrack.className = 'h-[2px] w-full bg-[#c5d4eb]';
+                if (gridDot1) gridDot1.className = 'w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left';
+                if (gridDot2) gridDot2.className = 'w-2 h-2 rounded-full bg-[#7897c9] dot-flow-left';
+            }
+
             document.getElementById('valBatteryW').textContent = appState.batteryW;
             document.getElementById('valBatteryPct').textContent = appState.batteryPct;
             document.getElementById('valBatteryCap').textContent = formatNum(appState.batteryCap, 1);
@@ -3363,84 +3596,6 @@
             renderDisplayWaste();
             renderGoogleCalendarTab();
             renderShuttersView();
-            renderClimateView();
-        }
-
-        function renderShuttersView() {
-            const container = document.getElementById('shuttersGridContainer');
-            const badge = document.getElementById('menuShuttersCountBadge');
-            const shutters = appState.shutters || [];
-            if (badge) badge.textContent = `${shutters.length} units`;
-            if (!container) return;
-
-            if (shutters.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full bg-white rounded-[26px] p-8 text-center space-y-3">
-                        <p class="text-lg font-bold text-[#1c2520]">Nog geen rolluiken gekoppeld</p>
-                        <p class="text-xs text-[#68736d]">Voeg je Home Assistant <code>cover.*</code> entiteiten toe in het Beheerpaneel (Tabblad 7).</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = shutters.map((sh, idx) => {
-                const pos = Math.max(0, Math.min(100, Math.round(Number(sh.position) ?? 100)));
-                const isClosed = pos === 0 || sh.state === 'closed';
-                const statusLabel = isClosed ? 'Gesloten (0%)' : pos === 100 ? 'Volledig Open (100%)' : `Geopend (${pos}%)`;
-                const closedHeightPct = 100 - pos;
-
-                return `
-                    <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/80 flex flex-col justify-between gap-5">
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-3">
-                                <div>
-                                    <h3 class="text-lg font-bold text-[#1c2520]">🪟 ${sh.name}</h3>
-                                    <p class="text-[11px] font-mono text-[#68736d]">${sh.entityId || 'Lokale bediening / Demo'}</p>
-                                </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-extrabold ${isClosed ? 'bg-stone-200 text-stone-700' : 'bg-[#dcece3] text-[#152920]'}">
-                                    ${statusLabel}
-                                </span>
-                            </div>
-
-                            <!-- Visuele Raam & Rolluik Lamellen Weergave -->
-                            <div class="relative h-28 rounded-2xl bg-gradient-to-b from-sky-100 to-emerald-50 border-2 border-stone-300 overflow-hidden mb-4">
-                                <div class="w-full bg-[#38443d] transition-all duration-500 flex flex-col justify-end" style="height: ${closedHeightPct}%; background-image: repeating-linear-gradient(0deg, #2c3630, #2c3630 6px, #435149 6px, #435149 8px);">
-                                    <div class="h-1.5 w-full bg-[#152920]"></div>
-                                </div>
-                                <div class="absolute bottom-2 right-3 bg-white/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-[#152920] shadow-2xs">
-                                    ${pos}% open
-                                </div>
-                            </div>
-
-                            <!-- Positie Slider -->
-                            <div class="space-y-1">
-                                <div class="flex justify-between text-xs font-bold text-[#55605a]">
-                                    <span>Dicht (0%)</span>
-                                    <span>Stand: ${pos}%</span>
-                                    <span>Open (100%)</span>
-                                </div>
-                                <input type="range" min="0" max="100" step="5" value="${pos}" onchange="window.setShutterPosition(${idx}, this.value)" class="w-full accent-[#152920] cursor-pointer h-2 rounded-lg">
-                            </div>
-                        </div>
-
-                        <!-- Bedieningsknoppen: Omhoog, Stop, Omlaag -->
-                        <div class="grid grid-cols-3 gap-2.5 pt-2 border-t border-stone-100">
-                            <button onclick="window.controlSingleShutter(${idx}, 'open_cover')" class="bg-[#e8f2ec] hover:bg-[#dcece3] text-[#152920] font-extrabold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
-                                <span class="text-base">↑</span>
-                                <span>Openen</span>
-                            </button>
-                            <button onclick="window.controlSingleShutter(${idx}, 'stop_cover')" class="bg-stone-100 hover:bg-stone-200 text-[#1c2520] font-bold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
-                                <span class="text-base">⏹</span>
-                                <span>Stop</span>
-                            </button>
-                            <button onclick="window.controlSingleShutter(${idx}, 'close_cover')" class="bg-[#152920] hover:bg-[#233d30] text-white font-extrabold py-3 rounded-2xl text-xs transition cursor-pointer flex flex-col items-center gap-1">
-                                <span class="text-base">↓</span>
-                                <span>Sluiten</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         window.controlSingleShutter = async function(idx, action) {
@@ -3481,96 +3636,6 @@
             });
         };
 
-        function renderClimateView() {
-            const container = document.getElementById('climateGridContainer');
-            const badge = document.getElementById('menuClimateCountBadge');
-            const climates = appState.climates || [];
-            if (badge) badge.textContent = `${climates.length} airco's`;
-            if (!container) return;
-
-            const modeMeta = {
-                off: { label: "Uit", icon: "⏻", pill: "bg-stone-200 text-stone-700", activeBtn: "bg-stone-700 text-white" },
-                cool: { label: "Koelen", icon: "❄️", pill: "bg-sky-100 text-sky-800", activeBtn: "bg-sky-600 text-white" },
-                heat: { label: "Verwarmen", icon: "🔥", pill: "bg-orange-100 text-orange-800", activeBtn: "bg-orange-600 text-white" },
-                heat_cool: { label: "Auto", icon: "🔄", pill: "bg-emerald-100 text-emerald-800", activeBtn: "bg-emerald-700 text-white" },
-                auto: { label: "Auto", icon: "🔄", pill: "bg-emerald-100 text-emerald-800", activeBtn: "bg-emerald-700 text-white" },
-                dry: { label: "Drogen", icon: "💧", pill: "bg-amber-100 text-amber-800", activeBtn: "bg-amber-600 text-white" },
-                fan_only: { label: "Ventilator", icon: "🌀", pill: "bg-teal-100 text-teal-800", activeBtn: "bg-teal-700 text-white" }
-            };
-
-            container.innerHTML = climates.map((cl, idx) => {
-                const mode = cl.hvacMode || 'off';
-                const meta = modeMeta[mode] || modeMeta.off;
-                const modesList = ["off", "cool", "heat", "heat_cool", "dry", "fan_only"];
-                const fanList = cl.fanModes?.length ? cl.fanModes : ["auto", "low", "medium", "high"];
-                const swingList = cl.swingModes?.length ? cl.swingModes : ["off", "vertical", "horizontal", "both"];
-
-                return `
-                    <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/80 flex flex-col justify-between gap-5">
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-4">
-                                <div>
-                                    <h3 class="text-lg font-bold text-[#1c2520]">${meta.icon} ${cl.name}</h3>
-                                    <p class="text-[11px] font-mono text-[#68736d]">${cl.entityId || 'Lokale bediening / Demo'}</p>
-                                </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-extrabold ${meta.pill}">
-                                    ${meta.icon} ${meta.label}
-                                </span>
-                            </div>
-
-                            <!-- Grote Temperatuur Regelaar (- / +) -->
-                            <div class="bg-[#f4f7f4] rounded-2xl p-4 flex items-center justify-between mb-4 border border-stone-200/60">
-                                <button onclick="window.adjustAircoTemp(${idx}, -0.5)" class="w-12 h-12 rounded-2xl bg-white hover:bg-stone-100 shadow-xs text-xl font-extrabold text-[#152920] cursor-pointer transition">
-                                    −
-                                </button>
-                                <div class="text-center">
-                                    <p class="text-[11px] font-bold uppercase tracking-wider text-[#68736d]">Doeltemperatuur</p>
-                                    <p class="text-3xl font-extrabold text-[#1c2520] mt-0.5">${formatNum(cl.targetTemp ?? 20, 1)} °C</p>
-                                    <p class="text-xs font-semibold text-[#197447] mt-0.5">Nu in kamer: ${formatNum(cl.currentTemp ?? 21, 1)} °C</p>
-                                </div>
-                                <button onclick="window.adjustAircoTemp(${idx}, 0.5)" class="w-12 h-12 rounded-2xl bg-white hover:bg-stone-100 shadow-xs text-xl font-extrabold text-[#152920] cursor-pointer transition">
-                                    +
-                                </button>
-                            </div>
-
-                            <!-- Modus Knoppen (Uit, Koelen, Verwarmen, Auto, Droog, Ventilator) -->
-                            <div class="mb-4">
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-[#68736d] mb-2">Modus kiezen</p>
-                                <div class="grid grid-cols-3 gap-2">
-                                    ${modesList.map(m => {
-                                        const mInfo = modeMeta[m] || modeMeta.off;
-                                        const isActive = mode === m;
-                                        return `
-                                            <button onclick="window.setAircoHvacMode(${idx}, '${m}')" class="py-2 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${isActive ? mInfo.activeBtn + ' shadow-xs' : 'bg-stone-100 hover:bg-stone-200 text-[#38443d]'}">
-                                                <span>${mInfo.icon}</span>
-                                                <span>${mInfo.label}</span>
-                                            </button>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Ventilatorsnelheid & Swing Lamellen -->
-                        <div class="grid grid-cols-2 gap-3 pt-3 border-t border-stone-100">
-                            <div>
-                                <label class="block text-[11px] font-bold text-[#55605a] mb-1">🌀 Ventilator</label>
-                                <select onchange="window.setAircoFanMode(${idx}, this.value)" class="w-full px-3 py-2 rounded-xl bg-[#f4f7f4] border border-stone-200 text-xs font-bold text-[#1c2520] cursor-pointer">
-                                    ${fanList.map(f => `<option value="${f}" ${cl.fanMode === f ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-[#55605a] mb-1">↕️ Swing (Lamellen)</label>
-                                <select onchange="window.setAircoSwingMode(${idx}, this.value)" class="w-full px-3 py-2 rounded-xl bg-[#f4f7f4] border border-stone-200 text-xs font-bold text-[#1c2520] cursor-pointer">
-                                    ${swingList.map(sw => `<option value="${sw}" ${cl.swingMode === sw ? 'selected' : ''}>${sw.toUpperCase()}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
         window.adjustAircoTemp = async function(idx, delta) {
             const cl = appState.climates?.[idx];
             if (!cl) return;
@@ -3584,7 +3649,7 @@
                     temperature: nextTemp
                 });
             }
-            renderClimateView();
+            renderShuttersView();
             persistStateToFirestore(false);
             showToast(`${cl.name} ingesteld op ${formatNum(nextTemp, 1)} °C`);
         };
@@ -3600,7 +3665,7 @@
                     hvac_mode: newMode
                 });
             }
-            renderClimateView();
+            renderShuttersView();
             persistStateToFirestore(false);
             showToast(`${cl.name} modus: ${newMode.toUpperCase()}`);
         };
@@ -3616,7 +3681,7 @@
                     fan_mode: newFan
                 });
             }
-            renderClimateView();
+            renderShuttersView();
             persistStateToFirestore(false);
             showToast(`${cl.name} ventilator: ${newFan}`);
         };
@@ -3632,7 +3697,7 @@
                     swing_mode: newSwing
                 });
             }
-            renderClimateView();
+            renderShuttersView();
             persistStateToFirestore(false);
             showToast(`${cl.name} swing: ${newSwing}`);
         };
@@ -3857,49 +3922,6 @@
             appState.climates.splice(idx, 1);
             renderAdminShuttersAndClimateLists();
             renderShuttersView();
-            persistStateToFirestore(true);
-        };
-
-        window.adminRemoveShutter = function(idx) {
-            appState.shutters.splice(idx, 1);
-            renderAdminShuttersAndClimateLists();
-            renderShuttersView();
-            persistStateToFirestore(true);
-        };
-
-        window.adminAddClimate = function() {
-            const name = document.getElementById('newClimateName').value.trim();
-            const entityId = document.getElementById('newClimateEntity').value.trim();
-            if (!name) {
-                showToast("Geef de airco een naam.");
-                return;
-            }
-            if (!appState.climates) appState.climates = [];
-            appState.climates.push({
-                id: 'cl_' + Date.now(),
-                name,
-                entityId,
-                hvacMode: 'off',
-                currentTemp: 21.0,
-                targetTemp: 20.0,
-                fanMode: 'auto',
-                swingMode: 'off',
-                hvacModes: ["off", "cool", "heat", "heat_cool", "dry", "fan_only"],
-                fanModes: ["auto", "low", "medium", "high"],
-                swingModes: ["off", "vertical", "horizontal", "both"]
-            });
-            document.getElementById('newClimateName').value = '';
-            document.getElementById('newClimateEntity').value = '';
-            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
-            renderAdminShuttersAndClimateLists();
-            renderClimateView();
-            persistStateToFirestore(true);
-        };
-
-        window.adminRemoveClimate = function(idx) {
-            appState.climates.splice(idx, 1);
-            renderAdminShuttersAndClimateLists();
-            renderClimateView();
             persistStateToFirestore(true);
         };
 
@@ -4555,13 +4577,77 @@
             appState.appliances[idx].watts = parseInt(val, 10) || 0;
             renderAll();
         };
+
+        window.adminRemoveAppliance = function(idx) {
+            appState.appliances.splice(idx, 1);
+            renderAdminAppliancesList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddAppliance = function() {
+            const icon = document.getElementById('newAppIcon').value;
+            const name = document.getElementById('newAppName').value.trim();
+            const entityId = document.getElementById('newAppEntityId').value.trim();
+            const watts = parseInt(document.getElementById('newAppWatts').value, 10) || 0;
+            if (!name) {
+                showToast("Geef het apparaat een naam (bijv. Wasmachine)");
+                return;
+            }
+            if (!appState.appliances) appState.appliances = [];
+            appState.appliances.push({
+                id: 'app_' + Date.now(),
+                icon,
+                name,
+                watts,
+                entityId,
+                active: true
+            });
+            document.getElementById('newAppName').value = '';
+            document.getElementById('newAppEntityId').value = '';
+            document.getElementById('newAppWatts').value = '';
+            if (discoveredHaEntities.length > 0) applyLiveStatesFromHomeAssistant(discoveredHaEntities);
+            renderAdminAppliancesList();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        function renderAdminLists() {
+            const agendaHtml = !appState.agendaItems?.length
+                ? `<p class="text-xs text-[#68736d] italic py-2">Geen handmatige afspraken voor vandaag.</p>`
+                : appState.agendaItems.map((item, idx) => `
+                    <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
+                        <span><strong>${item.time}</strong> – ${item.title}</span>
+                        <button onclick="window.adminRemoveAgendaItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+
+            const taskHtml = !appState.tasks?.length
+                ? `<p class="text-xs text-[#68736d] italic py-2">Geen taken ingesteld.</p>`
+                : appState.tasks.map((task, idx) => `
+                    <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
+                        <span>${task.text}</span>
+                        <button onclick="window.adminRemoveTaskItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
+                    </div>
+                `).join('');
+
+            const admAg = document.getElementById('adminAgendaList');
+            const admTk = document.getElementById('adminTaskList');
+            if (admAg) admAg.innerHTML = agendaHtml;
+            if (admTk) admTk.innerHTML = taskHtml;
+
+            const userAgendaEl = document.getElementById('userPortalAgendaList');
+            const userTaskEl = document.getElementById('userPortalTaskList');
+            if (userAgendaEl) userAgendaEl.innerHTML = agendaHtml;
+            if (userTaskEl) userTaskEl.innerHTML = taskHtml;
+        }
+
         window.switchView = function(view) {
             if (!currentRole) {
                 view = 'login';
             } else if (view === 'admin' && currentRole !== 'manager' && currentRole !== 'admin') {
                 view = 'display';
             }
-            // UserPortal en Climate zijn nu samengevoegd met respectievelijk Calendar en Shutters (Ruimtes)
             if (view === 'userPortal') view = 'calendar';
             if (view === 'climate') {
                 activeRoomsFilter = 'all';
@@ -4629,15 +4715,289 @@
                 window.switchView('admin');
                 return;
             }
-            if (preferredSection === 'agenda') {
-                renderAdminLists();
-                window.switchView('calendar');
-            } else if (currentRole === 'user') {
+            if (preferredSection === 'agenda' || currentRole === 'user') {
                 renderAdminLists();
                 window.switchView('calendar');
             } else if (currentRole === 'manager' || currentRole === 'admin') {
                 updateAdminRolePermissionsUI();
                 window.switchView('admin');
+            }
+        };
+
+        function completeGoogleSignInWithEmail(email, displayName = "") {
+            const cleanEmail = (email || "").trim().toLowerCase();
+            const errEl = document.getElementById('loginErrorMsg');
+            const matchedAccount = (platformState.accounts || []).find(
+                a => (a.email || "").toLowerCase() === cleanEmail
+            );
+
+            if (!matchedAccount) {
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            errEl.classList.add('hidden');
+            currentRole = matchedAccount.role;
+            currentLoggedUserName = matchedAccount.name || displayName || cleanEmail;
+            currentLoggedUserEmail = matchedAccount.email;
+
+            if (matchedAccount.household && platformState.households[matchedAccount.household]) {
+                activeHouseholdName = matchedAccount.household;
+            }
+            syncActiveHouseholdPointer();
+
+            updateNavigationAndRoleVisibility();
+            populateAdminInputs();
+
+            if (currentRole === 'admin') {
+                window.switchAdminTab('gezinnen');
+            } else if (currentRole === 'manager') {
+                window.switchAdminTab('gebruikers');
+            }
+
+            renderAdminLists();
+            window.switchView('display');
+            showToast(`Ingelogd als ${currentLoggedUserName}`);
+
+            if (appState.haUrl && appState.haToken) {
+                window.fetchHomeAssistantEntities(true);
+            }
+        }
+
+        function renderGoogleAccountChooser() {
+            const box = document.getElementById('googleAccountChooserBox');
+            const listEl = document.getElementById('googleChooserAccountsList');
+            box.classList.remove('hidden');
+
+            const accounts = platformState.accounts || [];
+            listEl.innerHTML = accounts.map((acc) => `
+                <button type="button" onclick="window.selectGoogleChooserAccount('${acc.email}')" class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#f4f7f4] border border-stone-200/80 transition text-left cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-[#152920] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        ${(acc.name || 'G').charAt(0).toUpperCase()}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-[#1c2520] truncate">${acc.name}</p>
+                        <p class="text-[11px] text-[#68736d] truncate">${acc.email} • ${acc.household || ''}</p>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        window.selectGoogleChooserAccount = function(email) {
+            completeGoogleSignInWithEmail(email);
+        };
+
+        window.submitGoogleEmailSignIn = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('customGoogleEmailInput').value;
+            completeGoogleSignInWithEmail(email);
+        };
+
+        window.triggerGoogleSignIn = async function() {
+            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
+                try {
+                    const provider = new GoogleAuthProvider();
+                    const result = await signInWithPopup(auth, provider);
+                    if (result && result.user && result.user.email) {
+                        completeGoogleSignInWithEmail(result.user.email, result.user.displayName);
+                        return;
+                    }
+                } catch (popupErr) {
+                    console.warn("Google OAuth Popup kon niet worden geopend, overschakelen naar accountkiezer:", popupErr);
+                    renderGoogleAccountChooser();
+                    return;
+                }
+            }
+            renderGoogleAccountChooser();
+        };
+
+        window.logoutSession = async function() {
+            if (auth && MIJN_EIGEN_FIREBASE_CONFIG.apiKey) {
+                try { await signOut(auth); } catch (e) {}
+            }
+            currentRole = null;
+            currentLoggedUserName = "";
+            currentLoggedUserEmail = "";
+            document.getElementById('googleAccountChooserBox').classList.add('hidden');
+            updateNavigationAndRoleVisibility();
+            window.switchView('login');
+            showToast("Je bent uitgelogd");
+        };
+
+        window.switchAdminTab = function(tabName) {
+            const tabs = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco'];
+            tabs.forEach(t => {
+                const tabEl = document.getElementById('adminTab_' + t);
+                if (tabEl) tabEl.classList.toggle('hidden', t !== tabName);
+                const btn = document.getElementById('adminTabBtn_' + t);
+                if (!btn) return;
+                const isHidden = btn.classList.contains('hidden');
+                if (t === tabName) {
+                    btn.className = 'px-4 py-2.5 rounded-xl text-sm font-bold bg-[#152920] text-white transition cursor-pointer' + (isHidden ? ' hidden' : '');
+                } else {
+                    btn.className = 'px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer' + (isHidden ? ' hidden' : '');
+                }
+            });
+        };
+
+        window.applyAdminChangesLive = function() {
+            if (document.getElementById('admVatPercent')) appState.vatPercent = parseFloat(document.getElementById('admVatPercent').value) || 0;
+            if (document.getElementById('admFixedDailyCost')) appState.fixedDailyCost = parseFloat(document.getElementById('admFixedDailyCost').value) || 0;
+            if (document.getElementById('admTaxPerKwh')) appState.taxPerKwh = parseFloat(document.getElementById('admTaxPerKwh').value) || 0;
+            if (document.getElementById('admMarkupPerKwh')) appState.markupPerKwh = parseFloat(document.getElementById('admMarkupPerKwh').value) || 0;
+            if (document.getElementById('admApplyFormulaToHours')) appState.applyFormulaToHours = document.getElementById('admApplyFormulaToHours').checked;
+
+            if (document.getElementById('admGasPrice')) appState.gasPricePerM3 = parseFloat(document.getElementById('admGasPrice').value) || 0;
+            if (document.getElementById('admWaterPrice')) appState.waterPricePerM3 = parseFloat(document.getElementById('admWaterPrice').value) || 0;
+            if (document.getElementById('admKwhImport')) appState.kwhImport = parseFloat(document.getElementById('admKwhImport').value) || 0;
+            if (document.getElementById('admKwhExport')) appState.kwhExport = parseFloat(document.getElementById('admKwhExport').value) || 0;
+            if (document.getElementById('admKwhSolar')) appState.kwhSolar = parseFloat(document.getElementById('admKwhSolar').value) || 0;
+            if (document.getElementById('admGasToday')) appState.gasToday = parseFloat(document.getElementById('admGasToday').value) || 0;
+
+            if (document.getElementById('admWaterRate')) appState.waterRate = parseFloat(document.getElementById('admWaterRate').value) || 0;
+            if (document.getElementById('admWaterToday')) appState.waterTodayLiters = parseFloat(document.getElementById('admWaterToday').value) || 0;
+
+            if (document.getElementById('admSolarW')) appState.solarW = parseInt(document.getElementById('admSolarW').value, 10) || 0;
+            if (document.getElementById('admHouseW')) appState.houseW = parseInt(document.getElementById('admHouseW').value, 10) || 0;
+            if (document.getElementById('admGridW')) appState.gridW = parseInt(document.getElementById('admGridW').value, 10) || 0;
+            if (document.getElementById('admGridImportW')) appState.gridImportW = parseInt(document.getElementById('admGridImportW').value, 10) || 0;
+            if (document.getElementById('admGridExportW')) appState.gridExportW = parseInt(document.getElementById('admGridExportW').value, 10) || 0;
+            if (document.getElementById('admBatteryW')) appState.batteryW = parseInt(document.getElementById('admBatteryW').value, 10) || 0;
+            if (document.getElementById('admBatteryMode')) appState.batteryMode = document.getElementById('admBatteryMode').value;
+            if (document.getElementById('admBatterySignConvention')) appState.batterySignConvention = document.getElementById('admBatterySignConvention').value;
+            if (document.getElementById('admHouseCalcMode')) appState.houseCalcMode = document.getElementById('admHouseCalcMode').value;
+            if (document.getElementById('admBatteryPct')) appState.batteryPct = parseInt(document.getElementById('admBatteryPct').value, 10) || 0;
+            if (document.getElementById('admBatteryCap')) appState.batteryCap = parseFloat(document.getElementById('admBatteryCap').value) || 0;
+            if (document.getElementById('admGasRate')) appState.gasRate = parseFloat(document.getElementById('admGasRate').value) || 0;
+
+            if (document.getElementById('admAutoAdvice')) appState.autoAdvice = document.getElementById('admAutoAdvice').checked;
+            if (document.getElementById('admRotateAdvice')) appState.rotateAdvice = document.getElementById('admRotateAdvice').checked;
+            if (document.getElementById('admAdviceText')) appState.adviceText = document.getElementById('admAdviceText').value;
+            if (document.getElementById('admAdviceBadge')) appState.adviceBadge = document.getElementById('admAdviceBadge').value;
+
+            if (document.getElementById('admGcalUrl')) {
+                appState.googleCalendarUrl = normalizeGoogleCalendarEmbedUrl(document.getElementById('admGcalUrl').value.trim());
+            }
+
+            if (document.getElementById('admWasteEnabled')) appState.wasteEnabled = document.getElementById('admWasteEnabled').checked;
+            if (document.getElementById('admWasteType')) appState.wasteType = document.getElementById('admWasteType').value;
+            if (document.getElementById('admWastePostal')) appState.wastePostal = document.getElementById('admWastePostal').value;
+            if (document.getElementById('admWasteDate')) appState.wasteDate = document.getElementById('admWasteDate').value;
+            if (document.getElementById('admWasteDesc')) appState.wasteDesc = document.getElementById('admWasteDesc').value;
+
+            if (document.getElementById('admStatusText')) appState.statusText = document.getElementById('admStatusText').value;
+            if (document.getElementById('admHaUrl')) appState.haUrl = document.getElementById('admHaUrl').value;
+            if (document.getElementById('admHaToken')) appState.haToken = document.getElementById('admHaToken').value;
+
+            window.saveEntityMapping();
+            pushLivePowerPoint(appState.solarW, appState.houseW);
+            renderAll();
+        };
+
+        window.updateSingleHourPrice = function(hour, val) {
+            const target = adminEditPriceDay === 'tomorrow' ? appState.tomorrowPrices : appState.hourlyPrices;
+            target[hour] = parseFloat(val) || 0;
+            renderAll();
+        };
+
+        window.importBulkHourlyPrices = function() {
+            const rawText = document.getElementById('bulkPricesInput').value.trim();
+            if (!rawText) return;
+            const parsed = rawText
+                .replace(/;/g, ',')
+                .split(/[\s,]+/)
+                .map(s => parseFloat(s.replace(',', '.')))
+                .filter(n => !isNaN(n));
+
+            if (parsed.length === 0) {
+                showToast("Geen geldige getallen gevonden.");
+                return;
+            }
+            const target = adminEditPriceDay === 'tomorrow' ? appState.tomorrowPrices : appState.hourlyPrices;
+            for (let i = 0; i < 24; i++) {
+                if (parsed[i] !== undefined) target[i] = parsed[i];
+            }
+            document.getElementById('bulkPricesInput').value = '';
+            populateAdminInputs();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.userAddAgendaItem = function() {
+            const time = document.getElementById('userNewAgendaTime').value.trim() || 'Vandaag';
+            const title = document.getElementById('userNewAgendaTitle').value.trim();
+            if (!title) return;
+            appState.agendaItems.push({ time, title });
+            document.getElementById('userNewAgendaTime').value = '';
+            document.getElementById('userNewAgendaTitle').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.userAddTaskItem = function() {
+            const text = document.getElementById('userNewTaskText').value.trim();
+            if (!text) return;
+            appState.tasks.push({ id: Date.now().toString(), text, done: false });
+            document.getElementById('userNewTaskText').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddAgendaItem = function() {
+            const time = document.getElementById('newAgendaTime').value.trim() || 'Vandaag';
+            const title = document.getElementById('newAgendaTitle').value.trim();
+            if (!title) return;
+            appState.agendaItems.push({ time, title });
+            document.getElementById('newAgendaTime').value = '';
+            document.getElementById('newAgendaTitle').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveAgendaItem = function(idx) {
+            appState.agendaItems.splice(idx, 1);
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminAddTaskItem = function() {
+            const text = document.getElementById('newTaskText').value.trim();
+            if (!text) return;
+            appState.tasks.push({ id: Date.now().toString(), text, done: false });
+            document.getElementById('newTaskText').value = '';
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.adminRemoveTaskItem = function(idx) {
+            appState.tasks.splice(idx, 1);
+            renderAdminLists();
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.toggleTaskDone = function(idx) {
+            if (!appState.tasks[idx]) return;
+            appState.tasks[idx].done = !appState.tasks[idx].done;
+            renderAll();
+            persistStateToFirestore(true);
+        };
+
+        window.saveAllToFirebase = function() {
+            window.applyAdminChangesLive();
+            persistStateToFirestore(true);
+        };
+
+        window.toggleFullScreen = function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
             }
         };
 
@@ -4649,27 +5009,24 @@
             document.getElementById('liveClock').textContent = `${hours}:${mins}`;
             const timeLabel = document.getElementById('liveGraphTimeLabel');
             if (timeLabel) timeLabel.textContent = `live (${hours}:${mins}:${secs})`;
-            appState.batteryW = parseInt(document.getElementById('admBatteryW').value, 10) || 0;
-            if (document.getElementById('admBatteryMode')) appState.batteryMode = document.getElementById('admBatteryMode').value;
-            if (document.getElementById('admBatterySignConvention')) appState.batterySignConvention = document.getElementById('admBatterySignConvention').value;
-            if (document.getElementById('admHouseCalcMode')) appState.houseCalcMode = document.getElementById('admHouseCalcMode').value;
-            appState.batteryPct = parseInt(document.getElementById('admBatteryPct').value, 10) || 0;
-            appState.batteryCap = parseFloat(document.getElementById('admBatteryCap').value) || 0;
-            appState.gasRate = parseFloat(document.getElementById('admGasRate').value) || 0;
 
-            const fallbackLampColorEl = document.getElementById('admLampFallbackColor');
-            if (fallbackLampColorEl && (!appState.entityMap?.statusLamp || !discoveredHaEntities.length)) {
-                appState.lampColorHex = fallbackLampColorEl.value;
-                appState.lampIsOn = true;
-            }
+            const formatter = new Intl.DateTimeFormat('nl-NL', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+            document.getElementById('liveDate').textContent = formatter.format(now);
+        }
 
-            appState.autoAdvice = document.getElementById('admAutoAdvice').checked;
-            appState.rotateAdvice = document.getElementById('admRotateAdvice').checked;
-            appState.adviceText = document.getElementById('admAdviceText').value;
-            appState.adviceBadge = document.getElementById('admAdviceBadge').value;
+        function tickLiveEnergyMetrics() {
+            const em = appState.entityMap || {};
 
-            if (document.getElementById('admGcalUrl')) {
-                appState.googleCalendarUrl = normalizeGoogleCalendarEmbedUrl(document.getElementById('admGcalUrl').value.trim());
+            if (!em.solarW || !discoveredHaEntities.length) {
+                const deltaSolar = Math.round((Math.random() - 0.47) * 14);
+                const nextSolar = Math.max(15, Math.min(4200, (Number(appState.solarW) || 220) + deltaSolar));
+                if (nextSolar !== appState.solarW) flashElementOnUpdate('valSolar');
+                appState.solarW = nextSolar;
+                appState.kwhSolar = Number((Number(appState.kwhSolar) + (appState.solarW / 1800000)).toFixed(2));
             }
 
             if (!em.houseW || !discoveredHaEntities.length) {
