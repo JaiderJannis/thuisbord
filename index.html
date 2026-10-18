@@ -4,6 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thuisbord - Slimme Live Energie Display & Multi-Gezin Beheer</title>
+    <meta name="theme-color" content="#18261f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Thuisbord">
+    <link id="dynamicFaviconSvg" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='118' fill='%2318261f'/%3E%3Cpath d='M256 140L148 228V364H222V292H290V364H364V228L256 140Z' fill='none' stroke='%235cd69c' stroke-width='28' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link id="dynamicFaviconPng" rel="alternate icon" type="image/png" sizes="32x32" href="">
+    <link id="dynamicAppleTouchIcon" rel="apple-touch-icon" sizes="180x180" href="">
+    <link id="dynamicWebManifest" rel="manifest" href="">
+    <script>
+        // Genereert automatisch haarscherpe PNG-iconen voor iOS (180x180), Android (192x192 & 512x512) en Favicon (32x32)
+        (function setupThuisbordAppIcons() {
+            function renderLogoToDataUrl(size, isAppleTouch) {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                const scale = size / 512;
+
+                // Voor iOS Apple Touch Icon vullen we de achtergrond volledig (iOS rondt zelf de hoeken af)
+                const radius = isAppleTouch ? 0 : 118 * scale;
+                ctx.fillStyle = '#18261f';
+                ctx.beginPath();
+                if (radius > 0 && ctx.roundRect) {
+                    ctx.roundRect(0, 0, size, size, radius);
+                } else {
+                    ctx.rect(0, 0, size, size);
+                }
+                ctx.fill();
+
+                // Teken het groene Thuisbord huis-icoon exact zoals op het geüploade logo
+                ctx.strokeStyle = '#5cd69c';
+                ctx.lineWidth = 28 * scale;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(256 * scale, 140 * scale);
+                ctx.lineTo(148 * scale, 228 * scale);
+                ctx.lineTo(148 * scale, 364 * scale);
+                ctx.lineTo(222 * scale, 364 * scale);
+                ctx.lineTo(222 * scale, 292 * scale);
+                ctx.lineTo(290 * scale, 292 * scale);
+                ctx.lineTo(290 * scale, 364 * scale);
+                ctx.lineTo(364 * scale, 364 * scale);
+                ctx.lineTo(364 * scale, 228 * scale);
+                ctx.closePath();
+                ctx.stroke();
+
+                return canvas.toDataURL('image/png');
+            }
+
+            window.addEventListener('DOMContentLoaded', () => {
+                try {
+                    const fav32 = renderLogoToDataUrl(32, false);
+                    const apple180 = renderLogoToDataUrl(180, true);
+                    const android192 = renderLogoToDataUrl(192, false);
+                    const android512 = renderLogoToDataUrl(512, false);
+
+                    const favEl = document.getElementById('dynamicFaviconPng');
+                    const appleEl = document.getElementById('dynamicAppleTouchIcon');
+                    if (favEl) favEl.href = fav32;
+                    if (appleEl) appleEl.href = apple180;
+
+                    const manifestObj = {
+                        name: "Thuisbord Smart Home Dashboard",
+                        short_name: "Thuisbord",
+                        start_url: "./",
+                        display: "standalone",
+                        background_color: "#eef2ed",
+                        theme_color: "#18261f",
+                        icons: [
+                            { src: android192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+                            { src: android512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+                        ]
+                    };
+                    const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+                    const manifestEl = document.getElementById('dynamicWebManifest');
+                    if (manifestEl) manifestEl.href = URL.createObjectURL(manifestBlob);
+                } catch (e) {
+                    console.warn("Kon dynamische iconen niet genereren:", e);
+                }
+            });
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,7 +144,10 @@
     <nav id="topSystemNav" class="hidden bg-[#152920] text-white px-4 sm:px-8 py-2.5 flex-wrap items-center justify-between gap-3 text-xs sm:text-sm border-b border-white/10">
         <div class="flex items-center gap-3 flex-wrap">
             <span class="font-bold tracking-tight text-white flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span>
+                <svg class="w-6 h-6 rounded-lg shadow-xs shrink-0" viewBox="0 0 512 512">
+                    <rect width="512" height="512" rx="118" fill="#18261f" stroke="#5cd69c" stroke-width="16" stroke-opacity="0.3"/>
+                    <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" fill="none" stroke="#5cd69c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 Thuisbord
             </span>
             <span id="cloudSyncBadge" class="bg-white/10 text-[#dcece3] px-2.5 py-0.5 rounded-full text-[11px]">
@@ -592,9 +679,9 @@
     <!-- ===================================================================== -->
     <div id="viewLogin" class="flex flex-1 items-center justify-center p-4 min-h-screen">
         <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-lg border border-black/5">
-            <div class="w-14 h-14 rounded-2xl bg-[#152920] text-[#34d399] flex items-center justify-center mb-4 mx-auto shadow-sm">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
+            <div class="w-16 h-16 rounded-[18px] bg-[#18261f] flex items-center justify-center mb-4 mx-auto shadow-md">
+                <svg class="w-10 h-10" viewBox="0 0 512 512" fill="none">
+                    <path d="M256 140L148 228V364H222V292H290V364H364V228L256 140Z" stroke="#5cd69c" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
             <div class="text-center mb-6">
