@@ -11,6 +11,11 @@ const MIJN_EIGEN_FIREBASE_CONFIG = {
     appId: "1:974977360408:web:59464b6b219d4e6597d96d"
 };
 
+// URL van je Cloudflare Worker voor de EPEX-prijzen (zie ../cloudflare-worker/README.md).
+// Voorbeeld: "https://thuisbord-prijzen.jouwnaam.workers.dev"  (zonder slash op het einde)
+// Leeg laten = direct bij Energy-Charts ophalen (wordt door de browser geblokkeerd via CORS).
+const EPEX_PROXY_URL = "https://thuisbord-prijzen.jaiderjannis.workers.dev/";
+
 const EIGENAAR_SUPER_ADMIN_EMAIL = "jaiderjannis@gmail.com";
 
 // Standaard template voor een Gezin / Huishouden
