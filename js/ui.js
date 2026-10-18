@@ -173,6 +173,17 @@ function renderAll() {
     document.getElementById('kwhImport').textContent = `${formatNum(appState.kwhImport, 2)} kWh`;
     document.getElementById('kwhSolar').textContent = formatNum(appState.kwhSolar, 1);
     document.getElementById('kwhExport').textContent = `${formatNum(appState.kwhExport, 1)} kWh`;
+
+    // Piekverbruik huidige maand: enkel zichtbaar als er een entiteit aan gekoppeld is
+    const peakRow = document.getElementById('rowMonthlyPeak');
+    if (peakRow) {
+        const hasPeakEntity = !!((appState.entityMap || {}).monthlyPeakW || '').trim();
+        peakRow.classList.toggle('hidden', !hasPeakEntity);
+        peakRow.classList.toggle('flex', hasPeakEntity);
+        const peakEl = document.getElementById('valMonthlyPeak');
+        if (peakEl) peakEl.textContent = (hasPeakEntity && Number(appState.monthlyPeakW) > 0)
+            ? `${formatNum(Number(appState.monthlyPeakW) / 1000, 2)} kW` : '—';
+    }
     document.getElementById('m3GasTotal').textContent = `${formatNum(appState.gasToday, 2)} m³`;
     document.getElementById('litersWaterTotal').textContent = `${Math.round(appState.waterTodayLiters || 0)} L (${formatNum(waterM3, 2)} m³)`;
 
@@ -189,6 +200,7 @@ function renderAll() {
     renderActiveLightsBadgeAndModal();
     renderShuttersView();
     renderRobotsMaintenanceView();
+    renderCarsView();
 }
 
 window.switchView = function(view) {
@@ -230,6 +242,13 @@ window.switchView = function(view) {
         if (view === 'robots') renderRobotsMaintenanceView();
     }
 
+    const vCars = document.getElementById('viewCars');
+    if (vCars) {
+        vCars.classList.toggle('hidden', view !== 'cars');
+        vCars.classList.toggle('flex', view === 'cars');
+        if (view === 'cars') renderCarsView();
+    }
+
     document.getElementById('viewLogin').classList.toggle('hidden', view !== 'login');
     document.getElementById('viewLogin').classList.toggle('flex', view === 'login');
 
@@ -245,6 +264,7 @@ window.switchView = function(view) {
     const btnDisplay = document.getElementById('navBtnDisplay');
     const btnRooms = document.getElementById('navBtnRooms');
     const btnRobots = document.getElementById('navBtnRobots');
+    const btnCars = document.getElementById('navBtnCars');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -254,6 +274,7 @@ window.switchView = function(view) {
     if (btnDisplay) btnDisplay.className = view === 'display' ? activeClass : inactiveClass;
     if (btnRooms) btnRooms.className = view === 'shutters' ? activeClass : inactiveClass;
     if (btnRobots) btnRobots.className = view === 'robots' ? activeClass : inactiveClass;
+    if (btnCars) btnCars.className = view === 'cars' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if ((currentRole === 'manager' || currentRole === 'admin') && btnAdmin) btnAdmin.className = view === 'admin' ? activeClass : inactiveClass;
 
