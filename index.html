@@ -111,6 +111,12 @@
                     <span class="text-[10.5px] leading-tight opacity-70">Music Assistant</span>
                     <span id="menuMusicBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
+                <button id="navBtnWeather" onclick="switchView('weather'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🌦️</span>
+                    <span class="text-[13px] font-bold leading-tight">Weer</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Voorspelling &amp; regenradar</span>
+                    <span id="menuWeatherBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
@@ -197,58 +203,64 @@
 
             <!-- Header: op smartphone enkel icoontjes, vanaf tablet ook tekst -->
             <header class="mb-4 sm:mb-5 px-1">
-                <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-2 gap-y-2.5 sm:gap-4">
-                    <div class="flex items-baseline gap-2 sm:gap-4 min-w-0 max-w-full">
-                        <button onclick="toggleFullScreen()" title="Volledig scherm" class="self-center p-1.5 -ml-1.5 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer shrink-0">
+                <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-3 sm:gap-4">
+                    <div class="flex items-center gap-2.5 sm:gap-4 min-w-0 max-w-full">
+                        <button onclick="toggleFullScreen()" title="Volledig scherm" class="p-1.5 -ml-1.5 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m8-16h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3"/>
                             </svg>
                         </button>
-                        <h1 id="liveClock" class="text-3xl sm:text-[42px] font-bold tracking-tight text-[#1c2520] leading-none">14:21</h1>
-                        <span id="liveDate" class="text-sm sm:text-xl text-[#5a655e] font-normal truncate">zondag 18 oktober</span>
+                        <h1 id="liveClock" class="text-4xl sm:text-[42px] font-bold tracking-tight text-[#1c2520] leading-none shrink-0">14:21</h1>
+                        <!-- Datum + weer: op smartphone onder elkaar naast de klok, op groter scherm achter elkaar -->
+                        <div class="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-x-3 leading-snug">
+                            <span id="liveDate" class="text-[13px] sm:text-xl text-[#5a655e] font-normal truncate">zondag 18 oktober</span>
+                            <button id="liveWeather" type="button" onclick="switchView('weather')" title="Weer en regenradar" class="hidden text-left text-[13px] sm:text-xl text-[#5a655e] font-normal truncate cursor-pointer hover:text-[#1c2520] sm:before:content-['·'] sm:before:mr-3"></button>
+                        </div>
                     </div>
 
-                    <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 w-full sm:w-auto sm:shrink-0">
+                    <!-- Knoppen: op smartphone een nette rij van gelijke knoppen, op groter scherm rechts -->
+                    <div class="grid grid-flow-col auto-cols-fr gap-2 w-full sm:flex sm:w-auto sm:items-center sm:justify-end sm:gap-2.5 sm:shrink-0">
                         <span id="householdNamePill" class="hidden 2xl:inline-flex items-center gap-1.5 bg-white/70 px-3.5 py-2 rounded-full text-xs font-bold text-[#152920] border border-black/5">
                             🏡 Huishouden: Familie Peeters
                         </span>
 
-                        <!-- Snelle knop naar Ruimtes (Rolluiken, Airco's & Lampen) -->
-                        <button id="headerRoomsBtn" onclick="switchView('shutters')" title="Ruimtes: lampen, rolluiken & airco" aria-label="Ruimtes" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
-                            <span class="text-base md:text-sm">🏠</span>
-                            <span class="hidden md:inline">Ruimtes</span>
+                        <button id="headerRoomsBtn" onclick="switchView('shutters')" title="Ruimtes: lampen, rolluiken & airco" aria-label="Ruimtes" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                            <span class="text-lg 2xl:text-sm">🏠</span>
+                            <span class="hidden 2xl:inline">Ruimtes</span>
                         </button>
 
-                        <!-- Knop die toont hoeveel lampen en welke lampen er aan staan -->
-                        <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" aria-label="Lampen" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-2.5 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
+                        <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" aria-label="Lampen" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-2.5 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
                             <span id="headerLightsDot" class="hidden md:block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                            <span class="text-base md:text-sm">💡</span>
-                            <span id="headerActiveLightsCount" class="md:hidden">0</span>
-                            <span id="headerActiveLightsText" class="hidden md:inline max-w-[13rem] truncate">0 lampen aan</span>
+                            <span class="text-lg 2xl:text-sm">💡</span>
+                            <span id="headerActiveLightsCount" class="2xl:hidden text-sm">0</span>
+                            <span id="headerActiveLightsText" class="hidden 2xl:inline max-w-[13rem] truncate">0 lampen aan</span>
                         </button>
 
-                        <!-- Onderhoud voor Robotmaaier & Robotstofzuiger -->
-                        <button id="headerRobotsBtn" onclick="switchView('robots')" title="Robots: bediening & onderhoud" aria-label="Robots" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
-                            <span class="text-base md:text-sm">🤖</span>
-                            <span class="hidden md:inline">Robots</span>
+                        <button id="headerRobotsBtn" onclick="switchView('robots')" title="Robots: bediening & onderhoud" aria-label="Robots" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                            <span class="text-lg 2xl:text-sm">🤖</span>
+                            <span class="hidden 2xl:inline">Robots</span>
                         </button>
 
-                        <!-- Live status: op smartphone enkel een stipje, groter scherm ook een klein tekstje -->
-                        <div onclick="toggleHamburgerMenu(true)" title="Verbindingsstatus" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3 rounded-full flex items-center justify-center gap-2 text-[11px] font-medium text-[#68736d] transition cursor-pointer border border-black/5">
-                            <span id="haStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
-                            <span id="haStatusText" class="hidden">Live via Home Assistant</span>
-                        </div>
+                        <button id="headerWeatherBtn" onclick="switchView('weather')" title="Weer en regenradar" aria-label="Weer" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                            <span id="headerWeatherIcon" class="text-lg md:text-sm">🌦️</span>
+                            <span class="hidden 2xl:inline">Weer</span>
+                        </button>
 
-                        <!-- Hamburger Menu Knop -->
-                        <button onclick="toggleHamburgerMenu(true)" title="Open menu" aria-label="Menu" class="bg-white/95 hover:bg-white shadow-sm w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[#152920] transition cursor-pointer border border-black/5">
+                        <button onclick="toggleHamburgerMenu(true)" title="Open menu" aria-label="Menu" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-10 rounded-full flex items-center justify-center text-[#152920] transition cursor-pointer border border-black/5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                             </svg>
                         </button>
                     </div>
                 </div>
-                <!-- Gezinsnaam: op smartphone/tablet als klein regeltje onder de klok -->
-                <p class="2xl:hidden mt-1.5 text-[11px] sm:text-xs font-semibold text-[#68736d] truncate"><span id="liveDateMobile" class="hidden"></span><span id="householdNameLine"></span></p>
+                <!-- Gezinsnaam (tot 2xl) en klein live-HA-stream-label -->
+                <p class="mt-2 flex items-center gap-x-3 text-[11px] sm:text-xs font-semibold text-[#68736d] min-w-0">
+                    <span class="2xl:hidden truncate"><span id="liveDateMobile" class="hidden"></span><span id="householdNameLine"></span></span>
+                    <span class="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-[#8a958f] whitespace-nowrap" title="Verbinding met Home Assistant">
+                        <span id="haStatusDot" class="w-1.5 h-1.5 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
+                        <span id="haStatusText">Live HA stream</span>
+                    </span>
+                </p>
             </header>
 
             <!-- Smart Live Advice Banner (Zonder Pulse Lamp badge hierin!) -->
@@ -893,6 +905,24 @@
         </div>
     </div>
 
+    <div id="viewWeather" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1100px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🌦️</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Weer &amp; regenradar</h2>
+                        <p class="text-xs text-[#b3c7bd]">Het weer nu, de voorspelling en de regenradar voor jullie locatie.</p>
+                    </div>
+                </div>
+                <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                    ← Terug naar Wanddisplay
+                </button>
+            </div>
+            <div id="weatherContainer" class="space-y-5"></div>
+        </div>
+    </div>
+
     <!-- ===================================================================== -->
     <!-- VIEW: OVERZICHT (maand & jaar)                                        -->
     <!-- ===================================================================== -->
@@ -995,6 +1025,7 @@
                 <button id="adminTabBtn_autos" onclick="switchAdminTab('autos')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🚗</span><span>Auto's</span></button>
                 <button id="adminTabBtn_evcc" onclick="switchAdminTab('evcc')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>⚡</span><span>evcc</span></button>
                 <button id="adminTabBtn_muziek" onclick="switchAdminTab('muziek')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎵</span><span>Muziek</span></button>
+                <button id="adminTabBtn_weer" onclick="switchAdminTab('weer')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🌦️</span><span>Weer</span></button>
                 <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎨</span><span>Weergave</span></button>
                 <button id="adminTabBtn_backup" onclick="switchAdminTab('backup')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💾</span><span>Back-up</span></button>
             </div>
@@ -1611,6 +1642,10 @@
                 <div id="adminMusicContainer" class="space-y-6"></div>
             </div>
 
+            <div id="adminTab_weer" class="hidden space-y-6">
+                <div id="adminWeatherContainer" class="space-y-6"></div>
+            </div>
+
             <!-- ================================================================= -->
             <!-- TAB 10: BACK-UP & EXPORT                                          -->
             <!-- ================================================================= -->
@@ -1808,6 +1843,8 @@
     <script defer src="js/rooms-lights.js"></script>
     <script defer src="js/shutters-climate.js"></script>
     <script defer src="js/robots.js"></script>
+    <script defer src="js/maps.js"></script>
+    <script defer src="js/weather.js"></script>
     <script defer src="js/cars.js"></script>
     <script defer src="js/evcc.js"></script>
     <script defer src="js/music.js"></script>
