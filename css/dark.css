@@ -97,3 +97,9 @@ html.dark input[type=range]{accent-color:#19975c}
 html.dark button.bg-\[\#152920\]{background-color:#1f7a4f}
 html.dark button.bg-\[\#152920\]:hover{background-color:#25905c}
 html.dark #notificationsBar .bg-\[\#f1eefb\]{background-color:#241f3a;border-color:#3b3360;color:#cfc4f5}
+html.dark .weather-map,html.dark .car-map{background:#17231d}
+html.dark .weather-map .leaflet-container,html.dark .car-map .leaflet-container{background:#17231d}
+html.dark .map-pin{background:#1d2b24;border-color:#5cd69c}
+html.dark .leaflet-control-attribution{background:rgba(13,23,18,.75)!important;color:#9fb0a6!important}
+html.dark .leaflet-control-attribution a{color:#8fd4b0!important}
+html.dark .leaflet-bar a{background:#1d2b24;color:#e6efe9;border-color:#2c3d34}
