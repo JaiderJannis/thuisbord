@@ -19,7 +19,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>:root{--bg-sage:#eef2ed}body{background-color:var(--bg-sage)}</style>
     <script>try{var c=localStorage.getItem('thuisbord_bg');if(c&&/^#[0-9a-f]{6}$/i.test(c))document.documentElement.style.setProperty('--bg-sage',c)}catch(e){}</script>
+    <script>try{var m=localStorage.getItem('thuisbord_theme_mode');if(m==='dark'||((m!=='light')&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches&&m==='auto'))document.documentElement.classList.add('dark')}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dark.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none">
 
@@ -64,6 +66,9 @@
                 </div>
             </div>
 
+            <!-- Licht / donker / automatisch: voor iedereen -->
+            <div id="themeSwitcher"></div>
+
             <!-- Navigatie in het menu: vaste tegels, alles gecentreerd -->
             <div class="space-y-2.5">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Menu</p>
@@ -90,6 +95,18 @@
                     <span class="text-[13px] font-bold leading-tight">Auto's</span>
                     <span class="text-[10.5px] leading-tight opacity-70">Laden, banden, portieren</span>
                     <span id="menuCarsBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
+                <button id="navBtnEvcc" onclick="switchView('evcc'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">⚡</span>
+                    <span class="text-[13px] font-bold leading-tight">Laden (evcc)</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Zonneladen &amp; laadpunten</span>
+                    <span id="menuEvccBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
+                <button id="navBtnMusic" onclick="switchView('music'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🎵</span>
+                    <span class="text-[13px] font-bold leading-tight">Muziek</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Music Assistant</span>
+                    <span id="menuMusicBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
@@ -840,6 +857,42 @@
         </div>
     </div>
 
+    <div id="viewEvcc" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">⚡</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Laden (evcc)</h2>
+                        <p class="text-xs text-[#b3c7bd]">Zonneladen, laadmodus en limieten van jullie laadpunten, live via evcc in Home Assistant.</p>
+                    </div>
+                </div>
+                <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                    ← Terug naar Wanddisplay
+                </button>
+            </div>
+            <div id="evccContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+        </div>
+    </div>
+
+    <div id="viewMusic" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1440px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🎵</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Muziek</h2>
+                        <p class="text-xs text-[#b3c7bd]">Bedien Music Assistant en je muziekspelers, live via Home Assistant.</p>
+                    </div>
+                </div>
+                <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                    ← Terug naar Wanddisplay
+                </button>
+            </div>
+            <div id="musicContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+        </div>
+    </div>
+
     <!-- ===================================================================== -->
     <!-- VIEW: OVERZICHT (maand & jaar)                                        -->
     <!-- ===================================================================== -->
@@ -940,6 +993,8 @@
                 <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>📅</span><span>Agenda &amp; afval</span></button>
                 <button id="adminTabBtn_rolluiken_airco" onclick="switchAdminTab('rolluiken_airco')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🪟</span><span>Rolluiken &amp; airco</span></button>
                 <button id="adminTabBtn_autos" onclick="switchAdminTab('autos')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🚗</span><span>Auto's</span></button>
+                <button id="adminTabBtn_evcc" onclick="switchAdminTab('evcc')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>⚡</span><span>evcc</span></button>
+                <button id="adminTabBtn_muziek" onclick="switchAdminTab('muziek')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎵</span><span>Muziek</span></button>
                 <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎨</span><span>Weergave</span></button>
                 <button id="adminTabBtn_backup" onclick="switchAdminTab('backup')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💾</span><span>Back-up</span></button>
             </div>
@@ -1527,16 +1582,33 @@
                         <div class="max-w-2xl">
                             <span class="text-[11px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full">👑 Super Admin</span>
                             <h3 class="text-lg font-bold text-[#1c2520] mt-2">Rechten per rol</h3>
-                            <p class="text-xs text-[#68736d] mt-1">Bepaal wat gezinsbeheerders en gezinsleden mogen bekijken, bedienen en beheren. Wijzigingen gelden meteen voor alle gezinnen. Jij (Super Admin) mag altijd alles. Een gezinslid heeft nooit toegang tot het beheerpaneel.</p>
+                            <p class="text-xs text-[#68736d] mt-1">Bepaal per rol wat gezinsbeheerders en gezinsleden mogen bekijken, bedienen en beheren. Wijzigingen gelden meteen voor alle gezinnen. Jij (Super Admin) mag altijd alles. Een gezinslid heeft nooit toegang tot het beheerpaneel.</p>
                         </div>
                         <button onclick="resetPermissions()" class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-[#1c2520] text-xs font-bold cursor-pointer">↺ Standaardrechten</button>
                     </div>
                     <div id="permissionsMatrix" class="space-y-6"></div>
                 </div>
+
+                <div class="bg-white rounded-[26px] p-5 sm:p-6 shadow-sm space-y-4">
+                    <div class="max-w-2xl">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2.5 py-1 rounded-full">👤 Per persoon</span>
+                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Rechten per persoon</h3>
+                        <p class="text-xs text-[#68736d] mt-1">Wil je iemand meer of minder laten doen dan zijn rol? Kies de persoon en zet een recht op "Toestaan" of "Weigeren". Staat het op "Volgt rol", dan geldt de regel hierboven.</p>
+                    </div>
+                    <div id="permissionsUsers" class="space-y-4"></div>
+                </div>
             </div>
 
             <div id="adminTab_autos" class="hidden space-y-6">
                 <div id="adminCarsContainer" class="space-y-6"></div>
+            </div>
+
+            <div id="adminTab_evcc" class="hidden space-y-6">
+                <div id="adminEvccContainer" class="space-y-6"></div>
+            </div>
+
+            <div id="adminTab_muziek" class="hidden space-y-6">
+                <div id="adminMusicContainer" class="space-y-6"></div>
             </div>
 
             <!-- ================================================================= -->
@@ -1737,11 +1809,14 @@
     <script defer src="js/shutters-climate.js"></script>
     <script defer src="js/robots.js"></script>
     <script defer src="js/cars.js"></script>
+    <script defer src="js/evcc.js"></script>
+    <script defer src="js/music.js"></script>
     <script defer src="js/stats.js"></script>
     <script defer src="js/overview.js"></script>
     <script defer src="js/notifications.js"></script>
     <script defer src="js/backup.js"></script>
     <script defer src="js/permissions.js"></script>
+    <script defer src="js/darkmode.js"></script>
     <script defer src="js/households.js"></script>
     <script defer src="js/auth-accounts.js"></script>
     <script defer src="js/admin.js"></script>
