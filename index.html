@@ -64,44 +64,49 @@
                 </div>
             </div>
 
-            <!-- Navigatie Knoppen in Hamburger Menu -->
-            <div class="space-y-2">
-                <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Navigatie & Bediening</p>
-
-                <button id="navBtnDisplay" onclick="switchView('display'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-bold bg-white text-[#152920] transition flex items-center gap-3 cursor-pointer text-sm">
-                    <span>📺</span>
-                    <span>Wanddisplay</span>
+            <!-- Navigatie in het menu: vaste tegels, alles gecentreerd -->
+            <div class="space-y-2.5">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1">Menu</p>
+                <div class="grid grid-cols-2 gap-2.5">
+                <button id="navBtnDisplay" onclick="switchView('display'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">📺</span>
+                    <span class="text-[13px] font-bold leading-tight">Wanddisplay</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Startscherm</span>
                 </button>
-
-                <button id="navBtnRooms" onclick="switchView('shutters'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
-                    <span class="flex items-center gap-3"><span>🏠</span><span>Ruimtes: Lampen, Rolluiken & Airco</span></span>
-                    <span id="menuShuttersCountBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">Live</span>
+                <button id="navBtnRooms" onclick="switchView('shutters'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🏠</span>
+                    <span class="text-[13px] font-bold leading-tight">Ruimtes</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Lampen, rolluiken, airco</span>
+                    <span id="menuShuttersCountBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
-
-                <button id="navBtnRobots" onclick="switchView('robots'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
-                    <span class="flex items-center gap-3"><span>🤖</span><span>Onderhoud: Maaier & Stofzuiger</span></span>
-                    <span id="menuRobotsBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">2</span>
+                <button id="navBtnRobots" onclick="switchView('robots'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🤖</span>
+                    <span class="text-[13px] font-bold leading-tight">Robots</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Maaier &amp; stofzuiger</span>
+                    <span id="menuRobotsBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
-
-                <button id="navBtnCars" onclick="switchView('cars'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-between cursor-pointer text-sm">
-                    <span class="flex items-center gap-3"><span>🚗</span><span>Auto's</span></span>
-                    <span id="menuCarsBadge" class="text-[11px] bg-white/15 px-2 py-0.5 rounded-full">2</span>
+                <button id="navBtnCars" onclick="switchView('cars'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🚗</span>
+                    <span class="text-[13px] font-bold leading-tight">Auto's</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Laden, banden, portieren</span>
+                    <span id="menuCarsBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
-
-                <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-3 cursor-pointer text-sm">
-                    <span>📊</span>
-                    <span>Overzicht: maand &amp; jaar</span>
+                <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">📊</span>
+                    <span class="text-[13px] font-bold leading-tight">Overzicht</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Maand &amp; jaar</span>
                 </button>
-
-                <button id="navBtnCalendar" onclick="switchView('calendar'); toggleHamburgerMenu(false);" class="w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-3 cursor-pointer text-sm">
-                    <span>📅</span>
-                    <span>Agenda, Taken & Maandkalender</span>
+                <button id="navBtnCalendar" onclick="switchView('calendar'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">📅</span>
+                    <span class="text-[13px] font-bold leading-tight">Agenda</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Taken &amp; kalender</span>
                 </button>
-
-                <button id="navBtnAdmin" onclick="switchView('admin'); toggleHamburgerMenu(false);" class="hidden w-full px-4 py-3 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition items-center gap-3 cursor-pointer text-sm">
-                    <span id="adminNavIcon">🏡</span>
-                    <span id="adminNavLabel">Gezinsbeheer</span>
+                    <button id="navBtnAdmin" onclick="switchView('admin'); toggleHamburgerMenu(false);" class="nav-tile col-span-2 relative flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span id="adminNavIcon" class="text-2xl leading-none">🏡</span>
+                    <span id="adminNavLabel" class="text-[13px] font-bold leading-tight">Beheer</span>
+                    <span id="adminNavSub" class="text-[10.5px] leading-tight opacity-70">Instellingen &amp; gezinsleden</span>
                 </button>
+                </div>
             </div>
         </div>
 
@@ -170,55 +175,60 @@
     <div id="viewDisplay" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col justify-between">
         <div class="max-w-[1440px] w-full mx-auto">
 
-            <!-- Header Bar (Slechts 1 ronde Hamburger-menuknop rechtsboven!) -->
-            <header class="flex flex-wrap items-center justify-between gap-4 mb-5 px-1">
-                <div class="flex items-baseline gap-3 sm:gap-4 flex-wrap">
-                    <button onclick="toggleFullScreen()" title="Volledig scherm" class="p-2 -ml-2 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m8-16h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3"/>
-                        </svg>
-                    </button>
-                    <h1 id="liveClock" class="text-4xl sm:text-[42px] font-bold tracking-tight text-[#1c2520]">14:21</h1>
-                    <span id="liveDate" class="text-lg sm:text-xl text-[#5a655e] font-normal">zondag 18 oktober</span>
-                </div>
-
-                <div class="flex items-center gap-2.5 flex-wrap">
-                    <span id="householdNamePill" class="inline-flex items-center gap-1.5 bg-white/70 px-3.5 py-2 rounded-full text-xs font-bold text-[#152920] border border-black/5">
-                        🏡 Huishouden: Familie Peeters
-                    </span>
-
-                    <!-- Snelle knop naar Ruimtes (Rolluiken, Airco's & Lampen) -->
-                    <button onclick="switchView('shutters')" title="Ruimtes: Lampen, Rolluiken & Airco's bedienen" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
-                        <span>🏠</span>
-                        <span>Ruimtes (Rolluiken & Airco)</span>
-                    </button>
-
-                    <!-- NIEUW: Knop naast Ruimtes die toont hoeveel lampen en welke lampen er aan staan -->
-                    <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
-                        <span id="headerLightsDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        <span>💡</span>
-                        <span id="headerActiveLightsText">0 lampen aan</span>
-                    </button>
-
-                    <!-- NIEUW: Knop Onderhoud voor Robotmaaier & Robotstofzuiger -->
-                    <button onclick="switchView('robots')" title="Onderhoud & Bediening Robotmaaier en Robotstofzuiger" class="bg-white/95 hover:bg-white shadow-sm px-3.5 py-2 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
-                        <span>🤖</span>
-                        <span>Onderhoud</span>
-                    </button>
-
-                    <!-- Live Status Rechtsboven -->
-                    <div onclick="toggleHamburgerMenu(true)" class="bg-white/95 hover:bg-white shadow-sm px-4 py-2.5 rounded-full flex items-center gap-2.5 text-sm font-medium text-[#3b463f] transition cursor-pointer border border-black/5">
-                        <span id="haStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
-                        <span id="haStatusText">Live via Home Assistant</span>
+            <!-- Header: op smartphone enkel icoontjes, vanaf tablet ook tekst -->
+            <header class="mb-4 sm:mb-5 px-1">
+                <div class="flex items-center justify-between gap-2 sm:gap-4">
+                    <div class="flex items-baseline gap-2 sm:gap-4 min-w-0">
+                        <button onclick="toggleFullScreen()" title="Volledig scherm" class="self-center p-1.5 -ml-1.5 rounded-xl hover:bg-black/5 text-stone-600 transition cursor-pointer shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m8-16h3a1 1 0 011 1v3m0 8v3a1 1 0 01-1 1h-3"/>
+                            </svg>
+                        </button>
+                        <h1 id="liveClock" class="text-3xl sm:text-[42px] font-bold tracking-tight text-[#1c2520] leading-none">14:21</h1>
+                        <span id="liveDate" class="hidden sm:inline text-xl text-[#5a655e] font-normal truncate">zondag 18 oktober</span>
                     </div>
 
-                    <!-- Enige Hamburger Menu Knop Rechtsboven -->
-                    <button onclick="toggleHamburgerMenu(true)" title="Open Menu & Beheer" class="bg-white/95 hover:bg-white shadow-sm w-10 h-10 rounded-full flex items-center justify-center text-[#152920] transition cursor-pointer border border-black/5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                    </button>
+                    <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                        <span id="householdNamePill" class="hidden 2xl:inline-flex items-center gap-1.5 bg-white/70 px-3.5 py-2 rounded-full text-xs font-bold text-[#152920] border border-black/5">
+                            🏡 Huishouden: Familie Peeters
+                        </span>
+
+                        <!-- Snelle knop naar Ruimtes (Rolluiken, Airco's & Lampen) -->
+                        <button id="headerRoomsBtn" onclick="switchView('shutters')" title="Ruimtes: lampen, rolluiken & airco" aria-label="Ruimtes" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                            <span class="text-base md:text-sm">🏠</span>
+                            <span class="hidden md:inline">Ruimtes</span>
+                        </button>
+
+                        <!-- Knop die toont hoeveel lampen en welke lampen er aan staan -->
+                        <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" aria-label="Lampen" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-2.5 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
+                            <span id="headerLightsDot" class="hidden md:block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            <span class="text-base md:text-sm">💡</span>
+                            <span id="headerActiveLightsCount" class="md:hidden">0</span>
+                            <span id="headerActiveLightsText" class="hidden md:inline max-w-[13rem] truncate">0 lampen aan</span>
+                        </button>
+
+                        <!-- Onderhoud voor Robotmaaier & Robotstofzuiger -->
+                        <button id="headerRobotsBtn" onclick="switchView('robots')" title="Robots: bediening & onderhoud" aria-label="Robots" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                            <span class="text-base md:text-sm">🤖</span>
+                            <span class="hidden md:inline">Robots</span>
+                        </button>
+
+                        <!-- Live status: op smartphone enkel een stipje, groter scherm ook een klein tekstje -->
+                        <div onclick="toggleHamburgerMenu(true)" title="Verbindingsstatus" class="bg-white/95 hover:bg-white shadow-sm h-9 min-w-9 md:h-10 md:min-w-10 px-0 md:px-3 rounded-full flex items-center justify-center gap-2 text-[11px] font-medium text-[#68736d] transition cursor-pointer border border-black/5">
+                            <span id="haStatusDot" class="w-2.5 h-2.5 rounded-full bg-[#19975c] animate-pulse transition-all duration-500"></span>
+                            <span id="haStatusText" class="hidden md:inline">Live via Home Assistant</span>
+                        </div>
+
+                        <!-- Hamburger Menu Knop -->
+                        <button onclick="toggleHamburgerMenu(true)" title="Open menu" aria-label="Menu" class="bg-white/95 hover:bg-white shadow-sm w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[#152920] transition cursor-pointer border border-black/5">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+                <!-- Gezinsnaam: op smartphone/tablet als klein regeltje onder de klok -->
+                <p class="2xl:hidden mt-1.5 text-[11px] sm:text-xs font-semibold text-[#68736d] truncate"><span id="liveDateMobile" class="sm:hidden"></span><span class="sm:hidden"> · </span><span id="householdNameLine"></span></p>
             </header>
 
             <!-- Smart Live Advice Banner (Zonder Pulse Lamp badge hierin!) -->
@@ -682,7 +692,7 @@
                     <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/70">
                         <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Afspraak voor Vandaag Toevoegen</h3>
                         <p class="text-xs text-[#68736d] mb-3">Verschijnt direct bij 'Agenda vandaag' op het wanddisplay.</p>
-                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                        <div data-perm-box class="flex flex-col sm:flex-row gap-2 mb-3">
                             <input id="userNewAgendaTime" type="text" placeholder="14:00" class="sm:w-24 px-3 py-2 rounded-xl border border-stone-200 text-sm">
                             <input id="userNewAgendaTitle" type="text" placeholder="Afspraak (bijv. Tandarts)" class="flex-1 px-3 py-2 rounded-xl border border-stone-200 text-sm">
                             <button onclick="userAddAgendaItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shrink-0">
@@ -695,7 +705,7 @@
                     <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/70 flex-1">
                         <h3 class="text-lg font-bold text-[#1c2520] mb-1">✅ Taken Vandaag</h3>
                         <p class="text-xs text-[#68736d] mb-3">Voeg een huishoudtaak toe of vink ze af.</p>
-                        <div class="flex gap-2 mb-3">
+                        <div data-perm-box class="flex gap-2 mb-3">
                             <input id="userNewTaskText" type="text" placeholder="Nieuwe taak..." class="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 text-sm">
                             <button onclick="userAddTaskItem()" class="bg-[#152920] text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shrink-0">
                                 + Taak
@@ -897,62 +907,41 @@
         <div class="max-w-[1380px] w-full mx-auto">
 
             <!-- Header Banner -->
-            <div id="adminHeaderBanner" class="bg-[#152920] text-white rounded-[26px] p-6 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+            <div id="adminHeaderBanner" class="bg-[#152920] text-white rounded-[26px] p-4 sm:p-6 mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
                 <div>
                     <div class="flex items-center gap-2.5 flex-wrap">
                         <span id="adminHeaderRolePill" class="bg-[#dcece3] text-[#152920] text-xs font-extrabold px-3 py-1 rounded-full">🏡 Gezinsbeheer</span>
                         <span id="activeAdminHouseholdBadge" class="bg-white/15 text-white text-xs font-bold px-3 py-1 rounded-full">🏡 Gezin: Familie Peeters</span>
                         <span id="firebaseUidBadge" class="text-xs text-[#a3b8ae] font-mono"></span>
                     </div>
-                    <h2 id="adminHeaderTitle" class="text-2xl sm:text-3xl font-bold mt-2">Gezinsdashboard & Wanddisplay Beheer</h2>
-                    <p id="adminHeaderSubtitle" class="text-sm text-[#b3c7bd] mt-0.5">Beheer jouw huishouden, gezinsleden, Home Assistant entiteiten (incl. lamp & recycle afval) en live prijzen.</p>
+                    <h2 id="adminHeaderTitle" class="text-xl sm:text-3xl font-bold mt-2">Gezinsdashboard & Wanddisplay Beheer</h2>
+                    <p id="adminHeaderSubtitle" class="hidden sm:block text-sm text-[#b3c7bd] mt-0.5">Beheer jouw huishouden, gezinsleden, Home Assistant entiteiten (incl. lamp & recycle afval) en live prijzen.</p>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <button onclick="saveAllToFirebase()" class="bg-[#dcece3] hover:bg-white text-[#152920] font-bold px-5 py-3 rounded-xl text-sm transition cursor-pointer shadow-sm">
+                <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                    <button onclick="saveAllToFirebase()" class="flex-1 sm:flex-none bg-[#dcece3] hover:bg-white text-[#152920] font-bold px-4 sm:px-5 py-3 rounded-xl text-sm transition cursor-pointer shadow-sm">
                         💾 Wijzigingen Opslaan
                     </button>
-                    <button onclick="switchView('display')" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl text-sm transition cursor-pointer">
-                        Bekijk Wanddisplay →
+                    <button onclick="switchView('display')" class="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl text-sm transition cursor-pointer">
+                        Wanddisplay →
                     </button>
                 </div>
             </div>
 
-            <!-- Sub-Navigation Tabs -->
-            <div class="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-xs">
-                <button id="adminTabBtn_gezinnen" onclick="switchAdminTab('gezinnen')" class="hidden px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🏘️ 0. Alle Gezinnen Beheer
-                </button>
-                <button id="adminTabBtn_gebruikers" onclick="switchAdminTab('gebruikers')" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-[#152920] text-white transition cursor-pointer">
-                    👥 1. Gezinsleden
-                </button>
-                <button id="adminTabBtn_ha_entiteiten" onclick="switchAdminTab('ha_entiteiten')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🔌 2. Home Assistant, Lamp & Afval Sensoren
-                </button>
-                <button id="adminTabBtn_tarieven" onclick="switchAdminTab('tarieven')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    💶 3. Live Prijzen (Vandaag & Morgen)
-                </button>
-                <button id="adminTabBtn_apparaten" onclick="switchAdminTab('apparaten')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🧺 4. Slimme Apparaten & Water
-                </button>
-                <button id="adminTabBtn_advies" onclick="switchAdminTab('advies')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    💬 5. Live Advies
-                </button>
-                <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    📅 6. Google Agenda, Taken & Afval
-                </button>
-                <button id="adminTabBtn_rolluiken_airco" onclick="switchAdminTab('rolluiken_airco')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🪟❄️ 7. Rolluiken & Airco's
-                </button>
-                <button id="adminTabBtn_autos" onclick="switchAdminTab('autos')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🚗 9. Auto's
-                </button>
-                <button id="adminTabBtn_backup" onclick="switchAdminTab('backup')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    💾 10. Back-up
-                </button>
-                <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="px-4 py-2.5 rounded-xl text-sm font-bold text-[#49544d] hover:bg-stone-100 transition cursor-pointer">
-                    🎨 8. Weergave
-                </button>
+            <!-- Tabs van het beheerpaneel: geen nummers, op smartphone een net raster -->
+            <div id="adminTabBar" class="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-xs">
+                <button id="adminTabBtn_gezinnen" onclick="switchAdminTab('gezinnen')" class="admin-tab hidden flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🏘️</span><span>Alle gezinnen</span></button>
+                <button id="adminTabBtn_gebruikers" onclick="switchAdminTab('gebruikers')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer bg-[#152920] text-white"><span>👥</span><span>Gezinsleden</span></button>
+                <button id="adminTabBtn_rechten" onclick="switchAdminTab('rechten')" class="admin-tab hidden flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🔐</span><span>Rechten</span></button>
+                <button id="adminTabBtn_ha_entiteiten" onclick="switchAdminTab('ha_entiteiten')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🔌</span><span>Home Assistant</span></button>
+                <button id="adminTabBtn_tarieven" onclick="switchAdminTab('tarieven')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💶</span><span>Prijzen</span></button>
+                <button id="adminTabBtn_apparaten" onclick="switchAdminTab('apparaten')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🧺</span><span>Apparaten &amp; water</span></button>
+                <button id="adminTabBtn_advies" onclick="switchAdminTab('advies')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💬</span><span>Advies</span></button>
+                <button id="adminTabBtn_agenda" onclick="switchAdminTab('agenda')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>📅</span><span>Agenda &amp; afval</span></button>
+                <button id="adminTabBtn_rolluiken_airco" onclick="switchAdminTab('rolluiken_airco')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🪟</span><span>Rolluiken &amp; airco</span></button>
+                <button id="adminTabBtn_autos" onclick="switchAdminTab('autos')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🚗</span><span>Auto's</span></button>
+                <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎨</span><span>Weergave</span></button>
+                <button id="adminTabBtn_backup" onclick="switchAdminTab('backup')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💾</span><span>Back-up</span></button>
             </div>
 
             <!-- ================================================================= -->
@@ -1529,6 +1518,23 @@
             <!-- ================================================================= -->
             <!-- TAB 9: AUTO'S (ENTITEITEN PER AUTO)                               -->
             <!-- ================================================================= -->
+            <!-- ================================================================= -->
+            <!-- TAB (ALLEEN SUPER ADMIN): RECHTEN PER ROL                          -->
+            <!-- ================================================================= -->
+            <div id="adminTab_rechten" class="hidden space-y-6">
+                <div class="bg-white rounded-[26px] p-5 sm:p-6 shadow-sm space-y-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="max-w-2xl">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full">👑 Super Admin</span>
+                            <h3 class="text-lg font-bold text-[#1c2520] mt-2">Rechten per rol</h3>
+                            <p class="text-xs text-[#68736d] mt-1">Bepaal wat gezinsbeheerders en gezinsleden mogen bekijken, bedienen en beheren. Wijzigingen gelden meteen voor alle gezinnen. Jij (Super Admin) mag altijd alles. Een gezinslid heeft nooit toegang tot het beheerpaneel.</p>
+                        </div>
+                        <button onclick="resetPermissions()" class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-[#1c2520] text-xs font-bold cursor-pointer">↺ Standaardrechten</button>
+                    </div>
+                    <div id="permissionsMatrix" class="space-y-6"></div>
+                </div>
+            </div>
+
             <div id="adminTab_autos" class="hidden space-y-6">
                 <div id="adminCarsContainer" class="space-y-6"></div>
             </div>
@@ -1735,6 +1741,7 @@
     <script defer src="js/overview.js"></script>
     <script defer src="js/notifications.js"></script>
     <script defer src="js/backup.js"></script>
+    <script defer src="js/permissions.js"></script>
     <script defer src="js/households.js"></script>
     <script defer src="js/auth-accounts.js"></script>
     <script defer src="js/admin.js"></script>
