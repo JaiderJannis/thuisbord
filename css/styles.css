@@ -47,3 +47,10 @@ body {
 .notif-marquee-item{padding-right:3rem;flex:none}
 @keyframes notif-marquee-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.notif-marquee-track{animation:none}.notif-marquee-item+.notif-marquee-item{display:none}.notif-marquee{text-overflow:ellipsis}}
+
+/* Kaarten: pins en Leaflet-details */
+.map-pin-wrap{background:none;border:0}
+.map-pin{width:38px;height:38px;border-radius:50%;background:#fff;border:2px solid #152920;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.map-pin.is-car{border-color:#19975c}
+.weather-map .leaflet-container,.car-map .leaflet-container{width:100%;height:100%;font-family:inherit;background:#e8f2ec}
+.leaflet-control-attribution{font-size:9.5px!important}
