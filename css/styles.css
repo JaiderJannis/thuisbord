@@ -40,3 +40,10 @@ body {
 .theme-mode-btn.is-active { background: #ffffff; color: #152920; }
 .theme-mode-btn.is-idle { background: transparent; color: #dcece3; }
 .theme-mode-btn.is-idle:hover { background: rgba(255,255,255,.1); }
+
+/* Rollende melding (muziek): tekst schuift naar links */
+.notif-marquee{overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%)}
+.notif-marquee-track{display:inline-flex;will-change:transform;animation:notif-marquee-scroll 14s linear infinite}
+.notif-marquee-item{padding-right:3rem;flex:none}
+@keyframes notif-marquee-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.notif-marquee-track{animation:none}.notif-marquee-item+.notif-marquee-item{display:none}.notif-marquee{text-overflow:ellipsis}}
