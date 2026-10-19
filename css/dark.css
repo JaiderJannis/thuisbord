@@ -96,3 +96,4 @@ html.dark body{background-color:var(--bg-dark,#0d1712)!important}
 html.dark input[type=range]{accent-color:#19975c}
 html.dark button.bg-\[\#152920\]{background-color:#1f7a4f}
 html.dark button.bg-\[\#152920\]:hover{background-color:#25905c}
+html.dark #notificationsBar .bg-\[\#f1eefb\]{background-color:#241f3a;border-color:#3b3360;color:#cfc4f5}
