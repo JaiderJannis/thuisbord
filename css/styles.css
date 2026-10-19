@@ -35,3 +35,8 @@ body {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #cbd5cf; border-radius: 9999px; }
+
+/* Keuzeknoppen licht/donker/auto in het menu (menu is altijd donker) */
+.theme-mode-btn.is-active { background: #ffffff; color: #152920; }
+.theme-mode-btn.is-idle { background: transparent; color: #dcece3; }
+.theme-mode-btn.is-idle:hover { background: rgba(255,255,255,.1); }
