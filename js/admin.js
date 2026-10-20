@@ -100,7 +100,7 @@ function renderAdminAppliancesList() {
                 <select onchange="window.adminUpdateApplianceField(${idx}, 'icon', this.value)" class="sm:col-span-2 px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-sm">
                     ${icons.map(ic => `<option value="${ic}" ${app.icon === ic ? 'selected' : ''}>${ic}</option>`).join('')}
                 </select>
-                <input type="text" value="${app.name}" onchange="window.adminUpdateApplianceField(${idx}, 'name', this.value)" placeholder="Naam apparaat" class="sm:col-span-4 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                <input type="text" value="${haEscape(app.name)}" onchange="window.adminUpdateApplianceField(${idx}, 'name', this.value)" placeholder="Naam apparaat" class="sm:col-span-4 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
                 <input type="text" list="haEntitiesDatalist" value="${app.entityId || ''}" onchange="window.adminUpdateApplianceField(${idx}, 'entityId', this.value)" placeholder="sensor.wasmachine_power" class="sm:col-span-6 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#197447]">
             </div>
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -198,7 +198,7 @@ function renderAdminLists() {
         ? `<p class="text-xs text-[#68736d] italic py-2">Geen handmatige afspraken voor vandaag.</p>`
         : appState.agendaItems.map((item, idx) => `
             <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
-                <span><strong>${item.time}</strong> – ${item.title}</span>
+                <span><strong>${haEscape(item.time)}</strong> – ${haEscape(item.title)}</span>
                 <button onclick="window.adminRemoveAgendaItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
             </div>
         `).join('');
@@ -207,7 +207,7 @@ function renderAdminLists() {
         ? `<p class="text-xs text-[#68736d] italic py-2">Geen taken ingesteld.</p>`
         : appState.tasks.map((task, idx) => `
             <div class="flex items-center justify-between bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl text-sm">
-                <span>${task.text}</span>
+                <span>${haEscape(task.text)}</span>
                 <button onclick="window.adminRemoveTaskItem(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
             </div>
         `).join('');

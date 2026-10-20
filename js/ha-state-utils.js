@@ -11,6 +11,11 @@ function haEscape(text) {
     return String(text == null ? '' : text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Tekst veilig tussen quotes van een JavaScript-tekenreeks in een HTML-attribuut (onclick="f('...')")
+function escJsAttr(text) {
+    return haEscape(String(text == null ? '' : text).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ')).replace(/'/g, '&#39;');
+}
+
 function haStatesMap() {
     return new Map((discoveredHaEntities || []).map(s => [s.entity_id, s]));
 }

@@ -115,15 +115,15 @@ function renderRoomLightCardHtml(lt, idx) {
              ondragstart="window.handleDeviceDragStart(event, 'light', ${idx})"
              ondragend="window.handleDeviceDragEnd(event)"
              ondragover="window.handleDeviceDragOver(event)"
-             ondrop="window.handleDeviceDrop(event, 'light', ${idx}, '${lt.room || 'Woonkamer'}')"
+             ondrop="window.handleDeviceDrop(event, 'light', ${idx}, '${escJsAttr(lt.room || 'Woonkamer')}')"
              class="bg-white rounded-[24px] p-5 shadow-xs border ${isOn ? 'border-amber-300 bg-amber-50/20' : 'border-stone-200/90'} flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
             <div>
                 <div class="flex items-start justify-between gap-2 mb-3">
                     <div class="flex items-start gap-2">
                         <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
                         <div>
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider ${isOn ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-stone-600'} px-2 py-0.5 rounded-full">💡 Lamp • ${lt.room || 'Woonkamer'}</span>
-                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${lt.name}</h4>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider ${isOn ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-stone-600'} px-2 py-0.5 rounded-full">💡 Lamp • ${haEscape(lt.room || 'Woonkamer')}</span>
+                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${haEscape(lt.name)}</h4>
                             <p class="text-[10px] font-mono text-[#68736d]">${lt.entityId || 'Lokale bediening'}</p>
                         </div>
                     </div>
@@ -193,8 +193,8 @@ function renderActiveLightsBadgeAndModal() {
                         <div class="flex items-center gap-3">
                             <span class="w-8 h-8 rounded-xl ${isOn ? 'bg-amber-400 text-[#152920]' : 'bg-stone-200 text-stone-600'} flex items-center justify-center text-sm font-bold">💡</span>
                             <div>
-                                <p class="text-xs font-extrabold text-[#1c2520]">${lt.name}</p>
-                                <p class="text-[10px] text-[#68736d]">🏠 ${lt.room || 'Woonkamer'} • ${isOn ? (lt.brightnessPct ?? 100) + '% helderheid' : 'Uit'}</p>
+                                <p class="text-xs font-extrabold text-[#1c2520]">${haEscape(lt.name)}</p>
+                                <p class="text-[10px] text-[#68736d]">🏠 ${haEscape(lt.room || 'Woonkamer')} • ${isOn ? (lt.brightnessPct ?? 100) + '% helderheid' : 'Uit'}</p>
                             </div>
                         </div>
                         <button onclick="window.toggleSingleRoomLight(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-extrabold cursor-pointer ${isOn ? 'bg-[#152920] text-white' : 'bg-stone-200 text-stone-700'}">

@@ -214,6 +214,7 @@ function renderAll() {
     if (typeof renderCamerasView === 'function') renderCamerasView();
     if (typeof renderGuestView === 'function') renderGuestView();
     if (typeof renderTimelineView === 'function') renderTimelineView();
+    if (typeof renderHealthView === 'function') renderHealthView();
     if (typeof renderGuestOverlay === 'function') renderGuestOverlay();
     if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
     if (typeof renderDisplayLayout === 'function') renderDisplayLayout();
@@ -231,7 +232,7 @@ window.switchView = function(view) {
     }
     if (view === 'userPortal') view = 'calendar';
     try {
-        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
         const tEl = document.getElementById('subNavCurrentPageTitle');
         if (tEl && titles[view]) tEl.textContent = titles[view];
     } catch (e) { /* titel is een extraatje */ }
@@ -326,6 +327,13 @@ window.switchView = function(view) {
         if (view === 'timeline' && typeof renderTimelineView === 'function') renderTimelineView();
     }
 
+    const vHealth = document.getElementById('viewHealth');
+    if (vHealth) {
+        vHealth.classList.toggle('hidden', view !== 'health');
+        vHealth.classList.toggle('flex', view === 'health');
+        if (typeof healthViewActive === 'function') healthViewActive(view === 'health');
+    }
+
     const vGuest = document.getElementById('viewGuest');
     if (vGuest) {
         vGuest.classList.toggle('hidden', view !== 'guest');
@@ -380,6 +388,7 @@ window.switchView = function(view) {
     const btnCameras = document.getElementById('navBtnCameras');
     const btnGuest = document.getElementById('navBtnGuest');
     const btnTimeline = document.getElementById('navBtnTimeline');
+    const btnHealth = document.getElementById('navBtnHealth');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -401,6 +410,7 @@ window.switchView = function(view) {
     if (btnCameras) btnCameras.className = view === 'cameras' ? activeClass : inactiveClass;
     if (btnGuest) btnGuest.className = view === 'guest' ? activeClass : inactiveClass;
     if (btnTimeline) btnTimeline.className = view === 'timeline' ? activeClass : inactiveClass;
+    if (btnHealth) btnHealth.className = view === 'health' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if (btnAdmin) btnAdmin.className = (view === 'admin' ? activeClass : inactiveClass) + ' col-span-2';
 
