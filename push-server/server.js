@@ -66,6 +66,19 @@ let rules = readJson('rules.json', []);
 const lastState = new Map();
 const lastFire = new Map();
 
+const asList = (v) => (Array.isArray(v) ? v : [v]).map(x => String(x));
+const num = (v) => { if (v === null || v === undefined || v === '') return null; const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
+
+// Past een regel bij deze wijziging? Regels: naar/van (tekst of lijst), nietNaar (lijst), boven/onder (drempel wordt overschreden)
+function ruleMatches(r, to, from) {
+    if (r.naar != null && !asList(r.naar).includes(to)) return false;
+    if (r.van != null && !asList(r.van).includes(from)) return false;
+    if (r.nietNaar != null && asList(r.nietNaar).includes(to)) return false;
+    if (r.boven != null) { const n = num(to), o = num(from); if (n === null || n < Number(r.boven) || (o !== null && o >= Number(r.boven))) return false; }
+    if (r.onder != null) { const n = num(to), o = num(from); if (n === null || n > Number(r.onder) || (o !== null && o <= Number(r.onder))) return false; }
+    return true;
+}
+
 function handleStateChange(ev) {
     if (!ev || !ev.entity_id) return;
     const to = ev.new_state ? String(ev.new_state.state) : null;
@@ -73,8 +86,7 @@ function handleStateChange(ev) {
     if (to === null || from === to) return;
     rules.forEach(r => {
         if (r.entity !== ev.entity_id) return;
-        if (r.naar != null && String(r.naar) !== to) return;
-        if (r.van != null && String(r.van) !== from) return;
+        if (!ruleMatches(r, to, from)) return;
         const k = r.tag || r.entity, now = Date.now();
         if (now - (lastFire.get(k) || 0) < 30000) return;   // niet vaker dan 1x per 30 s per melding
         lastFire.set(k, now);
@@ -82,6 +94,23 @@ function handleStateChange(ev) {
         sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam}: {nieuw}').replace('{naam}', name).replace('{nieuw}', to).replace('{oud}', from || ''), tag: r.tag || ev.entity_id })
             .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
     });
+}
+
+// Regels die van buitenaf (de app) binnenkomen: streng opschonen
+function cleanRules(list) {
+    if (!Array.isArray(list) || list.length > 150) return null;
+    const txt = (v, n) => String(v == null ? '' : v).slice(0, n);
+    const arr = (v) => (v == null ? undefined : (Array.isArray(v) ? v : [v]).slice(0, 30).map(x => txt(x, 60)));
+    const out = [];
+    for (const r of list) {
+        if (!r || typeof r.entity !== 'string' || !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(r.entity)) continue;
+        const c = { naam: txt(r.naam, 80), entity: r.entity, titel: txt(r.titel || 'Thuisbord', 60), tekst: txt(r.tekst, 200), tag: txt(r.tag || r.entity, 60) };
+        ['naar', 'van', 'nietNaar'].forEach(k => { const a = arr(r[k]); if (a && a.length) c[k] = a.length === 1 && k !== 'nietNaar' ? a[0] : a; });
+        ['boven', 'onder'].forEach(k => { if (r[k] != null && isFinite(Number(r[k]))) c[k] = Number(r[k]); });
+        if (c.naar == null && c.van == null && c.nietNaar == null && c.boven == null && c.onder == null) continue;
+        out.push(c);
+    }
+    return out;
 }
 
 function connectHa() {
@@ -107,7 +136,7 @@ const send = (res, code, obj) => {
     res.end(JSON.stringify(obj));
 };
 const readBody = (req) => new Promise((resolve, reject) => {
-    let b = ''; req.on('data', c => { b += c; if (b.length > 20000) { reject(new Error('te groot')); req.destroy(); } });
+    let b = ''; req.on('data', c => { b += c; if (b.length > 100000) { reject(new Error('te groot')); req.destroy(); } });
     req.on('end', () => { try { resolve(b ? JSON.parse(b) : {}); } catch (e) { reject(e); } });
 });
 const keyOk = (req) => { const k = String(req.headers['x-key'] || ''); return k.length === cfg.key.length && require('crypto').timingSafeEqual(Buffer.from(k), Buffer.from(cfg.key)); };
@@ -132,6 +161,15 @@ http.createServer(async (req, res) => {
             subs = subs.filter(s => s.sub.endpoint !== (b.endpoint || ''));
             saveSubs();
             return send(res, 200, { ok: true });
+        }
+        if (req.method === 'GET' && u === '/rules') return send(res, 200, { rules });
+        if (req.method === 'POST' && u === '/rules') {
+            const b = await readBody(req);
+            const clean = cleanRules(b.rules);
+            if (!clean) return send(res, 400, { error: 'ongeldige regels' });
+            writeJson('rules.json', clean); rules = clean;
+            console.log('Regels ontvangen van de app:', clean.length);
+            return send(res, 200, { ok: true, regels: clean.length });
         }
         if (req.method === 'POST' && u === '/notify') {
             const b = await readBody(req);

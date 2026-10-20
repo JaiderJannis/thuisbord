@@ -151,6 +151,8 @@ function renderPushSwitcher() {
                 <input id="pushSrvKey" type="password" autocomplete="off" placeholder="SHARED_KEY uit je .env" value="${esc(cfg.key)}" class="w-full px-3 py-2 rounded-xl bg-white/10 text-white text-xs placeholder-white/40 border border-white/10">
                 <div class="flex gap-2"><button type="button" onclick="pushSaveServer()" class="flex-1 py-2 rounded-xl bg-[#34d399] text-[#0d2a1c] text-xs font-extrabold cursor-pointer">Opslaan</button>
                 <button type="button" onclick="pushServerTest()" class="flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">Testmelding</button></div>
+                <button type="button" onclick="pushRulesSend()" class="w-full py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">📤 Meldingsregels maken en naar de server sturen</button>
+                <p class="text-[10px] text-[#a3b8ae] leading-snug">Maakt uit je bord regels voor: wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg en internetlimiet. Druk hier opnieuw op na elke wijziging aan je apparaten.</p>
             </div>
         </details>` : '';
     const html = `
