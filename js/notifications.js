@@ -10,6 +10,7 @@ const NOTIF_CATEGORIES = [
     { key: 'robotsActive', label: '🤖 Robot is bezig',  hint: 'Toont zolang een robotmaaier of -stofzuiger aan het werk is (verdwijnt vanzelf)' },
     { key: 'climate',    label: '❄️ Airco aan',         hint: 'Toont zolang een airco aan staat, met de stand en gewenste temperatuur' },
     { key: 'laundry',    label: '🧺 Wasserij bezig',   hint: 'Wasmachine of droger draait: fase en resterende tijd. De melding "is klaar" valt onder Apparaat is klaar' },
+    { key: 'internet',   label: '📶 Internetlimiet',    hint: 'Je Telenet-verbruik komt in de buurt van de limiet (vanaf 90%)' },
     { key: 'waste',      label: '♻️ Afvalophaling',     hint: 'Vandaag of morgen is er ophaling' },
     { key: 'music',      label: '🎵 Muziek',            hint: 'Toont wat er nu speelt, als rollende tekst (Music Assistant)' },
     { key: 'connection', label: '📡 Verbinding',        hint: 'Geen live verbinding met Home Assistant' }
@@ -33,6 +34,7 @@ function notifCatOf(key) {
     if (k.startsWith('done_')) return 'appliances';
     if (k.startsWith('car_')) return 'cars';
     if (k.startsWith('laun_')) return 'laundry';
+    if (k.startsWith('net_')) return 'internet';
     if (k.startsWith('robact_')) return 'robotsActive';
     if (k.startsWith('clim_')) return 'climate';
     if (k.startsWith('rob_')) return 'robots';
@@ -49,7 +51,7 @@ function notifSticky(cat) {
 function notifTarget(key) {
     const cat = notifCatOf(key);
     const t = { cars: { view: 'cars' }, robots: { view: 'robots' }, robotsActive: { view: 'robots' },
-        climate: { view: 'shutters', filter: 'climate' }, laundry: { view: 'laundry' }, music: { view: 'music' }, waste: { view: 'calendar' },
+        climate: { view: 'shutters', filter: 'climate' }, laundry: { view: 'laundry' }, internet: { view: 'telenet' }, music: { view: 'music' }, waste: { view: 'calendar' },
         connection: { view: 'admin', tab: 'ha_entiteiten' } }[cat];
     if (!t) return null;
     if (typeof permViewAllowed === 'function' && currentRole && !permViewAllowed(t.view)) return null;
@@ -219,6 +221,7 @@ function computeNotifications(now = Date.now()) {
     if (notifEnabled('cars')) items.push(...notifCarItems(map));
     if (notifEnabled('robots')) items.push(...notifRobotItems(map));
     if (notifEnabled('laundry') && typeof laundryNotifItems === 'function') items.push(...laundryNotifItems(map));
+    if (notifEnabled('internet') && typeof telenetNotifItems === 'function') { try { items.push(...telenetNotifItems()); } catch (e) { /* extraatje */ } }
     if (notifEnabled('robotsActive')) items.push(...notifRobotActiveItems());
     if (notifEnabled('climate')) items.push(...notifClimateItems());
     if (notifEnabled('waste')) items.push(...notifWasteItems());
