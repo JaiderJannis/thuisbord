@@ -233,7 +233,7 @@ window.switchView = function(view) {
     }
     if (view === 'userPortal') view = 'calendar';
     try {
-        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', report: 'Maandrapport', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', report: 'Rapport', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
         const tEl = document.getElementById('subNavCurrentPageTitle');
         if (tEl && titles[view]) tEl.textContent = titles[view];
     } catch (e) { /* titel is een extraatje */ }
