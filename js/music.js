@@ -170,6 +170,7 @@ function musicPlayerCardHtml(pl, idx, map, allPlayers) {
                 </select>
             </div>` : ''}
 
+            <button type="button" onclick="window.musicLibOpen('${eid}')" class="w-full px-4 py-2.5 rounded-2xl bg-[#152920] hover:bg-[#233f31] text-white text-xs font-extrabold cursor-pointer">🎧 Spotify, afspeellijsten &amp; wachtrij</button>
             <details class="rounded-2xl border border-stone-200/80 bg-[#f6f8f5]">
                 <summary class="cursor-pointer select-none px-3.5 py-2 text-xs font-extrabold text-[#1c2520]">🎶 Iets afspelen</summary>
                 <div class="px-3.5 pb-3 pt-1 space-y-2">

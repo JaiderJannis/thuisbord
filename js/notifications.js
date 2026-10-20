@@ -23,6 +23,22 @@ const notifDismissed = new Set();    // sleutels die de gebruiker wegklikte (tot
 let notifSettingsHtmlCache = '';
 let notifBarHtmlCache = '';
 
+// Standaard niet weg te klikken: zaken die je niet mag missen. Per gezin aan te passen (notifSettings.sticky).
+const NOTIF_STICKY_DEFAULT = { connection: true, cars: true };
+function notifCatOf(key) {
+    const k = String(key || '');
+    if (k.startsWith('done_')) return 'appliances';
+    if (k.startsWith('car_')) return 'cars';
+    if (k.startsWith('rob_')) return 'robots';
+    if (k.startsWith('waste_')) return 'waste';
+    if (k.startsWith('music_')) return 'music';
+    if (k === 'ha_offline') return 'connection';
+    return '';
+}
+function notifSticky(cat) {
+    const s = (appState && appState.notifSettings && appState.notifSettings.sticky) || {};
+    return cat in s ? !!s[cat] : !!NOTIF_STICKY_DEFAULT[cat];
+}
 function notifEnabled(cat) {
     const s = (appState && appState.notifSettings) || {};
     return s[cat] !== false;
@@ -174,7 +190,7 @@ function renderNotifications() {
         music: 'bg-[#f1eefb] border-[#d9d0f0] text-[#4b3a85]'
     };
     const html = visible.map(i => {
-        const close = `<button onclick="window.dismissNotification('${haEscape(i.key).replace(/'/g, '&#39;')}')" aria-label="Melding sluiten" class="w-5 h-5 rounded-full hover:bg-black/10 cursor-pointer leading-none shrink-0">✕</button>`;
+        const close = notifSticky(notifCatOf(i.key)) ? '<span class="w-1.5 shrink-0"></span>' : `<button onclick="window.dismissNotification('${haEscape(i.key).replace(/'/g, '&#39;')}')" aria-label="Melding sluiten" class="w-5 h-5 rounded-full hover:bg-black/10 cursor-pointer leading-none shrink-0">✕</button>`;
         if (i.marquee) {
             // Rollende tekst naar links; de tekst staat twee keer achter elkaar voor een naadloze lus
             const secs = Math.max(10, Math.round(i.text.length * 0.32));
@@ -194,6 +210,7 @@ function renderNotifications() {
 }
 
 window.dismissNotification = function(key) {
+    if (notifSticky(notifCatOf(key))) return;
     notifDismissed.add(key);
     renderNotifications();
 };
@@ -205,7 +222,10 @@ function renderNotifSettings() {
     const html = NOTIF_CATEGORIES.map(c => `
         <label class="flex items-start gap-3 p-3 rounded-2xl bg-[#f6f8f5] border border-stone-200/80 cursor-pointer">
             <input type="checkbox" ${notifEnabled(c.key) ? 'checked' : ''} onchange="window.setNotifSetting('${c.key}', this.checked)" class="mt-0.5 w-4 h-4 accent-[#152920]">
-            <span><span class="block text-sm font-bold text-[#1c2520]">${c.label}</span><span class="block text-[11px] text-[#68736d]">${c.hint}</span></span>
+            <span class="flex-1"><span class="block text-sm font-bold text-[#1c2520]">${c.label}</span><span class="block text-[11px] text-[#68736d]">${c.hint}</span></span>
+            <span class="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-[#38443d]" onclick="event.stopPropagation()" title="Aan: de melding heeft een ✕. Uit: ze verdwijnt pas als het niet meer actief is.">
+                <input type="checkbox" ${notifSticky(c.key) ? '' : 'checked'} onchange="window.setNotifSticky('${c.key}', !this.checked)" class="w-4 h-4 accent-[#152920]">Wegklikbaar
+            </span>
         </label>`).join('');
     if (html === notifSettingsHtmlCache) return;
     notifSettingsHtmlCache = html;
@@ -215,6 +235,14 @@ function renderNotifSettings() {
 window.setNotifSetting = function(key, on) {
     if (!appState.notifSettings) appState.notifSettings = {};
     appState.notifSettings[key] = !!on;
+    persistStateToFirestore(false);
+    renderNotifications();
+};
+
+window.setNotifSticky = function(key, sticky) {
+    if (!appState.notifSettings) appState.notifSettings = {};
+    if (!appState.notifSettings.sticky) appState.notifSettings.sticky = {};
+    appState.notifSettings.sticky[key] = !!sticky;
     persistStateToFirestore(false);
     renderNotifications();
 };
