@@ -105,21 +105,40 @@ function renderDisplayWaste() {
     if (liveItems.length > 0) {
         unlinked.classList.add('hidden');
         linked.classList.remove('hidden');
+        const hasD = (i) => i.daysUntil !== null && i.daysUntil !== undefined && !isNaN(Number(i.daysUntil));
+        const sorted = liveItems.slice().sort((x, y) => (hasD(x) ? Number(x.daysUntil) : 999) - (hasD(y) ? Number(y.daysUntil) : 999));
+        const eveningNow = new Date().getHours() >= 16;
+        const chip = (i) => {
+            if (!hasD(i)) return '';
+            const d = Number(i.daysUntil);
+            if (d <= 0) return '<span class="waste-chip waste-chip-hot">Vandaag</span>';
+            if (d === 1) return `<span class="waste-chip waste-chip-warn">${eveningNow ? 'Vanavond buiten zetten' : 'Morgen'}</span>`;
+            return `<span class="waste-chip">over ${d} dagen</span>`;
+        };
+        const next = sorted.find(hasD);
+        const nd = next ? Number(next.daysUntil) : null;
+        const headline = !next ? '' : nd <= 0
+            ? `<p class="text-xs font-bold text-[#9e4516] mb-2">♻️ Vandaag wordt ${next.short || next.label} opgehaald</p>`
+            : nd === 1
+                ? `<p class="text-xs font-bold text-[#9e4516] mb-2">${eveningNow ? '🌙 Zet vanavond' : '♻️ Zet'} ${next.short || next.label} buiten: morgen wordt het opgehaald</p>`
+                : `<p class="text-xs text-[#68736d] mb-2">Eerstvolgende ophaling: <b class="text-[#1c2520]">${next.short || next.label}</b> over ${nd} dagen</p>`;
         linked.innerHTML = `
             <div class="flex items-center justify-between mb-2.5">
                 <span class="text-xs font-bold uppercase tracking-wider text-[#1c2520]">♻️ Afvalkalender</span>
                 <span class="text-[10px] font-bold bg-[#e8f2ec] text-[#197447] px-2 py-0.5 rounded-full">Live RecycleApp</span>
             </div>
+            ${headline}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                ${liveItems.map(item => `
-                    <div class="flex items-center gap-2.5 p-2 rounded-xl border ${item.border} bg-stone-50/50">
+                ${sorted.map(item => `
+                    <div class="waste-row flex items-center gap-2.5 p-2 rounded-xl border ${item.border} bg-stone-50/50 ${hasD(item) && Number(item.daysUntil) <= 1 ? 'waste-row-urgent' : ''}">
                         <div class="w-9 h-9 rounded-xl ${item.bg} ${item.text} flex items-center justify-center font-extrabold text-[10px] shrink-0">
                             ${item.short}
                         </div>
-                        <div class="min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="text-xs font-bold text-[#1c2520] truncate">${item.stateValue}</p>
                             <p class="text-[10px] text-[#68736d] truncate">${item.label}</p>
                         </div>
+                        ${chip(item)}
                     </div>
                 `).join('')}
             </div>

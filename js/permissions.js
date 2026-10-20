@@ -37,19 +37,23 @@ const PERM_ITEMS = [
     { key: 'view_music',      group: 'gebruik', icon: '🎵', label: 'Muziek bekijken',               hint: 'Wat speelt er, en waar',                                    roles: PERM_BOTH },
     { key: 'control_music',   group: 'gebruik', icon: '🎶', label: 'Muziek bedienen',               hint: 'Afspelen, pauzeren, volgende, volume, afspelen op een speler', roles: PERM_BOTH, requires: 'view_music' },
     { key: 'view_weather',    group: 'gebruik', icon: '🌦️', label: 'Weer & regenradar bekijken',    hint: 'Weer, voorspelling en regenradar (ook de weerregel op het display)', roles: PERM_BOTH },
+    { key: 'view_scenes',     group: 'gebruik', icon: '🎬', label: 'Scènes bekijken',               hint: 'De scènes zien (bijv. Goedenacht, Film kijken)',            roles: PERM_BOTH },
+    { key: 'control_scenes',  group: 'gebruik', icon: '▶️', label: 'Scènes uitvoeren',              hint: 'Een scène starten: lampen, rolluiken en airco volgen',      roles: PERM_BOTH, requires: 'view_scenes' },
+    { key: 'view_planner',    group: 'gebruik', icon: '🧠', label: 'Slim advies & planner',         hint: 'Beste moment om wasmachine, droger of vaatwasser te starten', roles: PERM_BOTH },
     { key: 'choose_theme',    group: 'gebruik', icon: '🌙', label: 'Eigen weergave kiezen',         hint: 'Zelf licht/donker/automatisch kiezen. Uit = de beheerder bepaalt', roles: PERM_BOTH },
     // ----- beheer (enkel gezinsbeheerder) -----
     { key: 'manage_members',    group: 'beheer', icon: '👥', label: 'Gezinsleden',         hint: 'Leden toevoegen of verwijderen en hun weergave (kleur, donker) kiezen', roles: ['manager'] },
     { key: 'manage_ha',         group: 'beheer', icon: '🔌', label: 'Home Assistant',      hint: 'Verbinding, token en sensoren koppelen',               roles: ['manager'] },
     { key: 'manage_prices',     group: 'beheer', icon: '💶', label: 'Prijzen',             hint: 'Stroom-, gas- en watertarieven',                       roles: ['manager'] },
     { key: 'manage_appliances', group: 'beheer', icon: '🧺', label: 'Apparaten & water',   hint: 'Slimme apparaten en watermeting',                      roles: ['manager'] },
-    { key: 'manage_advice',     group: 'beheer', icon: '💬', label: 'Advies',              hint: 'Eigen adviesberichten',                                roles: ['manager'] },
+    { key: 'manage_advice',     group: 'beheer', icon: '💬', label: 'Advies & doelen',     hint: 'Adviesregels, planner-taken, budget en eigen berichten',                                roles: ['manager'] },
     { key: 'manage_agenda',     group: 'beheer', icon: '📅', label: 'Agenda & afval',      hint: 'Google Agenda, taken en afvalsensoren instellen',      roles: ['manager'] },
     { key: 'manage_rooms',      group: 'beheer', icon: '🪟', label: 'Rolluiken & airco',   hint: 'Ruimtes, lampen, rolluiken en airco\'s instellen',      roles: ['manager'] },
     { key: 'manage_cars',       group: 'beheer', icon: '🚗', label: "Auto's",              hint: 'Auto\'s en hun entiteiten instellen',                   roles: ['manager'] },
     { key: 'manage_evcc',       group: 'beheer', icon: '🔌', label: 'Laden (evcc)',        hint: 'Laadpunten en hun entiteiten instellen',               roles: ['manager'] },
     { key: 'manage_music',      group: 'beheer', icon: '🎵', label: 'Muziek',              hint: 'Muziekspelers kiezen en benoemen',                     roles: ['manager'] },
     { key: 'manage_weather',    group: 'beheer', icon: '🌦️', label: 'Weer',                hint: 'Locatie voor weer en regenradar kiezen',               roles: ['manager'] },
+    { key: 'manage_scenes',     group: 'beheer', icon: '🎬', label: 'Scènes',              hint: 'Scènes maken, bewerken, ordenen en verwijderen',       roles: ['manager'] },
     { key: 'manage_display',    group: 'beheer', icon: '🎨', label: 'Weergave',            hint: 'Achtergrondkleur en meldingen',                        roles: ['manager'] },
     { key: 'manage_backup',     group: 'beheer', icon: '💾', label: 'Back-up',             hint: 'Back-up maken, herstellen en exporteren',              roles: ['manager'] }
 ];
@@ -60,11 +64,11 @@ PERM_ITEMS.forEach(i => { PERM_BY_KEY[i.key] = i; });
 const ADMIN_TAB_PERMISSION = {
     gebruikers: 'manage_members', ha_entiteiten: 'manage_ha', tarieven: 'manage_prices', apparaten: 'manage_appliances',
     advies: 'manage_advice', agenda: 'manage_agenda', rolluiken_airco: 'manage_rooms', autos: 'manage_cars',
-    weergave: 'manage_display', backup: 'manage_backup', evcc: 'manage_evcc', muziek: 'manage_music', weer: 'manage_weather'
+    weergave: 'manage_display', backup: 'manage_backup', evcc: 'manage_evcc', muziek: 'manage_music', weer: 'manage_weather', scenes: 'manage_scenes'
 };
 const ADMIN_ONLY_TABS = ['gezinnen', 'rechten'];
 
-const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather' };
+const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner' };
 
 function permDefault(key, role) {
     const item = PERM_BY_KEY[key];
@@ -148,6 +152,8 @@ function applyPermissionsToUI() {
     permSetShown(get('navBtnEvcc'), permAllowed('view_evcc'), 'flex');
     permSetShown(get('navBtnMusic'), permAllowed('view_music'), 'flex');
     permSetShown(get('navBtnWeather'), permAllowed('view_weather'), 'flex');
+    permSetShown(get('navBtnScenes'), permAllowed('view_scenes'), 'flex');
+    permSetShown(get('navBtnPlanner'), permAllowed('view_planner'), 'flex');
     permSetShown(get('headerWeatherBtn'), permAllowed('view_weather'), 'flex');
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
     permSetShown(get('navBtnAdmin'), permHasAnyManage(), 'flex');
@@ -163,7 +169,7 @@ function applyPermissionsToUI() {
     });
 
     // Beheertabs
-    const tabs = ['gezinnen', 'gebruikers', 'rechten', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'autos', 'evcc', 'muziek', 'weer', 'weergave', 'backup'];
+    const tabs = ['gezinnen', 'gebruikers', 'rechten', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'autos', 'evcc', 'muziek', 'weer', 'scenes', 'weergave', 'backup'];
     tabs.forEach(t => {
         const btn = get('adminTabBtn_' + t);
         if (btn) btn.classList.toggle('hidden', !permAdminTabAllowed(t));
@@ -176,7 +182,7 @@ function applyPermissionsToUI() {
 
 // Eerste toegestane beheertab (voor na het inloggen of als het huidige tabblad niet meer mag)
 function permFirstAdminTab() {
-    const order = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'autos', 'evcc', 'muziek', 'weer', 'weergave', 'backup', 'rechten'];
+    const order = ['gezinnen', 'gebruikers', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'autos', 'evcc', 'muziek', 'weer', 'scenes', 'weergave', 'backup', 'rechten'];
     return order.find(t => permAdminTabAllowed(t)) || null;
 }
 

@@ -238,9 +238,11 @@ window.switchAdminTab = function(tabName) {
     if (tabName === 'evcc') renderAdminEvccList();
     if (tabName === 'muziek') renderAdminMusicList();
     if (tabName === 'weer') renderAdminWeather();
+    if (tabName === 'scenes' && typeof renderAdminScenes === 'function') renderAdminScenes();
+    if (tabName === 'advies' && typeof renderAdminAdviceAdvanced === 'function') renderAdminAdviceAdvanced();
     if (tabName === 'backup') renderBackupTab();
     if (tabName === 'weergave') renderNotifSettings();
-    const tabs = ['gezinnen', 'gebruikers', 'rechten', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'weergave', 'autos', 'evcc', 'muziek', 'weer', 'backup'];
+    const tabs = ['gezinnen', 'gebruikers', 'rechten', 'ha_entiteiten', 'tarieven', 'apparaten', 'advies', 'agenda', 'rolluiken_airco', 'weergave', 'autos', 'evcc', 'muziek', 'weer', 'scenes', 'backup'];
     tabs.forEach(t => {
         const tabEl = document.getElementById('adminTab_' + t);
         if (tabEl) tabEl.classList.toggle('hidden', t !== tabName);

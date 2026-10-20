@@ -208,6 +208,9 @@ function renderAll() {
     renderCarsView();
     renderEvccView();
     renderMusicView();
+    if (typeof renderScenesView === 'function') renderScenesView();
+    if (typeof renderPlannerView === 'function') renderPlannerView();
+    if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
     renderNotifications();
     recordDailyHistory();
@@ -221,6 +224,11 @@ window.switchView = function(view) {
         view = 'display';
     }
     if (view === 'userPortal') view = 'calendar';
+    try {
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const tEl = document.getElementById('subNavCurrentPageTitle');
+        if (tEl && titles[view]) tEl.textContent = titles[view];
+    } catch (e) { /* titel is een extraatje */ }
     if (view === 'climate') {
         activeRoomsFilter = 'all';
         view = 'shutters';
@@ -287,6 +295,20 @@ window.switchView = function(view) {
     }
     if (typeof weatherViewActive === 'function') weatherViewActive(view === 'weather');
 
+    const vScenes = document.getElementById('viewScenes');
+    if (vScenes) {
+        vScenes.classList.toggle('hidden', view !== 'scenes');
+        vScenes.classList.toggle('flex', view === 'scenes');
+        if (view === 'scenes' && typeof renderScenesView === 'function') renderScenesView();
+    }
+
+    const vPlanner = document.getElementById('viewPlanner');
+    if (vPlanner) {
+        vPlanner.classList.toggle('hidden', view !== 'planner');
+        vPlanner.classList.toggle('flex', view === 'planner');
+        if (view === 'planner' && typeof renderPlannerView === 'function') renderPlannerView();
+    }
+
     const vOverview = document.getElementById('viewOverview');
     if (vOverview) {
         vOverview.classList.toggle('hidden', view !== 'overview');
@@ -314,6 +336,8 @@ window.switchView = function(view) {
     const btnEvcc = document.getElementById('navBtnEvcc');
     const btnMusic = document.getElementById('navBtnMusic');
     const btnWeather = document.getElementById('navBtnWeather');
+    const btnScenes = document.getElementById('navBtnScenes');
+    const btnPlanner = document.getElementById('navBtnPlanner');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -329,6 +353,8 @@ window.switchView = function(view) {
     if (btnEvcc) btnEvcc.className = view === 'evcc' ? activeClass : inactiveClass;
     if (btnMusic) btnMusic.className = view === 'music' ? activeClass : inactiveClass;
     if (btnWeather) btnWeather.className = view === 'weather' ? activeClass : inactiveClass;
+    if (btnScenes) btnScenes.className = view === 'scenes' ? activeClass : inactiveClass;
+    if (btnPlanner) btnPlanner.className = view === 'planner' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if (btnAdmin) btnAdmin.className = (view === 'admin' ? activeClass : inactiveClass) + ' col-span-2';
 

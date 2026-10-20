@@ -76,6 +76,27 @@ function createDefaultCars(householdName) {
 const EIGENAAR_SUPER_ADMIN_EMAIL = "jaiderjannis@gmail.com";
 
 // Standaard template voor een Gezin / Huishouden
+// Standaardinstellingen van het slimme advies en de planner (alles per gezin aanpasbaar in Beheer → Advies & doelen)
+function defaultPlannerSettings() {
+    return {
+        horizonHours: 24,                 // zoek de beste start binnen zoveel uur
+        jobs: [
+            { id: 'job_wasmachine', name: 'Wasmachine', icon: '🫧', hours: 2, kwh: 1.0 },
+            { id: 'job_droger', name: 'Droger', icon: '👕', hours: 2, kwh: 2.5 },
+            { id: 'job_vaatwasser', name: 'Vaatwasser', icon: '🍽️', hours: 2, kwh: 1.2 }
+        ],
+        rules: {
+            cheapNow: true, peakNow: true, negativePrice: true, bestStart: true, solarSurplus: true,
+            capacityPeak: true, tomorrow: true, batteryPeak: true, budget: true, sunTomorrow: true
+        },
+        solarSurplusW: 500,               // vanaf hoeveel zonne-overschot (W) adviseren
+        capacityPct: 90,                  // waarschuwen vanaf % van de maandpiek
+        cheapMargin: 0.02,                // € boven het dalmoment dat nog als goedkoop telt
+        peakMargin: 0.03,                 // € onder het piekmoment dat nog als duur telt
+        maxBestStartTips: 2               // aantal "beste start"-tips tegelijk in de rotatie
+    };
+}
+
 const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
     householdName: name,
     statusText: "Live via Home Assistant",
@@ -102,6 +123,9 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
     cars: createDefaultCars(name),
     evcc: { loadpoints: [] },
     music: { players: [] },
+    scenes: [],
+    planner: defaultPlannerSettings(),
+    budget: { monthEuro: 0, monthKwh: 0, yearEuro: 0 },
     weather: { source: 'ha', lat: '', lon: '', name: '' },
     history: {},
     historyArchive: {},
