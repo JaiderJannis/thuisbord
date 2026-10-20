@@ -1,0 +1,36 @@
+/* Levendig bord: zachte animaties. Alles staat uit bij "minder beweging" in het systeem. */
+@keyframes tbSpin{to{transform:rotate(360deg)}}
+@keyframes tbBreathe{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(28,100,63,0)}50%{transform:scale(1.06);box-shadow:0 0 18px 2px rgba(28,100,63,.22)}}
+@keyframes tbGlow{0%,100%{box-shadow:0 0 0 0 rgba(230,161,0,0)}50%{box-shadow:0 0 20px 3px rgba(230,161,0,.45)}}
+@keyframes tbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes tbWiggle{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(-12deg)}93%{transform:rotate(10deg)}97%{transform:rotate(-6deg)}}
+@keyframes tbSoft{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 16px 1px color-mix(in srgb,var(--c) 38%,transparent)}}
+@keyframes tbViewIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes tbPopIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes tbPulseDot{0%,100%{opacity:1}50%{opacity:.35}}
+
+.anim-spin{animation:tbSpin 30s linear infinite;transform-origin:50% 50%}
+.anim-breathe{animation:tbBreathe 4.2s ease-in-out infinite}
+.anim-glow{animation:tbGlow 3.4s ease-in-out infinite}
+.anim-spin.is-idle,.anim-glow.is-idle{animation-play-state:paused}
+.anim-glow.is-idle{box-shadow:none}
+
+#headerWeatherIcon{display:inline-block;animation:tbFloat 4.5s ease-in-out infinite}
+#haStatusDot.bg-\[\#19975c\]{animation:tbPulseDot 2.4s ease-in-out infinite}
+
+.app-node.is-on{animation:tbSoft 3.2s ease-in-out infinite}
+.app-node.is-on .app-node-ico{animation:tbWiggle 4.5s ease-in-out infinite}
+
+.view-enter{animation:tbViewIn .4s cubic-bezier(.2,.8,.2,1) both}
+.pop-in{animation:tbPopIn .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
+
+[data-tween]{display:inline-block;font-variant-numeric:tabular-nums}
+
+.nav-tile{transition:transform .2s ease,background-color .2s ease}
+.nav-tile:hover{transform:translateY(-2px)}
+button:not(.room-card):not(:disabled):active{transform:scale(.96)}
+
+@media (prefers-reduced-motion:reduce){
+  .anim-spin,.anim-breathe,.anim-glow,#headerWeatherIcon,#haStatusDot,.app-node.is-on,.app-node.is-on .app-node-ico,.view-enter,.pop-in{animation:none!important}
+  .nav-tile:hover{transform:none}
+}

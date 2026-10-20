@@ -21,6 +21,7 @@
     <script>try{var c=localStorage.getItem('thuisbord_bg');if(c&&/^#[0-9a-f]{6}$/i.test(c))document.documentElement.style.setProperty('--bg-sage',c)}catch(e){}</script>
     <script>try{var m=localStorage.getItem('thuisbord_theme_mode');if(m==='dark'||((m!=='light')&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches&&m==='auto'))document.documentElement.classList.add('dark')}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/dark.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none">
@@ -341,8 +342,8 @@
                             <div id="appliancesFlowContainer" class="px-1"></div>
                             <div class="flex items-center justify-between px-1">
                                 <!-- Solar Node -->
-                                <div class="w-11 h-11 rounded-full bg-[#faecc8] text-[#b47b1c] flex items-center justify-center shrink-0 shadow-2xs">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <div id="solarNode" class="anim-glow w-11 h-11 rounded-full bg-[#faecc8] text-[#b47b1c] flex items-center justify-center shrink-0 shadow-2xs">
+                                    <svg id="solarIcon" class="anim-spin w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="4"/>
                                         <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/>
                                     </svg>
@@ -361,7 +362,7 @@
                                 </div>
 
                                 <!-- Center House Node -->
-                                <div class="w-12 h-12 rounded-full bg-[#dcece3] text-[#1c643f] flex items-center justify-center shrink-0 shadow-2xs border-2 border-white z-10">
+                                <div id="houseNode" class="anim-breathe w-12 h-12 rounded-full bg-[#dcece3] text-[#1c643f] flex items-center justify-center shrink-0 shadow-2xs border-2 border-white z-10">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
                                     </svg>
@@ -399,12 +400,24 @@
                                     <circle id="gasFlowDot" r="3.2" fill="#8e79b8">
                                         <animateMotion dur="2.2s" repeatCount="indefinite" path="M 50 38 L 50 22 L 138 22 L 138 4" />
                                     </circle>
+                                    <circle class="follow-dot" data-follow="gasFlowDot" r="3.2" fill="#8e79b8">
+                                        <animateMotion dur="2.2s" begin="-0.73s" repeatCount="indefinite" path="M 50 38 L 50 22 L 138 22 L 138 4" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="gasFlowDot" r="3.2" fill="#8e79b8">
+                                        <animateMotion dur="2.2s" begin="-1.47s" repeatCount="indefinite" path="M 50 38 L 50 22 L 138 22 L 138 4" />
+                                    </circle>
 
                                     <!-- Water -> House (Vertical line) -->
                                     <path id="waterBranchPath" d="M 150 38 L 150 5" stroke="#bae6fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                                     <path d="M 146 10 L 150 4 L 154 10" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                                     <circle id="waterFlowDot" r="3.2" fill="#0284c7">
                                         <animateMotion dur="1.7s" repeatCount="indefinite" path="M 150 38 L 150 5" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="waterFlowDot" r="3.2" fill="#0284c7">
+                                        <animateMotion dur="1.7s" begin="-0.57s" repeatCount="indefinite" path="M 150 38 L 150 5" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="waterFlowDot" r="3.2" fill="#0284c7">
+                                        <animateMotion dur="1.7s" begin="-1.13s" repeatCount="indefinite" path="M 150 38 L 150 5" />
                                     </circle>
 
                                     <!-- Battery <-> House (90-degree orthogonal line) -->
@@ -418,9 +431,21 @@
                                     <circle id="batteryFlowDotCharge" class="hidden" r="3.2" fill="#e6a100">
                                         <animateMotion dur="2s" repeatCount="indefinite" path="M 162 4 L 162 22 L 250 22 L 250 38" />
                                     </circle>
+                                    <circle class="follow-dot" data-follow="batteryFlowDotCharge" r="3.2" fill="#e6a100">
+                                        <animateMotion dur="2s" begin="-0.67s" repeatCount="indefinite" path="M 162 4 L 162 22 L 250 22 L 250 38" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="batteryFlowDotCharge" r="3.2" fill="#e6a100">
+                                        <animateMotion dur="2s" begin="-1.33s" repeatCount="indefinite" path="M 162 4 L 162 22 L 250 22 L 250 38" />
+                                    </circle>
                                     <!-- Dot for DISCHARGING / USING (Battery -> House) -->
                                     <circle id="batteryFlowDotDischarge" r="3.2" fill="#19975c">
                                         <animateMotion dur="2s" repeatCount="indefinite" path="M 250 38 L 250 22 L 162 22 L 162 4" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="batteryFlowDotDischarge" r="3.2" fill="#19975c">
+                                        <animateMotion dur="2s" begin="-0.67s" repeatCount="indefinite" path="M 250 38 L 250 22 L 162 22 L 162 4" />
+                                    </circle>
+                                    <circle class="follow-dot" data-follow="batteryFlowDotDischarge" r="3.2" fill="#19975c">
+                                        <animateMotion dur="2s" begin="-1.33s" repeatCount="indefinite" path="M 250 38 L 250 22 L 162 22 L 162 4" />
                                     </circle>
                                 </svg>
                             </div>
@@ -1854,6 +1879,7 @@
     <script defer src="js/households.js"></script>
     <script defer src="js/auth-accounts.js"></script>
     <script defer src="js/admin.js"></script>
+    <script defer src="js/liveliness.js"></script>
     <script defer src="js/main.js"></script>
 </body>
 </html>
