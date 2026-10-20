@@ -130,6 +130,11 @@
                     <span class="text-[10.5px] leading-tight opacity-70">Beste moment voor de was</span>
                     <span id="menuPlannerBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
+                <button id="navBtnLayout" onclick="switchView('display'); toggleHamburgerMenu(false); setTimeout(function(){ if (window.dlStartEdit) window.dlStartEdit(); }, 60);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span class="text-2xl leading-none">🧩</span>
+                    <span class="text-[13px] font-bold leading-tight">Indeling</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Wanddisplay aanpassen</span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
@@ -1796,6 +1801,15 @@
                         <p class="text-xs text-[#68736d] mt-0.5">Kies een kleur voor de achtergrond van dit gezin. De keuze wordt automatisch opgeslagen.</p>
                     </div>
                     <div id="bgColorPicker"></div>
+                </div>
+
+                <div class="bg-white rounded-[26px] p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#197447] px-2.5 py-1 rounded-full">🧩 Indeling</span>
+                        <h3 class="text-lg font-bold text-[#1c2520] mt-2">Wanddisplay indelen</h3>
+                        <p class="text-xs text-[#68736d] mt-0.5">Blokken verplaatsen, groter of kleiner maken, widgets toevoegen en extra schermen maken.</p>
+                    </div>
+                    <button type="button" onclick="switchView('display'); setTimeout(function(){ if (window.dlStartEdit) window.dlStartEdit(); }, 60);" class="bg-[#152920] hover:bg-[#233f31] text-white font-bold px-5 py-2.5 rounded-xl text-sm cursor-pointer">✏️ Indeling aanpassen</button>
                 </div>
 
                 <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-4">

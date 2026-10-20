@@ -154,6 +154,7 @@ function applyPermissionsToUI() {
     permSetShown(get('navBtnWeather'), permAllowed('view_weather'), 'flex');
     permSetShown(get('navBtnScenes'), permAllowed('view_scenes'), 'flex');
     permSetShown(get('navBtnPlanner'), permAllowed('view_planner'), 'flex');
+    permSetShown(get('navBtnLayout'), permAllowed('manage_display'), 'flex');
     permSetShown(get('headerWeatherBtn'), permAllowed('view_weather'), 'flex');
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
     permSetShown(get('navBtnAdmin'), permHasAnyManage(), 'flex');
