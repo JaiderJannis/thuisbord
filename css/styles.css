@@ -82,11 +82,11 @@ body {
     .room-card-name { font-size: 20px; }
 }
 
-/* Apparaten-kaarten in de energieflow (zelfde stijl als Gas/Water/Batterij, oranje accent) */
-.app-node.is-on{background:#fff6ec;border:1px solid #fbe3c8}
-.app-node.is-on .app-node-ico{background:#fde5cc;color:#b45f12}
-.app-node.is-on .app-node-name{color:#b45f12}
-.app-node.is-on .app-node-val{color:#1c2520}
+/* Apparaten-kaarten in de energieflow: elk apparaat eigen kleur via --c */
+.app-node{--base:#fff}
+.app-node.is-on{background:color-mix(in srgb,var(--c) 10%,var(--base));border:1px solid color-mix(in srgb,var(--c) 32%,var(--base))}
+.app-node.is-on .app-node-ico{background:color-mix(in srgb,var(--c) 22%,var(--base))}
+.app-node.is-on .app-node-name{color:color-mix(in srgb,var(--c) 82%,#000)}
 .app-node.is-off{background:#f6f7f5;border:1px solid #e7ebe8}
 .app-node.is-off .app-node-ico{background:#eceeec;filter:grayscale(.6)}
 .app-node.is-off .app-node-name{color:#68736d}
