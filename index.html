@@ -309,10 +309,11 @@
             <div id="notificationsBar" class="hidden flex-wrap gap-2 mb-5 px-1" aria-live="polite"></div>
 
             <!-- Main 4-Column Grid -->
-            <main class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 items-stretch">
+            <div id="displayScreensBar" class="hidden mb-3"></div>
+            <main id="displayMain" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 items-stretch">
 
                 <!-- COLUMN 1: Nu (Stroom in huis) + Live Moving Chart -->
-                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                <div id="dispBlk_energy" class="dblock bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-5">
                             <div class="flex items-center gap-2.5">
@@ -538,7 +539,7 @@
                 </div>
 
                 <!-- COLUMN 2: Vandaag (kosten tot nu toe) -->
-                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                <div id="dispBlk_today" class="dblock bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-baseline justify-between mb-5">
                             <h3 class="text-xl font-bold text-[#1c2520]">Vandaag</h3>
@@ -618,7 +619,7 @@
                 </div>
 
                 <!-- COLUMN 3: Stroomprijs Vandaag & Morgen (EPEX Live / HA) -->
-                <div class="xl:col-span-3 bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                <div id="dispBlk_price" class="dblock bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between gap-2">
                             <h3 id="priceCardTitle" class="text-xl font-bold text-[#1c2520]">Stroomprijs</h3>
@@ -676,7 +677,7 @@
                 </div>
 
                 <!-- COLUMN 4: Agenda Vandaag, Taken & Live Recycle Afvalkalender -->
-                <div class="xl:col-span-3 flex flex-col gap-5 justify-between">
+                <div id="dispBlk_agenda" class="dblock flex flex-col gap-5 justify-between">
                     <div class="bg-white rounded-[26px] p-6 shadow-sm flex-1 flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-1">
@@ -1950,6 +1951,7 @@
     <script defer src="js/music.js"></script>
     <script defer src="js/music-library.js"></script>
     <script defer src="js/scenes.js"></script>
+    <script defer src="js/display-layout.js"></script>
     <script defer src="js/planner.js"></script>
     <script defer src="js/stats.js"></script>
     <script defer src="js/overview.js"></script>

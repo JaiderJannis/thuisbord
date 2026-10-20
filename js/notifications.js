@@ -43,6 +43,25 @@ function notifSticky(cat) {
     const s = (appState && appState.notifSettings && appState.notifSettings.sticky) || {};
     return cat in s ? !!s[cat] : !!NOTIF_STICKY_DEFAULT[cat];
 }
+// Waarheen een melding je brengt als je erop tikt: { view, filter?, tab? } of null als er niets te openen valt
+function notifTarget(key) {
+    const cat = notifCatOf(key);
+    const t = { cars: { view: 'cars' }, robots: { view: 'robots' }, robotsActive: { view: 'robots' },
+        climate: { view: 'shutters', filter: 'climate' }, music: { view: 'music' }, waste: { view: 'calendar' },
+        connection: { view: 'admin', tab: 'ha_entiteiten' } }[cat];
+    if (!t) return null;
+    if (typeof permViewAllowed === 'function' && currentRole && !permViewAllowed(t.view)) return null;
+    if (t.view === 'admin' && typeof permAdminTabAllowed === 'function' && !permAdminTabAllowed(t.tab)) return null;
+    return t;
+}
+window.notificationGo = function(key) {
+    const t = notifTarget(key);
+    if (!t) return;
+    switchView(t.view);
+    if (t.filter && typeof window.setRoomsFilter === 'function') window.setRoomsFilter(t.filter);
+    if (t.tab && typeof switchAdminTab === 'function') switchAdminTab(t.tab);
+};
+
 function notifEnabled(cat) {
     const s = (appState && appState.notifSettings) || {};
     return s[cat] !== false;
@@ -61,7 +80,7 @@ function notifTrackAppliances(now) {
                 const key = `done_${app.id}`;
                 notifDismissed.delete(key);
                 notifDoneEvents = notifDoneEvents.filter(e => e.key !== key);
-                notifDoneEvents.push({ key, icon: app.icon || '🔌', text: `${app.name} is klaar`, until: now + NOTIF_DONE_VISIBLE_MS });
+                notifDoneEvents.push({ key, icon: app.icon || '🔌', anim: 'ni-pop', text: `${app.name} is klaar`, until: now + NOTIF_DONE_VISIBLE_MS });
             }
         }
     });
@@ -76,18 +95,18 @@ function notifCarItems(map) {
         const e = car.entities || {};
         const name = car.name || 'Auto';
         const open = ['df', 'pf', 'dr', 'pr'].filter(p => e['door_open_' + p] && carDoorStates(car, map, p).open === true);
-        if (open.length) out.push({ key: `car_${car.id}_door`, icon: '🚪', level: 'warn', text: `${name}: portier open (${open.map(p => doorNames[p]).join(', ')})` });
+        if (open.length) out.push({ key: `car_${car.id}_door`, icon: '🚪', anim: 'ni-door', level: 'warn', text: `${name}: portier open (${open.map(p => doorNames[p]).join(', ')})` });
 
         const low = ['df', 'pf', 'dr', 'pr'].map(p => ({ p, bar: e['tp_' + p] ? carTirePressure(haStateObj(map, e['tp_' + p])) : null }))
             .filter(x => x.bar !== null && x.bar < NOTIF_TIRE_WARN_BAR);
-        if (low.length) out.push({ key: `car_${car.id}_tire`, icon: '🛞', level: 'bad',
+        if (low.length) out.push({ key: `car_${car.id}_tire`, icon: '🛞', anim: 'ni-wobble', level: 'bad',
             text: `${name}: bandendruk laag (${low.map(x => `${doorNames[x.p]} ${x.bar.toLocaleString('nl-BE', { maximumFractionDigits: 1 })} bar`).join(', ')})` });
 
         if (e.battery) {
             const pct = haNumber(haStateObj(map, e.battery));
             const charge = typeof carChargeInfo === 'function' ? carChargeInfo(haStateObj(map, e.charge_status), haStateObj(map, e.status)) : { charging: false };
             if (pct !== null && pct < NOTIF_CAR_BATTERY_WARN && !charge.charging) {
-                out.push({ key: `car_${car.id}_battery`, icon: '🔋', level: 'warn', text: `${name}: batterij ${Math.round(pct)}%, niet aan het laden` });
+                out.push({ key: `car_${car.id}_battery`, icon: '🪫', anim: 'ni-blink', level: 'warn', text: `${name}: batterij ${Math.round(pct)}%, niet aan het laden` });
             }
         }
     });
@@ -99,7 +118,7 @@ function notifRobotItems(map) {
     (appState.robots || []).forEach(rob => {
         const name = rob.name || 'Robot';
         if (String(rob.state || '').toLowerCase() === 'error') {
-            out.push({ key: `rob_${rob.id}_error`, icon: '🤖', level: 'bad', text: `${name}: storing, controleer de robot` });
+            out.push({ key: `rob_${rob.id}_error`, icon: '🚨', anim: 'ni-shake', level: 'bad', text: `${name}: storing, controleer de robot` });
         }
         (rob.extras || []).forEach(ex => {
             const st = haStateObj(map, ex.entityId);
@@ -110,14 +129,14 @@ function notifRobotItems(map) {
             const isWater = /water|tank|reservoir/i.test(label);
             const pct = (fv.kind === 'number' && fv.unit === '%') ? fv.value : null;
             if (isBin && ((pct !== null && pct >= 90) || fv.kind === 'warn' || fv.kind === 'bad')) {
-                out.push({ key: `rob_${rob.id}_${ex.id}`, icon: ex.icon || '🗑️', level: 'warn', text: `${name}: ${label.toLowerCase()} is vol` });
+                out.push({ key: `rob_${rob.id}_${ex.id}`, icon: ex.icon || '🗑️', anim: 'ni-shake', level: 'warn', text: `${name}: ${label.toLowerCase()} is vol` });
             } else if (isWater && pct !== null && pct <= 10) {
-                out.push({ key: `rob_${rob.id}_${ex.id}`, icon: ex.icon || '💧', level: 'warn', text: `${name}: ${label.toLowerCase()} bijna leeg` });
+                out.push({ key: `rob_${rob.id}_${ex.id}`, icon: ex.icon || '💧', anim: 'ni-drip', level: 'warn', text: `${name}: ${label.toLowerCase()} bijna leeg` });
             }
         });
         (rob.tasks || []).forEach(t => {
             if (Number(t.maxHours) > 0 && Number(t.usedHours) / Number(t.maxHours) >= 0.9) {
-                out.push({ key: `rob_${rob.id}_task_${t.id}`, icon: '🛠️', level: 'info', text: `${name}: ${String(t.name || 'onderhoud').toLowerCase()} bijna aan de beurt` });
+                out.push({ key: `rob_${rob.id}_task_${t.id}`, icon: '🛠️', anim: 'ni-wiggle', level: 'info', text: `${name}: ${String(t.name || 'onderhoud').toLowerCase()} bijna aan de beurt` });
             }
         });
     });
@@ -130,8 +149,8 @@ function notifWasteItems() {
         const d = Number(item.daysUntil);
         if (item.daysUntil === null || item.daysUntil === undefined || isNaN(d)) return;
         const label = item.short || item.label || 'Afval';
-        if (d === 0) out.push({ key: `waste_${label}_0`, icon: '♻️', level: 'warn', text: `Vandaag wordt ${label} opgehaald` });
-        else if (d === 1) out.push({ key: `waste_${label}_1`, icon: '♻️', level: 'info', text: `Morgen wordt ${label} opgehaald: buiten zetten` });
+        if (d === 0) out.push({ key: `waste_${label}_0`, icon: '♻️', anim: 'ni-spin', level: 'warn', text: `Vandaag wordt ${label} opgehaald` });
+        else if (d === 1) out.push({ key: `waste_${label}_1`, icon: '♻️', anim: 'ni-spin', level: 'info', text: `Morgen wordt ${label} opgehaald: buiten zetten` });
     });
     return out;
 }
@@ -140,10 +159,16 @@ function notifWasteItems() {
 function notifRobotActiveItems() {
     const out = [];
     const txt = { cleaning: 'is aan het schoonmaken', mowing: 'is aan het maaien', returning: 'keert terug naar het dock' };
+    const look = (rob, st) => {
+        const mower = String(rob.entityId || '').startsWith('lawn_mower.') || st === 'mowing';
+        if (st === 'returning') return { icon: '🏠', anim: 'ni-home' };
+        return mower ? { icon: '🚜', anim: 'ni-mow' } : { icon: '🤖', anim: 'ni-vac' };
+    };
     (appState.robots || []).forEach(rob => {
         const st = String(rob.state || '').toLowerCase();
         if (!txt[st]) return;
-        out.push({ key: `robact_${rob.id}`, icon: rob.icon || '🤖', level: 'info', text: `${rob.name || 'Robot'} ${txt[st]}` });
+        const lk = look(rob, st);
+        out.push({ key: `robact_${rob.id}`, icon: lk.icon, anim: lk.anim, level: 'info', text: `${rob.name || 'Robot'} ${txt[st]}` });
     });
     return out;
 }
@@ -152,12 +177,14 @@ function notifRobotActiveItems() {
 function notifClimateItems() {
     const out = [];
     const label = { cool: 'koelen', heat: 'verwarmen', heat_cool: 'automatisch', auto: 'automatisch', dry: 'drogen', fan_only: 'ventilator' };
+    const look = { cool: ['❄️', 'ni-snow'], heat: ['🔥', 'ni-flame'], heat_cool: ['🔄', 'ni-spin'], auto: ['🔄', 'ni-spin'], dry: ['💧', 'ni-drip'], fan_only: ['🌀', 'ni-fan'] };
     (appState.climates || []).forEach((cl, i) => {
         const mode = String(cl.hvacMode || 'off').toLowerCase();
         if (mode === 'off' || mode === 'unavailable') return;
         const t = Number(cl.targetTemp);
         const temp = isFinite(t) && cl.targetTemp !== undefined && cl.targetTemp !== null && cl.targetTemp !== '' ? ` op ${t.toLocaleString('nl-BE', { maximumFractionDigits: 1 })}°` : '';
-        out.push({ key: `clim_${cl.id || i}`, icon: '❄️', level: 'info', text: `${cl.name || 'Airco'}: ${label[mode] || mode}${temp}` });
+        const lk = look[mode] || ['❄️', 'ni-snow'];
+        out.push({ key: `clim_${cl.id || i}`, icon: lk[0], anim: lk[1], level: 'info', text: `${cl.name || 'Airco'}: ${label[mode] || mode}${temp}` });
     });
     return out;
 }
@@ -173,7 +200,7 @@ function notifMusicItems(map) {
         const title = String(a.media_title || '').trim();
         if (!title) return;
         const artist = String(a.media_artist || '').trim();
-        out.push({ key: `music_${pl.entityId}_${title}`, icon: '🎵', level: 'music', marquee: true,
+        out.push({ key: `music_${pl.entityId}_${title}`, icon: '🎵', anim: 'ni-note', level: 'music', marquee: true,
             text: `${pl.name || 'Speler'}: ${title}${artist ? ' · ' + artist : ''}` });
     });
     return out;
@@ -184,7 +211,7 @@ function computeNotifications(now = Date.now()) {
     const map = haStatesMap();
     if (notifEnabled('appliances')) {
         notifTrackAppliances(now);
-        notifDoneEvents.forEach(e => items.push({ key: e.key, icon: e.icon, level: 'info', text: e.text }));
+        notifDoneEvents.forEach(e => items.push({ key: e.key, icon: e.icon, anim: e.anim, level: 'info', text: e.text }));
     }
     if (notifEnabled('cars')) items.push(...notifCarItems(map));
     if (notifEnabled('robots')) items.push(...notifRobotItems(map));
@@ -193,7 +220,7 @@ function computeNotifications(now = Date.now()) {
     if (notifEnabled('waste')) items.push(...notifWasteItems());
     if (notifEnabled('music')) items.push(...notifMusicItems(map));
     if (notifEnabled('connection') && appState.haUrl && appState.haToken && !haWsConnected && now - NOTIF_PAGE_LOADED_MS > 20000) {
-        items.push({ key: 'ha_offline', icon: '📡', level: 'bad', text: 'Geen live verbinding met Home Assistant' });
+        items.push({ key: 'ha_offline', icon: '📡', anim: 'ni-blink', level: 'bad', text: 'Geen live verbinding met Home Assistant' });
     }
     // weggeklikte meldingen die niet meer van toepassing zijn weer "vrijgeven"
     const activeKeys = new Set(items.map(i => i.key));
@@ -227,12 +254,16 @@ function renderNotifications() {
             // Rollende tekst naar links; de tekst staat twee keer achter elkaar voor een naadloze lus
             const secs = Math.max(10, Math.round(i.text.length * 0.32));
             const t = `<span class="notif-marquee-item">${haEscape(i.text)}</span>`;
-            return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold w-full sm:w-auto sm:max-w-[26rem] ${style[i.level]}" role="status" aria-label="${haEscape(i.text)}">
-                <span class="shrink-0">${haEscape(i.icon)}</span>
-                <span class="notif-marquee flex-1 min-w-0" aria-hidden="true"><span class="notif-marquee-track" style="animation-duration:${secs}s">${t}${t}</span></span>${close}</div>`;
+            const go = notifTarget(i.key);
+            const ga = go ? ` onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter')window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open"` : '';
+            return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold w-full sm:w-auto sm:max-w-[26rem] ${style[i.level]} ${go ? 'notif-link' : ''}" role="status" aria-label="${haEscape(i.text)}">
+                <span class="shrink-0 notif-ico ${i.anim || ''}"${ga}>${haEscape(i.icon)}</span>
+                <span class="notif-marquee flex-1 min-w-0" aria-hidden="true"${ga}><span class="notif-marquee-track" style="animation-duration:${secs}s">${t}${t}</span></span>${close}</div>`;
         }
-        return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold ${style[i.level]}" role="status">
-            <span>${haEscape(i.icon)}</span><span>${haEscape(i.text)}</span>${close}</div>`;
+        const go = notifTarget(i.key);
+        const ka = go ? `onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open" aria-label="${haEscape(i.text)}: openen"` : 'disabled';
+        return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold ${style[i.level]} ${go ? 'notif-link' : ''}" role="status">
+            <button type="button" ${ka} class="flex items-center gap-2 text-left ${go ? 'cursor-pointer' : 'cursor-default'}"><span class="notif-ico ${i.anim || ''}">${haEscape(i.icon)}</span><span>${haEscape(i.text)}</span>${go ? '<span class="opacity-60">›</span>' : ''}</button>${close}</div>`;
     }).join('');
     bar.classList.remove('hidden');
     bar.classList.add('flex');
