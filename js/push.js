@@ -86,7 +86,7 @@ async function pushServerUnsubscribe() {
     } catch (e) { /* negeren */ }
 }
 window.pushSaveServer = function() {
-    if (typeof currentRole !== 'undefined' && currentRole !== 'manager') return;
+    if (typeof currentRole !== 'undefined' && currentRole !== 'manager' && currentRole !== 'admin') return;
     const u = (document.getElementById('pushSrvUrl') || {}).value || '', k = (document.getElementById('pushSrvKey') || {}).value || '';
     appState.pushServer = { url: u.trim(), key: k.trim() };
     try { persistStateToFirestore(true); } catch (e) { /* negeren */ }
@@ -140,7 +140,7 @@ function renderPushSwitcher() {
     } else {
         label = 'Uit'; sub = 'Tik om meldingen op dit apparaat te ontvangen.';
     }
-    const mgr = typeof currentRole !== 'undefined' && currentRole === 'manager';
+    const mgr = typeof currentRole !== 'undefined' && (currentRole === 'manager' || currentRole === 'admin');
     const cfg = (appState && appState.pushServer) || {};
     const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const srvForm = mgr ? `
