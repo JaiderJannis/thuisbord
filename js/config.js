@@ -21,7 +21,7 @@ const MIJN_EIGEN_FIREBASE_CONFIG = {
 // URL van je Cloudflare Worker voor de EPEX-prijzen (zie ../cloudflare-worker/README.md).
 // Voorbeeld: "https://thuisbord-prijzen.jouwnaam.workers.dev"  (zonder slash op het einde)
 // Leeg laten = direct bij Energy-Charts ophalen (wordt door de browser geblokkeerd via CORS).
-const EPEX_PROXY_URL = "";
+const EPEX_PROXY_URL = "https://thuisbord-prijzen.jaiderjannis.workers.dev/";
 
 // Opslag-indeling in Firestore:
 //   "v2"     = aparte documenten per gezin en per account (aanbevolen, zie FIREBASE.md)
