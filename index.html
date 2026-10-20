@@ -336,6 +336,9 @@
 
                         <!-- Visual Flow Diagram (Zon -> Huis <-> Net) -->
                         <div class="py-1 mb-2">
+                            <!-- Slimme apparaten: stroomafnemers boven het huis, met eigen flowlijn per apparaat -->
+                            <span id="activeAppliancesCount" class="hidden">0 actief</span>
+                            <div id="appliancesFlowContainer" class="px-1"></div>
                             <div class="flex items-center justify-between px-1">
                                 <!-- Solar Node -->
                                 <div class="w-11 h-11 rounded-full bg-[#faecc8] text-[#b47b1c] flex items-center justify-center shrink-0 shadow-2xs">
@@ -466,11 +469,6 @@
                                 </div>
                             </div>
 
-                            <!-- Slimme apparaten: onderdeel van dezelfde flow (hangen onder het huis) -->
-                            <div class="mt-0">
-                                <span id="activeAppliancesCount" class="hidden">0 actief</span>
-                                <div id="appliancesFlowContainer"></div>
-                            </div>
                         </div>
                     </div>
 
