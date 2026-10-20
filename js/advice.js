@@ -124,6 +124,16 @@ function buildLiveAdvicePool() {
         }
     }
 
+    if (on('weatherTips') && typeof weatherTipsLive === 'function') {
+        try { weatherTipsLive().forEach(t => pool.push(t)); } catch (e) { /* weerstips zijn een extraatje */ }
+    }
+    if (on('weeklyStory') && typeof energyStoryLastWeek === 'function') {
+        try {
+            const st = energyStoryLastWeek(now);
+            if (st) pool.push({ category: 'VORIGE WEEK IN GEWONE TAAL', text: st.lines.slice(0, 3).join(' '), badge: st.badge, theme: 'green' });
+        } catch (e) { /* extraatje */ }
+    }
+
     const activeApps = (appState.appliances || []).filter(a => a.active && Number(a.watts) > 0);
     if (activeApps.length > 0) {
         const names = activeApps.map(a => `${a.icon} ${a.name} (${a.watts}W)`).join(', ');

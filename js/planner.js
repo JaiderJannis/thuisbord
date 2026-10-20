@@ -308,6 +308,8 @@ const PLANNER_RULES = [
     ['batteryPeak', '🔋 Batterij inzetten', 'Tip om de batterij te gebruiken tijdens dure uren'],
     ['tomorrow', '🔮 Voorspelling morgen', 'Goedkoopste uur van morgen, zodra de prijzen er zijn'],
     ['sunTomorrow', '🌤️ Zon morgen', 'Meldt een zonnige of grijze dag (via de weervoorspelling)'],
+    ['weatherTips', '🌦️ Weertips', 'Regen op komst, vorst, hitte, wind en droogweer: tips voor de was, tuin en robotmaaier'],
+    ['weeklyStory', '🗣️ Vorige week in gewone taal', 'Op maandag tot woensdag een korte samenvatting van je energieverbruik van vorige week'],
     ['budget', '🎯 Budget en doelen', 'Waarschuwt als je op het maandbudget afstevent']
 ];
 
