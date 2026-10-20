@@ -411,8 +411,7 @@ function carWhenText(loc) {
 // Kleine statusregel in de autokaart zelf (de kaart staat gezamenlijk bovenaan)
 function carLocationLineHtml(car, map) {
     const loc = carLocation(car, map);
-    const when = carWhenText(loc);
-    return `<p class="text-xs font-bold text-[#38443d]">📍 ${carWhereText(loc)}${when ? ` <span class="font-semibold text-[#8a958f]">· ${when}</span>` : ''}</p>`;
+    return `<p class="text-xs font-bold text-[#38443d]">📍 ${carWhereText(loc)}</p>`;
 }
 
 // Eén kaart met alle auto's, met een legenda eronder
@@ -431,11 +430,10 @@ function carsMapSectionHtml(cars, map) {
             </div>
             <div id="carsMap" class="car-map w-full h-72 sm:h-96 rounded-2xl overflow-hidden bg-[#e8f2ec] flex items-center justify-center text-xs text-[#68736d]">Kaart laden…</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-3">${located.map(({ car, i, loc }) => {
-                const when = carWhenText(loc);
                 return `<div class="flex items-center justify-between gap-2 text-xs">
                     <span class="flex items-center gap-2 min-w-0"><span class="w-3 h-3 rounded-full shrink-0" style="background:${carColor(i)}"></span>
                         <span class="font-extrabold text-[#1c2520] truncate">${haEscape(car.name || 'Auto')}</span>
-                        <span class="text-[#68736d] truncate">${carWhereText(loc)}${when ? ' · ' + when : ''}${loc.auto ? ' · automatisch gevonden' : ''}</span></span>
+                        <span class="text-[#68736d] truncate">${carWhereText(loc)}${loc.auto ? ' · automatisch gevonden' : ''}</span></span>
                     <a href="https://www.google.com/maps?q=${loc.lat},${loc.lon}" target="_blank" rel="noopener" class="font-bold text-[#197447] underline shrink-0">Maps</a></div>`;
             }).join('')}</div>
         </section>`;
@@ -453,6 +451,11 @@ function carsFitMap(h, points, withHome) {
     if (!pts.length) return;
     if (pts.length === 1) h.map.setView(pts[0], 15);
     else h.map.fitBounds(pts, { padding: [45, 45], maxZoom: 16 });
+}
+
+// Tekst bij het aanwijzen (of aantikken) van een auto op de kaart
+function carTooltipHtml(p) {
+    return `<span style="display:inline-flex;align-items:center;gap:6px;font-weight:800"><span style="width:10px;height:10px;border-radius:50%;background:${p.color};display:inline-block"></span>${haEscape(p.name)}</span><br><span style="font-weight:600;opacity:.75">${carWhereText(p.loc)}</span>`;
 }
 
 // Zet na het tekenen de blijvende kaart terug en schuift de markers naar de nieuwste posities
@@ -475,9 +478,11 @@ function carsMountMaps(cars, map) {
             const ll = [p.loc.lat, p.loc.lon];
             let m = h.markers[p.id];
             if (!m) {
-                m = L.marker(ll, { icon: mapsPinIcon(L, '🚗', 'is-car', p.name, p.color) }).addTo(h.map);
+                m = L.marker(ll, { icon: mapsPinIcon(L, '🚗', 'is-car', '', p.color), title: p.name }).addTo(h.map);
+                if (m.bindTooltip) m.bindTooltip(carTooltipHtml(p), { direction: 'top', offset: [0, -20], className: 'car-tip' });
                 h.markers[p.id] = m;
             } else {
+                if (m.setTooltipContent) m.setTooltipContent(carTooltipHtml(p));
                 const prev = m.getLatLng();
                 if (Math.abs(prev.lat - ll[0]) > 1e-6 || Math.abs(prev.lng - ll[1]) > 1e-6) { m.setLatLng(ll); moved = true; }
             }
