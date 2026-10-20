@@ -79,6 +79,20 @@ function ruleMatches(r, to, from) {
     return true;
 }
 
+// Toestel dat draait en dan stopt: het vermogen was minstens "stroomBoven" gedurende "minMinuten" en zakt nu eronder
+const running = new Map();
+function stroomRule(r, ev, to) {
+    const n = num(to); if (n === null) return;
+    const k = r.tag || r.entity, lim = Number(r.stroomBoven), now = Date.now();
+    if (n >= lim) { if (!running.has(k)) running.set(k, now); return; }
+    if (!running.has(k)) return;
+    const since = running.get(k); running.delete(k);
+    if (now - since < (Number(r.minMinuten) || 5) * 60000) return;
+    const name = (ev.new_state.attributes && ev.new_state.attributes.friendly_name) || ev.entity_id;
+    sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam} is klaar').replace('{naam}', name), tag: k })
+        .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
+}
+
 function handleStateChange(ev) {
     if (!ev || !ev.entity_id) return;
     const to = ev.new_state ? String(ev.new_state.state) : null;
@@ -86,6 +100,7 @@ function handleStateChange(ev) {
     if (to === null || from === to) return;
     rules.forEach(r => {
         if (r.entity !== ev.entity_id) return;
+        if (r.stroomBoven != null) return stroomRule(r, ev, to);
         if (!ruleMatches(r, to, from)) return;
         const k = r.tag || r.entity, now = Date.now();
         if (now - (lastFire.get(k) || 0) < 30000) return;   // niet vaker dan 1x per 30 s per melding
@@ -106,11 +121,48 @@ function cleanRules(list) {
         if (!r || typeof r.entity !== 'string' || !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(r.entity)) continue;
         const c = { naam: txt(r.naam, 80), entity: r.entity, titel: txt(r.titel || 'Thuisbord', 60), tekst: txt(r.tekst, 200), tag: txt(r.tag || r.entity, 60) };
         ['naar', 'van', 'nietNaar'].forEach(k => { const a = arr(r[k]); if (a && a.length) c[k] = a.length === 1 && k !== 'nietNaar' ? a[0] : a; });
-        ['boven', 'onder'].forEach(k => { if (r[k] != null && isFinite(Number(r[k]))) c[k] = Number(r[k]); });
-        if (c.naar == null && c.van == null && c.nietNaar == null && c.boven == null && c.onder == null) continue;
+        ['boven', 'onder', 'stroomBoven', 'minMinuten'].forEach(k => { if (r[k] != null && isFinite(Number(r[k]))) c[k] = Number(r[k]); });
+        if (c.minMinuten != null && c.stroomBoven == null) delete c.minMinuten;
+        if (c.naar == null && c.van == null && c.nietNaar == null && c.boven == null && c.onder == null && c.stroomBoven == null) continue;
         out.push(c);
     }
     return out;
+}
+
+// Meldingen op een vast tijdstip (bv. afvalophaling): { id, op: ISO-tijd, titel, tekst, tag }
+function cleanPlans(list) {
+    if (!Array.isArray(list) || list.length > 60) return null;
+    const out = [];
+    for (const p of list) {
+        if (!p || !p.tekst) continue;
+        const t = Date.parse(p.op); if (isNaN(t)) continue;
+        out.push({ id: String(p.id || p.tag || t).slice(0, 80), op: new Date(t).toISOString(), titel: String(p.titel || 'Thuisbord').slice(0, 60), tekst: String(p.tekst).slice(0, 200), tag: String(p.tag || p.id || 'plan').slice(0, 60) });
+    }
+    return out;
+}
+let plans = readJson('plannen.json', []);
+let firedPlans = new Set(readJson('plannen-gedaan.json', []));
+function runPlans() {
+    const now = Date.now(); let changed = false;
+    plans.forEach(p => {
+        const t = Date.parse(p.op), key = p.id + '@' + p.op;
+        if (t > now || firedPlans.has(key)) return;
+        firedPlans.add(key); changed = true;
+        if (now - t < 6 * 3600000) sendAll({ title: p.titel, body: p.tekst, tag: p.tag }).then(x => console.log(`[plan] ${p.id} -> ${x.sent} verstuurd`));
+    });
+    if (changed) { writeJson('plannen-gedaan.json', Array.from(firedPlans).slice(-300)); }
+}
+setInterval(runPlans, 30000);
+
+// Melding als Home Assistant langer dan 5 minuten niet bereikbaar is (en als het weer werkt)
+let haTimer = null, haAlerted = false;
+function haDown() {
+    if (haTimer || haAlerted) return;
+    haTimer = setTimeout(() => { haTimer = null; haAlerted = true; sendAll({ title: 'Thuisbord', body: '📡 Home Assistant is al 5 minuten niet bereikbaar', tag: 'ha_offline' }); }, 5 * 60000);
+}
+function haUp() {
+    if (haTimer) { clearTimeout(haTimer); haTimer = null; }
+    if (haAlerted) { haAlerted = false; sendAll({ title: 'Thuisbord', body: '✅ Home Assistant is weer bereikbaar', tag: 'ha_offline' }); }
 }
 
 function connectHa() {
@@ -122,11 +174,11 @@ function connectHa() {
     ws.on('message', raw => {
         let m; try { m = JSON.parse(raw); } catch (e) { return; }
         if (m.type === 'auth_required') ws.send(JSON.stringify({ type: 'auth', access_token: cfg.haToken }));
-        else if (m.type === 'auth_ok') { console.log('Verbonden met Home Assistant'); ws.send(JSON.stringify({ id: id++, type: 'subscribe_events', event_type: 'state_changed' })); }
+        else if (m.type === 'auth_ok') { console.log('Verbonden met Home Assistant'); haUp(); ws.send(JSON.stringify({ id: id++, type: 'subscribe_events', event_type: 'state_changed' })); }
         else if (m.type === 'auth_invalid') { console.error('HA_TOKEN is ongeldig'); ws.close(); }
         else if (m.type === 'event' && m.event && m.event.data) handleStateChange(m.event.data);
     });
-    ws.on('close', () => { console.log('HA-verbinding weg, opnieuw proberen over 10 s'); retry(); });
+    ws.on('close', () => { console.log('HA-verbinding weg, opnieuw proberen over 10 s'); haDown(); retry(); });
     ws.on('error', e => console.warn('HA-fout:', e.message));
 }
 
@@ -168,8 +220,10 @@ http.createServer(async (req, res) => {
             const clean = cleanRules(b.rules);
             if (!clean) return send(res, 400, { error: 'ongeldige regels' });
             writeJson('rules.json', clean); rules = clean;
-            console.log('Regels ontvangen van de app:', clean.length);
-            return send(res, 200, { ok: true, regels: clean.length });
+            let np = 0;
+            if (b.plannen !== undefined) { const pl = cleanPlans(b.plannen); if (pl) { plans = pl; writeJson('plannen.json', pl); np = pl.length; } }
+            console.log('Regels ontvangen van de app:', clean.length, 'plannen:', np);
+            return send(res, 200, { ok: true, regels: clean.length, plannen: np });
         }
         if (req.method === 'POST' && u === '/notify') {
             const b = await readBody(req);
