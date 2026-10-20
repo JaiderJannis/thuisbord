@@ -155,3 +155,7 @@ button:not(.room-card):not(:disabled):active{transform:scale(.96)}
 @keyframes camDot{0%,100%{opacity:1}50%{opacity:.25}}
 .cam-dot{animation:camDot 1.2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.cam-dot{animation:none}}
+
+/* ===== Gastmodus ===== */
+.guest-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:20px}
+.guest-h{font-size:15px;font-weight:800;margin-bottom:12px;letter-spacing:.01em}

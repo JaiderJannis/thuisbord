@@ -176,6 +176,15 @@ function ovTableHtml() {
     </table></div>`;
 }
 
+function ovStoryHtml() {
+    let s = null;
+    try { s = typeof energyStoryForOverview === 'function' ? energyStoryForOverview() : null; } catch (e) { s = null; }
+    if (!s) return '';
+    return `<div class="rounded-2xl bg-[#f6f8f5] border border-stone-200/80 px-4 py-3.5">
+        <div class="flex items-center justify-between gap-2 mb-1.5"><p class="text-[11px] font-extrabold uppercase tracking-wider text-[#68736d]">🗣️ In gewone taal</p><span class="text-[10px] font-bold bg-[#e8f2ec] text-[#197447] px-2 py-0.5 rounded-full">${s.badge}</span></div>
+        <div class="space-y-1 text-sm text-[#38443d] leading-relaxed">${s.lines.map(l => `<p>${String(l).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</p>`).join('')}</div></div>`;
+}
+
 function renderOverviewView() {
     const container = document.getElementById('overviewContainer');
     const view = document.getElementById('viewOverview');
@@ -257,6 +266,7 @@ function renderOverviewView() {
                 ${ovTile('Dagen met gegevens', String(t.days))}
             </div>
 
+            ${ovStoryHtml()}
             ${budgetHtml}
             ${bestWorst}
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">

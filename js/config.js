@@ -87,7 +87,7 @@ function defaultPlannerSettings() {
         ],
         rules: {
             cheapNow: true, peakNow: true, negativePrice: true, bestStart: true, solarSurplus: true,
-            capacityPeak: true, tomorrow: true, batteryPeak: true, budget: true, sunTomorrow: true
+            capacityPeak: true, tomorrow: true, batteryPeak: true, budget: true, sunTomorrow: true, weatherTips: true, weeklyStory: true
         },
         solarSurplusW: 500,               // vanaf hoeveel zonne-overschot (W) adviseren
         capacityPct: 90,                  // waarschuwen vanaf % van de maandpiek
