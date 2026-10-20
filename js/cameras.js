@@ -4,9 +4,8 @@
    Beelden komen rechtstreeks van Home Assistant via /api/camera_proxy(_stream)/<entiteit>?token=<access_token van de entiteit>.
    Dus: Home Assistant moet vanaf dit toestel bereikbaar zijn via dezelfde URL als de koppeling (bij https-bord ook https). */
 
-const CAM_REFRESH_MS = 4000;       // snapshot-interval
-const CAM_LIVE_MAX_MS = 10 * 60 * 1000;   // livebeeld stopt vanzelf na 10 min (spaart Home Assistant)
-const camLive = new Map();         // entityId -> starttijd
+const CAM_REFRESH_MS = 2000;       // snapshot-interval op de pagina
+const CAM_FULL_MS = 1000;          // sneller verversen in volledig scherm (voelt als live, zonder stream)
 let camEdit = false;
 let camHtmlCache = '';
 let camFull = '';
@@ -49,10 +48,6 @@ function cameraSnapshotUrl(entityId, bust) {
     if (!u) return '';
     return bust ? u + (u.includes('?') ? '&' : '?') + '_=' + Date.now() : u;
 }
-function cameraStreamUrl(entityId) {
-    const st = camState(entityId), base = camBase(), t = camToken(st);
-    return base && t ? `${base}/api/camera_proxy_stream/${entityId}?token=${encodeURIComponent(t)}` : '';
-}
 function camKind(st) {
     if (!st || !haIsUsable(st)) return 'unavailable';
     const s = String(st.state).toLowerCase();
@@ -65,23 +60,20 @@ function camKind(st) {
 function camCardHtml(c, i) {
     const st = camState(c.entityId);
     const kind = camKind(st);
-    const live = camLive.has(c.entityId);
     const eid = caEsc(c.entityId);
     const snap = cameraSnapshotUrl(c.entityId, false);
     const chip = { recording: ['● Neemt op', 'bg-red-100 text-red-700'], streaming: ['Streamt', 'bg-[#dcece3] text-[#1c643f]'], idle: ['Stand-by', 'bg-stone-200 text-stone-600'], unavailable: ['Niet beschikbaar', 'bg-red-50 text-red-700'] }[kind];
-    const src = live ? (cameraStreamUrl(c.entityId) || snap) : snap;
+    const src = snap;
     return `
         <article class="bg-white rounded-[26px] overflow-hidden shadow-sm border border-stone-200/80">
             <div class="relative bg-black aspect-video cursor-pointer" onclick="window.camerasOpen('${eid}')">
-                ${src ? `<img data-cam="${eid}" ${live ? 'data-live="1"' : ''} src="${caEsc(src)}" alt="${caEsc(c.name)}" class="w-full h-full object-cover" onerror="this.style.opacity='.25'" onload="this.style.opacity='1'">`
+                ${src ? `<img data-cam="${eid}" src="${caEsc(src)}" alt="${caEsc(c.name)}" class="w-full h-full object-cover" onerror="this.style.opacity='.25'" onload="this.style.opacity='1'">`
                       : `<div class="absolute inset-0 flex flex-col items-center justify-center text-center text-white/80 p-4"><span class="text-3xl mb-2">📹</span><p class="text-xs font-bold">${camBase() ? 'Geen beeldtoken beschikbaar voor deze camera' : 'Nog geen verbinding met Home Assistant'}</p></div>`}
-                ${live ? '<span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-white cam-dot"></span>LIVE</span>' : ''}
                 <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-extrabold ${chip[1]}">${chip[0]}</span>
             </div>
             <div class="flex items-center justify-between gap-3 p-4">
                 <h3 class="text-base font-extrabold text-[#1c2520] truncate">${caEsc(c.name || c.entityId)}</h3>
                 <div class="flex gap-2 shrink-0">
-                    <button type="button" onclick="window.camerasToggleLive('${eid}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold cursor-pointer ${live ? 'bg-red-600 text-white' : 'bg-[#152920] text-white hover:bg-[#233f31]'}">${live ? '⏹ Stop live' : '▶ Live'}</button>
                     <button type="button" onclick="window.camerasOpen('${eid}')" title="Volledig scherm" aria-label="Volledig scherm" class="w-9 h-9 rounded-xl bg-stone-100 hover:bg-stone-200 cursor-pointer">⤢</button>
                 </div>
             </div>
@@ -117,9 +109,6 @@ function camEditHtml() {
 
 function renderCamerasView() {
     const { items } = camerasToShow();
-    const liveN = camLive.size;
-    const badge = document.getElementById('menuCamerasBadge');
-    if (badge) badge.textContent = liveN ? `● ${liveN}` : '';
     const eb = document.getElementById('camerasEditBtn');
     if (eb) eb.classList.toggle('hidden', !permAllowed('edit_cameras'));
     renderCameraModal();
@@ -156,9 +145,7 @@ function renderCameraModal() {
     if (title) title.textContent = (c && c.name) || camFull;
     const img = document.getElementById('cameraModalImg');
     if (img && img.getAttribute) {
-        const want = cameraStreamUrl(camFull) || cameraSnapshotUrl(camFull, true);
-        const base = (u) => String(u || '').replace(/token=[^&]*/, '').replace(/&?_=\d+/, '');
-        if (base(img.getAttribute('src')) !== base(want)) img.setAttribute('src', want);
+        if (!img.getAttribute('src')) img.setAttribute('src', cameraSnapshotUrl(camFull, false));   // meteen het laatste beeld, nooit zwart
     }
     modal.classList.remove('hidden'); modal.classList.add('flex');
 }
@@ -166,46 +153,40 @@ window.camerasOpen = function(entityId) {
     if (!permGuard('view_cameras')) return;
     if (!camValid(entityId)) return;
     camFull = entityId;
-    const img = document.getElementById('cameraModalImg'); if (img && img.setAttribute) img.setAttribute('src', '');
+    const img = document.getElementById('cameraModalImg'); if (img && img.setAttribute) img.setAttribute('src', cameraSnapshotUrl(entityId, false));
     renderCameraModal();
     camerasEnsureTimer();
 };
 window.camerasClose = function() { camFull = ''; renderCameraModal(); };
 
-/* ---------- live en verversen ---------- */
-window.camerasToggleLive = function(entityId) {
-    if (!permGuard('view_cameras')) return;
-    if (!camValid(entityId)) return;
-    if (camLive.has(entityId)) camLive.delete(entityId); else camLive.set(entityId, Date.now());
-    camHtmlCache = ''; renderCamerasView(); camerasEnsureTimer();
-};
+/* ---------- verversen (vooraf laden, dan pas wisselen: nooit zwart of flikkerend) ---------- */
+function camSwap(img, u) {
+    const pre = new Image();
+    pre.onload = () => { img.src = u; img.style.opacity = '1'; };
+    pre.src = u;
+}
 function camerasTick() {
-    const now = Date.now();
-    camLive.forEach((t, id) => { if (now - t > CAM_LIVE_MAX_MS) camLive.delete(id); });
     if (typeof document === 'undefined' || document.hidden) return;
     const imgs = document.querySelectorAll ? Array.from(document.querySelectorAll('img[data-cam]')) : [];
-    imgs.forEach(img => {
-        if (img.getAttribute('data-live') === '1' || !img.offsetParent && !img.getClientRects) return;
-        const id = img.getAttribute('data-cam');
-        const u = cameraSnapshotUrl(id, true);
-        if (!u) return;
-        const pre = new Image();                 // eerst laden, dan wisselen: geen flikkering
-        pre.onload = () => { img.src = u; img.style.opacity = '1'; };
-        pre.src = u;
-    });
-    if (camFull && !camLive.has(camFull) && !cameraStreamUrl(camFull)) renderCameraModal();
+    imgs.forEach(img => { const u = cameraSnapshotUrl(img.getAttribute('data-cam'), true); if (u) camSwap(img, u); });
+}
+function camerasFullTick() {
+    if (!camFull || (typeof document !== 'undefined' && document.hidden)) return;
+    const img = document.getElementById('cameraModalImg');
+    const u = cameraSnapshotUrl(camFull, true);
+    if (img && u) camSwap(img, u);
 }
 function camerasEnsureTimer() {
     if (camTimer) return;
     camTimer = setInterval(() => {
-        const viewOn = window.currentViewName === 'cameras' || window.currentViewName === 'display' || !!camFull;
-        if (viewOn) camerasTick();
+        const viewOn = window.currentViewName === 'cameras' || window.currentViewName === 'display';
+        if (viewOn && !camFull) camerasTick();
     }, CAM_REFRESH_MS);
+    setInterval(camerasFullTick, CAM_FULL_MS);
 }
 function camerasViewActive(on) {
     camHtmlCache = '';
-    if (on) camerasEnsureTimer();
-    else { camLive.clear(); }   // pagina verlaten: alle streams dicht
+    if (on) { camerasEnsureTimer(); camerasTick(); }
 }
 
 /* ---------- widget voor het wanddisplay ---------- */
@@ -216,7 +197,7 @@ function cameraWidgetHtml(b) {
     const u = cameraSnapshotUrl(c.entityId, false);
     camerasEnsureTimer();
     return `<div class="flex flex-col gap-2 h-full"><div class="flex items-center justify-between"><span class="text-xs font-bold uppercase tracking-wider text-[#68736d]">📹 ${caEsc(c.name)}</span>
-        <button type="button" onclick="window.camerasOpen('${caEsc(c.entityId)}')" class="text-[11px] font-bold text-[#197447] hover:underline cursor-pointer">Live ›</button></div>
+        <button type="button" onclick="window.camerasOpen('${caEsc(c.entityId)}')" class="text-[11px] font-bold text-[#197447] hover:underline cursor-pointer">Groot ›</button></div>
         <div class="relative flex-1 min-h-[140px] rounded-2xl overflow-hidden bg-black cursor-pointer" onclick="window.camerasOpen('${caEsc(c.entityId)}')">
         ${u ? `<img data-cam="${caEsc(c.entityId)}" src="${caEsc(u)}" alt="${caEsc(c.name)}" class="absolute inset-0 w-full h-full object-cover">` : '<div class="absolute inset-0 flex items-center justify-center text-white/70 text-xs">Geen beeld</div>'}</div></div>`;
 }
