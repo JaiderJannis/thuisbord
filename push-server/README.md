@@ -94,14 +94,19 @@ Zet Tailscale ook op je telefoon(s) (app + inloggen met hetzelfde account). Dit 
    - **Android**: Chrome volstaat.
 4. Druk op **Testmelding**. Sluit de app volledig en probeer nog eens: de melding moet toch binnenkomen.
 
-## Stap 7 · Zelf bepalen wanneer er een melding komt
+## Stap 7a · De regels automatisch laten maken (aanbevolen)
+Open Thuisbord als beheerder → menu → **Pushserver** → tik op **📤 Meldingsregels maken en naar de server sturen**. Thuisbord maakt dan regels uit je instellingen (wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg, internetlimiet) en stuurt ze naar de server. Je hoeft niets in de console te typen. Doe dit opnieuw na elke wijziging aan je apparaten. Let op: de server moet eerst de nieuwste versie hebben (`cd /tmp/tb && git pull`, dan `cp /tmp/tb/push-server/server.js /opt/thuisbord-push/ && systemctl restart thuisbord-push`).
+
+Afvalophaling, airco en muziek kunnen niet via de server (die hangen van de klok of van de app af).
+
+## Stap 7b · Zelf bepalen wanneer er een melding komt
 Pas `/opt/thuisbord-push/rules.json` aan (wordt binnen 5 seconden automatisch ingelezen):
 ```json
 { "naam": "Wasmachine klaar", "entity": "sensor.samsung_washer_machine_state",
   "van": "run", "naar": "stop", "titel": "Thuisbord", "tekst": "🧺 De wasmachine is klaar", "tag": "wasmachine" }
 ```
 - `entity`: de entiteit uit Home Assistant (zie Wasserij → ⚙️ Instellen → "Wat ziet Home Assistant?").
-- `naar` / `van`: nieuwe en oude status (beide optioneel).
+- `naar` / `van`: nieuwe en oude status (beide optioneel, ook een lijst mag), `nietNaar`: lijst met statussen die niet mogen. `boven` / `onder`: een getal; de melding komt zodra de waarde die drempel overschrijdt.
 - `tekst` mag `{naam}`, `{nieuw}` en `{oud}` bevatten. Dezelfde `tag` binnen 30 seconden geeft maar één melding.
 
 Wil je een melding vanuit een Home Assistant-automatisering? Voeg toe aan `configuration.yaml`:
