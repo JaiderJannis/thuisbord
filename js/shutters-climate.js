@@ -304,7 +304,15 @@ const ROOM_EMOJI_MAP = [
     [/zolder|attic|vliering/i, '🪜'], [/kelder|berging|bijkeuken|wasruimte|wasplaats/i, '🧺'],
     [/kind|speel|baby/i, '🧸'], [/eet/i, '🍽️'], [/gast/i, '🛌']
 ];
+// Kingsize tweepersoonsbed (eigen tekening, schaalt mee met de lettergrootte)
+const KINGSIZE_BED_SVG = '<svg viewBox="0 0 72 52" width="1.2em" height="0.87em" role="img" aria-label="Kingsize bed" style="display:inline-block;vertical-align:middle">'
+    + '<rect x="4" y="4" width="64" height="30" rx="5" fill="#7a4b2a"/>'
+    + '<rect x="9" y="12" width="25" height="13" rx="5" fill="#f4efe6"/><rect x="38" y="12" width="25" height="13" rx="5" fill="#f4efe6"/>'
+    + '<rect x="2" y="24" width="68" height="18" rx="5" fill="#4a7fe0"/>'
+    + '<rect x="2" y="24" width="68" height="6" rx="3" fill="#7aa5f2"/>'
+    + '<rect x="6" y="42" width="7" height="8" rx="2" fill="#5b3a21"/><rect x="59" y="42" width="7" height="8" rx="2" fill="#5b3a21"/></svg>';
 function roomEmoji(name) {
+    if (/slaapkamer\s*(1|één|een)\b/i.test(name || '')) return KINGSIZE_BED_SVG;
     const m = ROOM_EMOJI_MAP.find(([re]) => re.test(name || ''));
     return m ? m[1] : '🏠';
 }
