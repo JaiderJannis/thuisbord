@@ -118,10 +118,22 @@
                     <span class="text-[10.5px] leading-tight opacity-70">Voorspelling &amp; regenradar</span>
                     <span id="menuWeatherBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
                 </button>
+                <button id="navBtnScenes" onclick="switchView('scenes'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🎬</span>
+                    <span class="text-[13px] font-bold leading-tight">Scènes</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Goedenacht, film, weg…</span>
+                    <span id="menuScenesBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
+                <button id="navBtnPlanner" onclick="switchView('planner'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
+                    <span class="text-2xl leading-none">🧠</span>
+                    <span class="text-[13px] font-bold leading-tight">Slim advies</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Beste moment voor de was</span>
+                    <span id="menuPlannerBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
-                    <span class="text-[10.5px] leading-tight opacity-70">Maand &amp; jaar</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Week, maand &amp; jaar</span>
                 </button>
                 <button id="navBtnCalendar" onclick="switchView('calendar'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📅</span>
@@ -286,6 +298,9 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Snelle scènes (alleen zichtbaar als er scènes op het display staan) -->
+            <div id="displayScenesRow" class="hidden mb-5"></div>
 
             <!-- Meldingen -->
             <div id="notificationsBar" class="hidden flex-wrap gap-2 mb-5 px-1" aria-live="polite"></div>
@@ -953,13 +968,58 @@
                 <div class="flex items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">📊</div>
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold">Overzicht: maand &amp; jaar</h2>
+                        <h2 class="text-xl sm:text-2xl font-bold">Overzicht: week, maand &amp; jaar</h2>
                         <p class="text-xs text-[#b3c7bd]">Stroom, zon, gas, water en kosten over tijd, met zelfverbruik en zelfvoorzienendheid.</p>
                     </div>
                 </div>
                 <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
             </div>
             <div id="overviewContainer"></div>
+        </div>
+    </div>
+
+
+    <!-- ===================================================================== -->
+    <!-- VIEW: SCÈNES                                                          -->
+    <!-- ===================================================================== -->
+    <div id="viewScenes" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🎬</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Scènes</h2>
+                        <p class="text-xs text-[#b3c7bd]">Eén tik en lampen, rolluiken en airco staan zoals jij wilt.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="scenesManageBtn" onclick="window.openScenesAdmin()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⚙️ Scènes beheren</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+                </div>
+            </div>
+            <div id="scenesContainer"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW: SLIM ADVIES & PLANNER                                           -->
+    <!-- ===================================================================== -->
+    <div id="viewPlanner" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🧠</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Slim advies &amp; planner</h2>
+                        <p class="text-xs text-[#b3c7bd]">Wanneer start je de wasmachine, droger of vaatwasser het goedkoopst?</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="plannerManageBtn" onclick="window.openPlannerAdmin()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⚙️ Instellingen</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+                </div>
+            </div>
+            <div id="plannerContainer"></div>
         </div>
     </div>
 
@@ -1047,6 +1107,7 @@
                 <button id="adminTabBtn_evcc" onclick="switchAdminTab('evcc')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>⚡</span><span>evcc</span></button>
                 <button id="adminTabBtn_muziek" onclick="switchAdminTab('muziek')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎵</span><span>Muziek</span></button>
                 <button id="adminTabBtn_weer" onclick="switchAdminTab('weer')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🌦️</span><span>Weer</span></button>
+                <button id="adminTabBtn_scenes" onclick="switchAdminTab('scenes')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎬</span><span>Scènes</span></button>
                 <button id="adminTabBtn_weergave" onclick="switchAdminTab('weergave')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>🎨</span><span>Weergave</span></button>
                 <button id="adminTabBtn_backup" onclick="switchAdminTab('backup')" class="admin-tab flex items-center justify-center gap-1.5 text-center px-2.5 sm:px-4 py-2.5 rounded-xl text-[13px] sm:text-sm font-bold transition cursor-pointer text-[#49544d] hover:bg-stone-100"><span>💾</span><span>Back-up</span></button>
             </div>
@@ -1576,6 +1637,8 @@
                     </div>
                     <div id="customAdviceListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
                 </div>
+
+                <div id="adminAdviceAdvanced" class="lg:col-span-2 space-y-6"></div>
             </div>
 
             <!-- ================================================================= -->
@@ -1657,6 +1720,10 @@
 
             <div id="adminTab_evcc" class="hidden space-y-6">
                 <div id="adminEvccContainer" class="space-y-6"></div>
+            </div>
+
+            <div id="adminTab_scenes" class="hidden space-y-6">
+                <div id="adminScenesContainer" class="space-y-6"></div>
             </div>
 
             <div id="adminTab_muziek" class="hidden space-y-6">
@@ -1869,6 +1936,8 @@
     <script defer src="js/cars.js"></script>
     <script defer src="js/evcc.js"></script>
     <script defer src="js/music.js"></script>
+    <script defer src="js/scenes.js"></script>
+    <script defer src="js/planner.js"></script>
     <script defer src="js/stats.js"></script>
     <script defer src="js/overview.js"></script>
     <script defer src="js/notifications.js"></script>

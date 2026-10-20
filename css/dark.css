@@ -112,3 +112,13 @@ html.dark .app-node.is-on .app-node-val{color:#e6efe9}
 html.dark .app-node.is-off{background:#1a2822;border-color:#2a3a32}
 html.dark .app-node.is-off .app-node-ico{background:#24332b}
 html.dark .app-node.is-off .app-node-name{color:#9fb0a6}
+
+/* Scènes, planner, afval */
+html.dark .scene-tile{background:linear-gradient(150deg,color-mix(in srgb,var(--c) 28%,#1b2420),color-mix(in srgb,var(--c) 10%,#1b2420));border-color:color-mix(in srgb,var(--c) 45%,#1b2420)}
+html.dark .scene-name{color:#eef3ef}
+html.dark .scene-desc,html.dark .scene-foot{color:#a9b8af}
+html.dark .scene-go{color:color-mix(in srgb,var(--c) 60%,#fff)}
+html.dark .scene-edit{background:rgba(30,40,35,.9);color:#fff}
+html.dark .scene-chip{background:color-mix(in srgb,var(--c) 24%,#1b2420);border-color:color-mix(in srgb,var(--c) 50%,#1b2420);color:#eef3ef}
+html.dark .waste-chip{background:#2a342f;color:#c4d0c8}
+html.dark .waste-chip-warn{background:#4a2c18;color:#f6c9a8}
