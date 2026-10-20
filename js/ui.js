@@ -211,6 +211,7 @@ function renderAll() {
     if (typeof renderScenesView === 'function') renderScenesView();
     if (typeof renderPlannerView === 'function') renderPlannerView();
     if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
+    if (typeof renderDisplayLayout === 'function') renderDisplayLayout();
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
     renderNotifications();
     recordDailyHistory();
@@ -242,6 +243,7 @@ window.switchView = function(view) {
 
     document.getElementById('viewDisplay').classList.toggle('hidden', view !== 'display');
     document.getElementById('viewDisplay').classList.toggle('flex', view === 'display');
+    if (view === 'display' && typeof renderDisplayLayout === 'function') renderDisplayLayout();
 
     const vCal = document.getElementById('viewCalendar');
     if (vCal) {

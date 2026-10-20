@@ -84,3 +84,23 @@ button:not(.room-card):not(:disabled):active{transform:scale(.96)}
 .house-item small{display:block;font-size:11px;color:#68736d}
 .house-ico{width:36px;height:36px;border-radius:12px;background:#e8f2ec;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 @media (prefers-reduced-motion:reduce){#houseMenu:not(.hidden){animation:none}}
+
+.notif-link{transition:transform .15s ease,box-shadow .15s ease}
+.notif-link:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.notif-link [onclick]{cursor:pointer}
+
+/* ===== Display-indeling ===== */
+.dblock{min-width:0}
+@media (min-width:1280px){.dblock{grid-column:span var(--sp,3) / span var(--sp,3);min-height:var(--mh,auto)}}
+@media (min-width:768px) and (max-width:1279px){.dblock[data-wide="1"]{grid-column:span 2 / span 2}}
+.dl-dim{opacity:.45}
+.dl-editing{outline:2px dashed #19975c;outline-offset:3px}
+.dl-bar{position:relative;z-index:20;flex-shrink:0;margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:5px;border-radius:14px;background:rgba(21,41,32,.94);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.dl-title{color:#dcece3;font-size:11px;font-weight:800;margin:0 6px 0 4px;white-space:nowrap}
+.dl-btn,.dl-sel{height:28px;min-width:28px;padding:0 8px;border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:11px;font-weight:800;cursor:pointer;border:0}
+.dl-btn:hover{background:rgba(255,255,255,.28)}
+.dl-sel{max-width:96px;color:#152920;background:#fff}
+.dl-on{background:#e07a2d}
+.dl-del{background:rgba(220,38,38,.55)}
+.dl-panel{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-radius:20px;background:#eaf3ed;border:2px solid #19975c;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){.dl-btn{transition:none}}

@@ -43,6 +43,25 @@ function notifSticky(cat) {
     const s = (appState && appState.notifSettings && appState.notifSettings.sticky) || {};
     return cat in s ? !!s[cat] : !!NOTIF_STICKY_DEFAULT[cat];
 }
+// Waarheen een melding je brengt als je erop tikt: { view, filter?, tab? } of null als er niets te openen valt
+function notifTarget(key) {
+    const cat = notifCatOf(key);
+    const t = { cars: { view: 'cars' }, robots: { view: 'robots' }, robotsActive: { view: 'robots' },
+        climate: { view: 'shutters', filter: 'climate' }, music: { view: 'music' }, waste: { view: 'calendar' },
+        connection: { view: 'admin', tab: 'ha_entiteiten' } }[cat];
+    if (!t) return null;
+    if (typeof permViewAllowed === 'function' && currentRole && !permViewAllowed(t.view)) return null;
+    if (t.view === 'admin' && typeof permAdminTabAllowed === 'function' && !permAdminTabAllowed(t.tab)) return null;
+    return t;
+}
+window.notificationGo = function(key) {
+    const t = notifTarget(key);
+    if (!t) return;
+    switchView(t.view);
+    if (t.filter && typeof window.setRoomsFilter === 'function') window.setRoomsFilter(t.filter);
+    if (t.tab && typeof switchAdminTab === 'function') switchAdminTab(t.tab);
+};
+
 function notifEnabled(cat) {
     const s = (appState && appState.notifSettings) || {};
     return s[cat] !== false;
@@ -227,12 +246,16 @@ function renderNotifications() {
             // Rollende tekst naar links; de tekst staat twee keer achter elkaar voor een naadloze lus
             const secs = Math.max(10, Math.round(i.text.length * 0.32));
             const t = `<span class="notif-marquee-item">${haEscape(i.text)}</span>`;
-            return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold w-full sm:w-auto sm:max-w-[26rem] ${style[i.level]}" role="status" aria-label="${haEscape(i.text)}">
-                <span class="shrink-0">${haEscape(i.icon)}</span>
-                <span class="notif-marquee flex-1 min-w-0" aria-hidden="true"><span class="notif-marquee-track" style="animation-duration:${secs}s">${t}${t}</span></span>${close}</div>`;
+            const go = notifTarget(i.key);
+            const ga = go ? ` onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter')window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open"` : '';
+            return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold w-full sm:w-auto sm:max-w-[26rem] ${style[i.level]} ${go ? 'notif-link' : ''}" role="status" aria-label="${haEscape(i.text)}">
+                <span class="shrink-0"${ga}>${haEscape(i.icon)}</span>
+                <span class="notif-marquee flex-1 min-w-0" aria-hidden="true"${ga}><span class="notif-marquee-track" style="animation-duration:${secs}s">${t}${t}</span></span>${close}</div>`;
         }
-        return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold ${style[i.level]}" role="status">
-            <span>${haEscape(i.icon)}</span><span>${haEscape(i.text)}</span>${close}</div>`;
+        const go = notifTarget(i.key);
+        const ka = go ? `onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open" aria-label="${haEscape(i.text)}: openen"` : 'disabled';
+        return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold ${style[i.level]} ${go ? 'notif-link' : ''}" role="status">
+            <button type="button" ${ka} class="flex items-center gap-2 text-left ${go ? 'cursor-pointer' : 'cursor-default'}"><span>${haEscape(i.icon)}</span><span>${haEscape(i.text)}</span>${go ? '<span class="opacity-60">›</span>' : ''}</button>${close}</div>`;
     }).join('');
     bar.classList.remove('hidden');
     bar.classList.add('flex');
