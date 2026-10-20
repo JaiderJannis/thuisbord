@@ -237,10 +237,13 @@
                             🏡 Huishouden: Familie Peeters
                         </span>
 
-                        <button id="headerRoomsBtn" onclick="switchView('shutters')" title="Ruimtes: lampen, rolluiken & airco" aria-label="Ruimtes" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
+                        <div class="relative">
+                        <button id="headerRoomsBtn" type="button" onclick="window.toggleHouseMenu(event)" aria-haspopup="true" aria-expanded="false" title="Huis: ruimtes, lampen, rolluiken & airco" aria-label="Huis" class="bg-white/95 hover:bg-white shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-0 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#1c2520] transition cursor-pointer border border-black/5">
                             <span class="text-lg 2xl:text-sm">🏠</span>
-                            <span class="hidden 2xl:inline">Ruimtes</span>
+                            <span class="hidden 2xl:inline">Huis</span>
+                            <span id="houseMenuCaret" class="hidden md:inline text-[10px] transition-transform">▾</span>
                         </button>
+                        </div>
 
                         <button id="headerActiveLightsBtn" onclick="window.toggleActiveLightsModal(true)" title="Bekijk welke lampen er nu aan staan" aria-label="Lampen" class="bg-amber-50 hover:bg-amber-100/90 shadow-sm h-10 w-full sm:w-auto sm:min-w-10 px-2.5 md:px-3.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-extrabold text-amber-900 transition cursor-pointer border border-amber-200/80">
                             <span id="headerLightsDot" class="hidden md:block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
@@ -933,9 +936,12 @@
                         <p class="text-xs text-[#b3c7bd]">Bedien Music Assistant en je muziekspelers, live via Home Assistant.</p>
                     </div>
                 </div>
-                <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
-                    ← Terug naar Wanddisplay
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="musicPauseAllBtn" type="button" onclick="window.musicPauseAll()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⏸ Pauzeer alles</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">
+                        ← Terug naar Wanddisplay
+                    </button>
+                </div>
             </div>
             <div id="musicContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
         </div>
@@ -1957,5 +1963,12 @@
     <script defer src="js/admin.js"></script>
     <script defer src="js/liveliness.js"></script>
     <script defer src="js/main.js"></script>
+
+    <div id="houseMenu" class="hidden fixed z-[95] w-64 rounded-2xl bg-white shadow-2xl border border-stone-200 p-1.5" role="menu">
+        <button type="button" role="menuitem" onclick="window.openHouseMenu('all')" class="house-item"><span class="house-ico">🏠</span><span><b>Ruimtes</b><small>Alles per kamer</small></span></button>
+        <button type="button" role="menuitem" onclick="window.openHouseMenu('lights')" class="house-item"><span class="house-ico">💡</span><span><b>Lampen</b><small id="houseMenuLights">Alle lampen</small></span></button>
+        <button type="button" role="menuitem" onclick="window.openHouseMenu('shutters')" class="house-item"><span class="house-ico">🪟</span><span><b>Rolluiken</b><small id="houseMenuShutters">Alle rolluiken</small></span></button>
+        <button type="button" role="menuitem" onclick="window.openHouseMenu('climate')" class="house-item"><span class="house-ico">❄️</span><span><b>Airco's</b><small id="houseMenuClimate">Alle airco's</small></span></button>
+    </div>
 </body>
 </html>
