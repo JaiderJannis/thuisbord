@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Ingelogd met een geverifieerd Google-account
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    // De eigenaar heeft altijd toegang (ook voordat de accountdocumenten bestaan)
+    function isOwner() {
+      return signedIn() && request.auth.token.email.lower() == 'jaiderjannis@gmail.com';
+    }
+
+    // Lid = er bestaat een accountdocument met het e-mailadres van de ingelogde persoon
+    function isMember() {
+      return signedIn() && exists(
+        /databases/$(database)/documents/artifacts/thuisbord-default-app/public/data/thuisbord_accounts/$(request.auth.token.email.lower())
+      );
+    }
+
+    // Alle Thuisbord-data: enkel eigenaar en leden
+    match /artifacts/thuisbord-default-app/public/data/{document=**} {
+      allow read, write: if isOwner() || isMember();
+    }
+
+    // Al het andere in de database is geblokkeerd (geen regel = geen toegang)
+  }
+}

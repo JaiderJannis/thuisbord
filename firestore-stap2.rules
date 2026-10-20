@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- hulpfuncties ----------
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function accountPath() {
+      return /databases/$(database)/documents/artifacts/thuisbord-default-app/public/data/thuisbord_accounts/$(myEmail());
+    }
+    function isOwner() {
+      return signedIn() && myEmail() == 'jaiderjannis@gmail.com';
+    }
+    function hasAccount() {
+      return signedIn() && exists(accountPath());
+    }
+    function myAccount() {
+      return get(accountPath()).data;
+    }
+    function myHousehold() {
+      return myAccount().household;
+    }
+    // Admin = eigenaar of account met rol "admin": ziet en beheert alles
+    function isAdmin() {
+      return isOwner() || (hasAccount() && myAccount().role == 'admin');
+    }
+    function isManager() {
+      return hasAccount() && myAccount().role == 'manager';
+    }
+
+    match /artifacts/thuisbord-default-app/public/data {
+
+      // ---------- gezinnen ----------
+      match /thuisbord_households/{householdId} {
+        // Eigen gezin lezen (resource == null: het document bestaat nog niet)
+        allow get: if isAdmin()
+                   || (hasAccount() && (resource == null || resource.data.name == myHousehold()));
+        allow list: if isAdmin();
+        // Eigen gezin aanpassen (ook de gewone gebruikers: agenda, taken, ...)
+        allow update: if isAdmin()
+                      || (hasAccount()
+                          && resource.data.name == myHousehold()
+                          && request.resource.data.name == myHousehold());
+        // Gezinnen aanmaken of verwijderen: enkel admin
+        allow create, delete: if isAdmin();
+      }
+
+      // ---------- accounts ----------
+      match /thuisbord_accounts/{accountId} {
+        // Eigen account altijd lezen; manager: accounts van het eigen gezin; admin: alles
+        allow get: if isAdmin()
+                   || (signedIn() && accountId == myEmail())
+                   || (isManager() && resource != null && resource.data.household == myHousehold());
+        // Lijst-queries: manager moet filteren met where('household', '==', eigenGezin)
+        allow list: if isAdmin()
+                    || (isManager() && resource.data.household == myHousehold());
+        // Manager mag leden toevoegen/aanpassen/verwijderen in het eigen gezin, maar nooit een admin maken
+        allow create: if isAdmin()
+                      || (isManager()
+                          && request.resource.data.household == myHousehold()
+                          && request.resource.data.role in ['user', 'manager']
+                          && request.resource.data.email.lower() == accountId);
+        allow update: if isAdmin()
+                      || (isManager()
+                          && resource.data.household == myHousehold()
+                          && resource.data.role != 'admin'
+                          && request.resource.data.household == myHousehold()
+                          && request.resource.data.role in ['user', 'manager']
+                          && request.resource.data.email.lower() == accountId);
+        allow delete: if isAdmin()
+                      || (isManager()
+                          && resource.data.household == myHousehold()
+                          && resource.data.role != 'admin');
+      }
+
+      // ---------- migratie-markering en oud document: enkel admin ----------
+      match /thuisbord_meta/{docId} {
+        allow read, write: if isAdmin();
+      }
+      match /thuisbord_settings/{docId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
+    // Al het andere in de database is geblokkeerd (geen regel = geen toegang)
+  }
+}
