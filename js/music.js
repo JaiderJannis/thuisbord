@@ -96,7 +96,7 @@ function musicPlayerCardHtml(pl, idx, map, allPlayers) {
     const cls = canControl ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed';
 
     const chip = {
-        playing: { t: '▶ Speelt', c: 'bg-[#dcece3] text-[#1c643f]' },
+        playing: { t: '<span class="eq"><i></i><i></i><i></i><i></i></span> Speelt', c: 'bg-[#dcece3] text-[#1c643f]' },
         paused: { t: '⏸ Gepauzeerd', c: 'bg-amber-100 text-amber-900' },
         idle: { t: 'Stil', c: 'bg-stone-200 text-stone-600' },
         off: { t: 'Uit', c: 'bg-stone-200 text-stone-600' },
