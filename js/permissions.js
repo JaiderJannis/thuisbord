@@ -45,6 +45,8 @@ const PERM_ITEMS = [
     { key: 'edit_cameras',    group: 'gebruik', icon: '🛠️', label: "Camera's instellen",            hint: "Kiezen welke camera's getoond worden en hoe ze heten",        roles: PERM_BOTH, requires: 'view_cameras', defaultUser: false },
     { key: 'view_guest',      group: 'gebruik', icon: '🛎️', label: 'Gastmodus starten',            hint: 'Het beperkte gastenscherm (wifi, lampen, huisregels) starten',  roles: PERM_BOTH },
     { key: 'edit_guest',      group: 'gebruik', icon: '🛠️', label: 'Gastmodus instellen',           hint: 'Wifi, huisregels, toegestane lampen en pincode wijzigen',      roles: PERM_BOTH, requires: 'view_guest', defaultUser: false },
+    { key: 'view_timeline',   group: 'gebruik', icon: '🕒', label: 'Tijdlijn bekijken',             hint: 'Wat er vandaag in huis gebeurde (deuren, personen, robots, wasserij)', roles: PERM_BOTH },
+    { key: 'edit_timeline',   group: 'gebruik', icon: '🛠️', label: 'Tijdlijn instellen',            hint: 'Kiezen welke soorten gebeurtenissen getoond worden',           roles: PERM_BOTH, requires: 'view_timeline', defaultUser: false },
     { key: 'view_planner',    group: 'gebruik', icon: '🧠', label: 'Slim advies & planner',         hint: 'Beste moment om wasmachine, droger of vaatwasser te starten', roles: PERM_BOTH },
     { key: 'choose_theme',    group: 'gebruik', icon: '🌙', label: 'Eigen weergave kiezen',         hint: 'Zelf licht/donker/automatisch kiezen. Uit = de beheerder bepaalt', roles: PERM_BOTH },
     // ----- beheer (enkel gezinsbeheerder) -----
@@ -74,7 +76,7 @@ const ADMIN_TAB_PERMISSION = {
 };
 const ADMIN_ONLY_TABS = ['gezinnen', 'rechten'];
 
-const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest' };
+const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest', timeline: 'view_timeline' };
 
 function permDefault(key, role) {
     const item = PERM_BY_KEY[key];
@@ -163,6 +165,7 @@ function applyPermissionsToUI() {
     permSetShown(get('navBtnLaundry'), permAllowed('view_laundry'), 'flex');
     permSetShown(get('navBtnCameras'), permAllowed('view_cameras'), 'flex');
     permSetShown(get('navBtnGuest'), permAllowed('view_guest'), 'flex');
+    permSetShown(get('navBtnTimeline'), permAllowed('view_timeline'), 'flex');
     permSetShown(get('navBtnLayout'), permAllowed('manage_display'), 'flex');
     permSetShown(get('headerWeatherBtn'), permAllowed('view_weather'), 'flex');
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();

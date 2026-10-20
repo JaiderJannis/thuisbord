@@ -152,6 +152,11 @@
                     <span class="text-[13px] font-bold leading-tight">Gastmodus</span>
                     <span class="text-[10.5px] leading-tight opacity-70">Beperkt scherm voor visite</span>
                 </button>
+                <button id="navBtnTimeline" onclick="switchView('timeline'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span class="text-2xl leading-none">🕒</span>
+                    <span class="text-[13px] font-bold leading-tight">Tijdlijn</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Wat er vandaag gebeurde</span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
@@ -1046,6 +1051,22 @@
     </div>
 
     <div id="guestOverlay" class="hidden fixed inset-0 z-[300] overflow-y-auto bg-[#0f1f18] text-white" role="dialog" aria-label="Gastmodus"></div>
+
+    <div id="viewTimeline" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[900px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🕒</div>
+                    <div><h2 class="text-xl sm:text-2xl font-bold">Tijdlijn</h2><p class="text-xs text-[#b3c7bd]">Wat er in huis gebeurde, rechtstreeks uit het logboek van Home Assistant.</p></div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="timelineEditBtn" onclick="window.timelineToggleEdit()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⚙️ Instellen</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+                </div>
+            </div>
+            <div id="timelineContainer" class="space-y-5"></div>
+        </div>
+    </div>
 
     <div id="viewCameras" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
         <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
@@ -2047,6 +2068,7 @@
     <script defer src="js/cameras.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script defer src="js/guest.js"></script>
+    <script defer src="js/timeline.js"></script>
     <script defer src="js/weather-tips.js"></script>
     <script defer src="js/energy-story.js"></script>
     <script defer src="js/display-layout.js"></script>
