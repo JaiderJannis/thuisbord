@@ -65,61 +65,48 @@ function renderDisplayAppliancesFlow() {
     if (countBadge) countBadge.textContent = `${activeCount} actief`;
 
     if (list.length === 0) {
-        container.innerHTML = `<p class="text-[11px] text-[#68736d] italic">Geen extra apparaten gekoppeld.</p>`;
+        container.innerHTML = '';
         return;
     }
 
-    const totalW = list.filter(isRunning).reduce((sum, a) => sum + Number(a.watts || 0), 0);
-    const lineOn = '#8ebd9f';
-    const lineOff = '#d9e0dc';
     const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const COLOR = '#e6862a', LINE_ON = '#f3c08c', LINE_OFF = '#dfe4e1';
 
-    // Huis-label bovenaan; daaronder krijgt elk apparaat zijn eigen flowlijn (eigen pad, eigen bewegend bolletje)
-    const houseNode = `
-        <div class="flex justify-center mt-2.5">
-            <div class="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-[#dcece3] text-[#1c643f] border-2 border-white shadow-2xs w-[78%]">
-                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/></svg>
-                <span class="text-[11px] font-extrabold truncate">${totalW > 0 ? `${totalW} W naar apparaten · ${activeCount} actief` : 'Huis → apparaten'}</span>
-            </div>
-        </div>`;
-
-    // Rijen van maximaal 4 apparaten
-    const perRow = 4;
+    // Stroomafnemers staan boven het huis; elke lijn loopt van het huis naar zijn eigen kaart (zoals bij de batterij)
+    const perRow = 5;
     const rows = [];
     for (let i = 0; i < list.length; i += perRow) rows.push(list.slice(i, i + perRow));
 
-    const rowsHtml = rows.map((row, rowIdx) => {
+    container.innerHTML = rows.map((row) => {
         const n = row.length;
-        const W = 300, H = 34, mid = 15;
-        const gap = Math.min(30, 150 / Math.max(1, n));          // startpunten verspreid onder het huis-label
-        const paths = row.map((app, i) => {
-            const on = isRunning(app);
-            const sx = Math.round(W / 2 + (i - (n - 1) / 2) * gap);
-            const cx = Math.round((i + 0.5) * W / n);
-            const d = `M ${sx} 0 L ${sx} ${mid} L ${cx} ${mid} L ${cx} ${H - 3}`;
-            const head = on ? `<path d="M ${cx - 3.5} ${H - 8} L ${cx} ${H - 2} L ${cx + 3.5} ${H - 8}" stroke="#19975c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` : '';
-            const dot = on ? `<circle r="3.2" fill="#19975c"><animateMotion dur="${(1.6 + (i % 3) * 0.3).toFixed(1)}s" repeatCount="indefinite" path="${d}"/></circle>` : '';
-            return `<path d="${d}" stroke="${on ? '#8ebd9f' : lineOff}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>${head}${dot}`;
-        }).join('');
-        const chips = row.map((app) => {
+        const W = 300, H = 40, mid = 22;
+        const gap = Math.min(12, 36 / Math.max(1, n));           // startpunten verspreid over de breedte van het huis
+        const cards = row.map((app) => {
             const on = isRunning(app);
             return `
-                <div class="w-full flex flex-col items-center text-center px-1 py-1.5 rounded-xl border ${on ? 'bg-[#f4fbf7] border-[#bce3ce]' : 'bg-stone-50/70 border-stone-200/60 opacity-70'}">
-                    <span class="text-base leading-none">${esc(app.icon || '🔌')}</span>
-                    <span class="text-[10px] font-bold text-[#1c2520] w-full truncate mt-0.5" title="${esc(app.name)}">${esc(app.name)}</span>
+                <div class="app-node ${on ? 'is-on' : 'is-off'} flex flex-col items-center text-center px-1 py-2 rounded-2xl min-w-0">
+                    <div class="app-node-ico w-7 h-7 rounded-full flex items-center justify-center text-sm mb-1 shadow-2xs">${esc(app.icon || '🔌')}</div>
+                    <p class="app-node-name text-[11px] font-bold w-full truncate px-0.5" title="${esc(app.name)}">${esc(app.name)}</p>
                     ${on
-                        ? `<span class="text-[11px] font-extrabold text-[#197447] leading-tight">${Number(app.watts)} W</span>`
-                        : `<span class="text-[10px] font-medium text-[#68736d] leading-tight">Uit</span>`}
+                        ? `<p class="app-node-val text-xs font-extrabold leading-tight">${Number(app.watts)} <span class="text-[10px] font-normal">W</span></p>`
+                        : `<p class="text-[10px] font-medium text-[#68736d] leading-tight">Uit</p>`}
                 </div>`;
         }).join('');
+        const paths = row.map((app, i) => {
+            const on = isRunning(app);
+            const sx = Math.round((W / 2 + (i - (n - 1) / 2) * gap) * 10) / 10;
+            const cx = Math.round((i + 0.5) * W / n);
+            const d = `M ${sx} ${H} L ${sx} ${mid} L ${cx} ${mid} L ${cx} 4`;
+            const head = on ? `<path d="M ${cx - 4} 9 L ${cx} 3 L ${cx + 4} 9" stroke="${COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>` : '';
+            const dot = on ? `<circle r="3.2" fill="${COLOR}"><animateMotion dur="${(1.8 + (i % 3) * 0.3).toFixed(1)}s" repeatCount="indefinite" path="${d}"/></circle>` : '';
+            return `<path d="${d}" stroke="${on ? LINE_ON : LINE_OFF}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>${head}${dot}`;
+        }).join('');
         return `
-            <div class="${rowIdx > 0 ? 'mt-1' : ''}">
-                <svg class="w-full block overflow-visible" style="height:auto" viewBox="0 0 ${W} ${H}" fill="none" aria-hidden="true">${paths}</svg>
-                <div class="grid gap-1" style="grid-template-columns: repeat(${n}, minmax(0, 1fr));">${chips}</div>
+            <div class="mb-0">
+                <div class="grid gap-2" style="grid-template-columns: repeat(${n}, minmax(0, 1fr));">${cards}</div>
+                <svg class="w-full h-10 block overflow-visible" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" fill="none" aria-hidden="true">${paths}</svg>
             </div>`;
     }).join('');
-
-    container.innerHTML = houseNode + rowsHtml;
 }
 
 function tickLiveEnergyMetrics() {

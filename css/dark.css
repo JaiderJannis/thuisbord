@@ -105,3 +105,11 @@ html.dark .leaflet-control-attribution a{color:#8fd4b0!important}
 html.dark .leaflet-bar a{background:#1d2b24;color:#e6efe9;border-color:#2c3d34}
 html.dark .map-base-tiles{filter:invert(1) hue-rotate(180deg) brightness(.88) contrast(.9) saturate(.55)}
 html.dark .map-pin-label{background:#1d2b24}
+
+html.dark .app-node.is-on{background:#33261a;border-color:#5a4126}
+html.dark .app-node.is-on .app-node-ico{background:#4a341e;color:#f0a560}
+html.dark .app-node.is-on .app-node-name{color:#f0a560}
+html.dark .app-node.is-on .app-node-val{color:#e6efe9}
+html.dark .app-node.is-off{background:#1a2822;border-color:#2a3a32}
+html.dark .app-node.is-off .app-node-ico{background:#24332b}
+html.dark .app-node.is-off .app-node-name{color:#9fb0a6}
