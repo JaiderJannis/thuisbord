@@ -1,0 +1,10 @@
+{
+  "name": "thuisbord-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kleine Web Push-server voor Thuisbord (Home Assistant -> telefoon)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "keys": "node server.js --keys" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "web-push": "^3.6.7", "ws": "^8.18.0" }
+}

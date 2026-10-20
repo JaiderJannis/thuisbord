@@ -210,6 +210,8 @@ function renderAll() {
     renderMusicView();
     if (typeof renderScenesView === 'function') renderScenesView();
     if (typeof renderPlannerView === 'function') renderPlannerView();
+    if (typeof renderLaundryView === 'function') renderLaundryView();
+    if (typeof renderCamerasView === 'function') renderCamerasView();
     if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
     if (typeof renderDisplayLayout === 'function') renderDisplayLayout();
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
@@ -226,7 +228,7 @@ window.switchView = function(view) {
     }
     if (view === 'userPortal') view = 'calendar';
     try {
-        const titles = { scenes: 'Scènes', planner: 'Slim advies', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
         const tEl = document.getElementById('subNavCurrentPageTitle');
         if (tEl && titles[view]) tEl.textContent = titles[view];
     } catch (e) { /* titel is een extraatje */ }
@@ -297,6 +299,22 @@ window.switchView = function(view) {
     }
     if (typeof weatherViewActive === 'function') weatherViewActive(view === 'weather');
 
+    const vLaundry = document.getElementById('viewLaundry');
+    if (vLaundry) {
+        vLaundry.classList.toggle('hidden', view !== 'laundry');
+        vLaundry.classList.toggle('flex', view === 'laundry');
+        if (typeof laundryViewActive === 'function') laundryViewActive(view === 'laundry');
+        if (view === 'laundry' && typeof renderLaundryView === 'function') renderLaundryView();
+    }
+
+    const vCameras = document.getElementById('viewCameras');
+    if (vCameras) {
+        vCameras.classList.toggle('hidden', view !== 'cameras');
+        vCameras.classList.toggle('flex', view === 'cameras');
+        if (typeof camerasViewActive === 'function') camerasViewActive(view === 'cameras');
+        if (view === 'cameras' && typeof renderCamerasView === 'function') renderCamerasView();
+    }
+
     const vScenes = document.getElementById('viewScenes');
     if (vScenes) {
         vScenes.classList.toggle('hidden', view !== 'scenes');
@@ -340,6 +358,8 @@ window.switchView = function(view) {
     const btnWeather = document.getElementById('navBtnWeather');
     const btnScenes = document.getElementById('navBtnScenes');
     const btnPlanner = document.getElementById('navBtnPlanner');
+    const btnLaundry = document.getElementById('navBtnLaundry');
+    const btnCameras = document.getElementById('navBtnCameras');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -357,6 +377,8 @@ window.switchView = function(view) {
     if (btnWeather) btnWeather.className = view === 'weather' ? activeClass : inactiveClass;
     if (btnScenes) btnScenes.className = view === 'scenes' ? activeClass : inactiveClass;
     if (btnPlanner) btnPlanner.className = view === 'planner' ? activeClass : inactiveClass;
+    if (btnLaundry) btnLaundry.className = view === 'laundry' ? activeClass : inactiveClass;
+    if (btnCameras) btnCameras.className = view === 'cameras' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if (btnAdmin) btnAdmin.className = (view === 'admin' ? activeClass : inactiveClass) + ' col-span-2';
 

@@ -135,6 +135,18 @@
                     <span class="text-[13px] font-bold leading-tight">Indeling</span>
                     <span class="text-[10.5px] leading-tight opacity-70">Wanddisplay aanpassen</span>
                 </button>
+                <button id="navBtnLaundry" onclick="switchView('laundry'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span class="text-2xl leading-none">🧺</span>
+                    <span class="text-[13px] font-bold leading-tight">Wasserij</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Wasmachine & droger live volgen</span>
+                    <span id="menuLaundryBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
+                <button id="navBtnCameras" onclick="switchView('cameras'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span class="text-2xl leading-none">📹</span>
+                    <span class="text-[13px] font-bold leading-tight">Camera's</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Livebeeld van je camera's</span>
+                    <span id="menuCamerasBadge" class="absolute top-2 right-2 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full empty:hidden"></span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
@@ -1000,6 +1012,53 @@
     <!-- ===================================================================== -->
     <!-- VIEW: SCÈNES                                                          -->
     <!-- ===================================================================== -->
+    <div id="viewLaundry" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">🧺</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Wasserij</h2>
+                        <p class="text-xs text-[#b3c7bd]">Wasmachine & droger live volgen.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="laundryEditBtn" onclick="window.laundryToggleEdit()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⚙️ Instellen</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+                </div>
+            </div>
+            <div id="laundryContainer" class="space-y-5"></div>
+        </div>
+    </div>
+
+    <div id="viewCameras" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">📹</div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold">Camera's</h2>
+                        <p class="text-xs text-[#b3c7bd]">Livebeeld van je camera's.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="camerasEditBtn" onclick="window.camerasToggleEdit()" class="hidden bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">⚙️ Instellen</button>
+                    <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+                </div>
+            </div>
+            <div id="camerasContainer" class="space-y-5"></div>
+        </div>
+    </div>
+
+    <div id="cameraModal" class="hidden fixed inset-0 z-[95] bg-black/90 flex-col items-center justify-center p-3 sm:p-8" onclick="if(event.target===this)window.camerasClose()">
+        <div class="w-full max-w-6xl flex items-center justify-between gap-3 mb-3 text-white">
+            <h3 id="cameraModalTitle" class="text-lg font-extrabold truncate">Camera</h3>
+            <button type="button" onclick="window.camerasClose()" aria-label="Sluiten" class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white cursor-pointer">✕</button>
+        </div>
+        <img id="cameraModalImg" alt="" class="w-full max-w-6xl max-h-[80vh] object-contain rounded-2xl bg-black">
+        <p class="text-[11px] text-white/60 mt-3">Livebeeld via Home Assistant. Het beeld stopt als je dit venster sluit.</p>
+    </div>
+
     <div id="viewScenes" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
         <div class="max-w-[1240px] w-full mx-auto flex-1 flex flex-col space-y-5">
             <div class="bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
@@ -1965,6 +2024,8 @@
     <script defer src="js/music.js"></script>
     <script defer src="js/music-library.js"></script>
     <script defer src="js/scenes.js"></script>
+    <script defer src="js/laundry.js"></script>
+    <script defer src="js/cameras.js"></script>
     <script defer src="js/display-layout.js"></script>
     <script defer src="js/planner.js"></script>
     <script defer src="js/stats.js"></script>

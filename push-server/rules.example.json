@@ -1,0 +1,8 @@
+[
+  { "naam": "Wasmachine klaar", "entity": "sensor.samsung_washer_machine_state", "naar": "stop", "van": "run",
+    "titel": "Thuisbord", "tekst": "🧺 De wasmachine is klaar", "tag": "wasmachine" },
+  { "naam": "Droger klaar", "entity": "sensor.droger_machine_state", "naar": "stop", "van": "run",
+    "titel": "Thuisbord", "tekst": "🌀 De droger is klaar", "tag": "droger" },
+  { "naam": "Deurbel", "entity": "binary_sensor.deurbel", "naar": "on",
+    "titel": "Thuisbord", "tekst": "🔔 Er is aangebeld", "tag": "deurbel" }
+]
