@@ -156,8 +156,87 @@ window.camerasOpen = function(entityId) {
     const img = document.getElementById('cameraModalImg'); if (img && img.setAttribute) img.setAttribute('src', cameraSnapshotUrl(entityId, false));
     renderCameraModal();
     camerasEnsureTimer();
+    camRtcStart(entityId);
 };
-window.camerasClose = function() { camFull = ''; renderCameraModal(); };
+window.camerasClose = function() { camFull = ''; camRtcStop(); renderCameraModal(); };
+
+/* ---------- echt livebeeld via WebRTC (Home Assistant + go2rtc) ----------
+   Alleen voor camera's die een stream aanbieden (supported_features bit 2; bij 'Algemene camera' = ingevulde Stream-bron).
+   Tot het eerste videobeeld er is blijft het snapshot-beeld staan; lukt WebRTC niet, dan blijven de snapshots lopen. */
+let camRtc = null;
+function camStreamable(entityId) {
+    const st = camState(entityId);
+    return !!(st && st.attributes && (Number(st.attributes.supported_features) & 2));
+}
+function camRtcStop() {
+    const r = camRtc; camRtc = null;
+    if (r) { clearTimeout(r.timer); try { r.pc && r.pc.close(); } catch (e) { /* negeren */ } try { r.ws && r.ws.close(); } catch (e) { /* negeren */ } }
+    const v = document.getElementById('cameraModalVideo');
+    if (v) { try { v.srcObject = null; } catch (e) { /* negeren */ } v.classList.add('hidden'); }
+    const b = document.getElementById('cameraModalLive'); if (b) b.textContent = '';
+}
+function camRtcStart(entityId) {
+    camRtcStop();
+    const v = document.getElementById('cameraModalVideo'), tag = document.getElementById('cameraModalLive');
+    const base = camBase(), token = String(appState.haToken || '').trim();
+    if (!camStreamable(entityId) || !base || !token || typeof RTCPeerConnection === 'undefined' || !v) {
+        if (tag) tag.textContent = camStreamable(entityId) ? '' : 'Deze camera heeft geen stream-bron: beeld ververst elke seconde.';
+        return;
+    }
+    const r = camRtc = { ws: null, pc: null, timer: null, id: entityId, sid: null, queue: [] };
+    const fail = (why) => { if (camRtc !== r) return; camRtcStop(); if (tag) tag.textContent = 'Livebeeld niet gelukt (' + why + '): beeld ververst elke seconde.'; };
+    if (tag) tag.textContent = 'Livebeeld verbinden…';
+    r.timer = setTimeout(() => fail('time-out'), 12000);
+    let n = 1;
+    try { r.ws = new WebSocket(base.replace(/^http/i, 'ws') + '/api/websocket'); } catch (e) { fail('geen verbinding'); return; }
+    r.ws.onerror = () => fail('geen verbinding');
+    r.ws.onclose = () => { if (camRtc === r && !v.srcObject) fail('verbroken'); };
+    const send = (o) => { try { r.ws.send(JSON.stringify(o)); } catch (e) { /* negeren */ } };
+    const begin = async () => {
+        let ice = [{ urls: 'stun:stun.l.google.com:19302' }];
+        const cfgId = ++n; r.cfgId = cfgId;
+        send({ id: cfgId, type: 'camera/webrtc/get_client_config', entity_id: entityId });
+        r.cfgWait = (res) => { if (res && res.configuration && res.configuration.iceServers) ice = res.configuration.iceServers; offer(ice); };
+    };
+    const offer = async (ice) => {
+        try {
+            const pc = r.pc = new RTCPeerConnection({ iceServers: ice });
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+            pc.createDataChannel('dataSendChannel');
+            pc.ontrack = (e) => { if (camRtc !== r) return; if (!v.srcObject) v.srcObject = e.streams[0] || new MediaStream([e.track]); };
+            pc.onicecandidate = (e) => {
+                if (!e.candidate) return;
+                const cand = e.candidate.toJSON ? e.candidate.toJSON() : e.candidate;
+                if (r.sid) send({ id: ++n, type: 'camera/webrtc/candidate', entity_id: entityId, session_id: r.sid, candidate: cand }); else r.queue.push(cand);
+            };
+            pc.onconnectionstatechange = () => { if (['failed', 'closed'].includes(pc.connectionState)) fail('verbinding'); };
+            v.onplaying = () => { if (camRtc !== r) return; clearTimeout(r.timer); v.classList.remove('hidden'); if (tag) tag.textContent = '● Live'; };
+            const o = await pc.createOffer();
+            await pc.setLocalDescription(o);
+            r.offerId = ++n;
+            send({ id: r.offerId, type: 'camera/webrtc/offer', entity_id: entityId, offer: o.sdp });
+        } catch (e) { fail('browser'); }
+    };
+    r.ws.onmessage = async (ev) => {
+        if (camRtc !== r) return;
+        let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+        if (m.type === 'auth_required') send({ type: 'auth', access_token: token });
+        else if (m.type === 'auth_invalid') fail('toegangstoken');
+        else if (m.type === 'auth_ok') begin();
+        else if (m.type === 'result' && m.id === r.cfgId) { r.cfgWait && r.cfgWait(m.success ? m.result : null); r.cfgWait = null; }
+        else if (m.type === 'result' && m.id === r.offerId && !m.success) fail((m.error && m.error.message) || 'geweigerd');
+        else if (m.type === 'event' && m.id === r.offerId && m.event) {
+            const e = m.event;
+            try {
+                if (e.type === 'session') { r.sid = e.session_id; r.queue.splice(0).forEach(c => send({ id: ++n, type: 'camera/webrtc/candidate', entity_id: entityId, session_id: r.sid, candidate: c })); }
+                else if (e.type === 'answer') await r.pc.setRemoteDescription({ type: 'answer', sdp: e.answer });
+                else if (e.type === 'candidate' && e.candidate) await r.pc.addIceCandidate(typeof e.candidate === 'string' ? { candidate: e.candidate, sdpMid: '0' } : e.candidate);
+                else if (e.type === 'error') fail(e.message || e.code || 'fout');
+            } catch (err) { /* losse kandidaat negeren */ }
+        }
+    };
+}
 
 /* ---------- verversen (vooraf laden, dan pas wisselen: nooit zwart of flikkerend) ---------- */
 function camSwap(img, u) {
@@ -171,7 +250,7 @@ function camerasTick() {
     imgs.forEach(img => { const u = cameraSnapshotUrl(img.getAttribute('data-cam'), true); if (u) camSwap(img, u); });
 }
 function camerasFullTick() {
-    if (!camFull || (typeof document !== 'undefined' && document.hidden)) return;
+    if (!camFull || camRtc && document.getElementById('cameraModalVideo') && !document.getElementById('cameraModalVideo').classList.contains('hidden') || (typeof document !== 'undefined' && document.hidden)) return;
     const img = document.getElementById('cameraModalImg');
     const u = cameraSnapshotUrl(camFull, true);
     if (img && u) camSwap(img, u);

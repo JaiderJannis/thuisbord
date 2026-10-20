@@ -1055,8 +1055,11 @@
             <h3 id="cameraModalTitle" class="text-lg font-extrabold truncate">Camera</h3>
             <button type="button" onclick="window.camerasClose()" aria-label="Sluiten" class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white cursor-pointer">✕</button>
         </div>
-        <img id="cameraModalImg" alt="" class="w-full max-w-6xl max-h-[80vh] object-contain rounded-2xl bg-black">
-        <p class="text-[11px] text-white/60 mt-3">Beeld ververst elke seconde via Home Assistant.</p>
+        <div class="relative w-full max-w-6xl flex justify-center">
+            <img id="cameraModalImg" alt="" class="w-full max-h-[80vh] object-contain rounded-2xl bg-black">
+            <video id="cameraModalVideo" autoplay muted playsinline class="hidden absolute inset-0 w-full h-full max-h-[80vh] object-contain rounded-2xl bg-black"></video>
+        </div>
+        <p id="cameraModalLive" class="text-xs font-bold text-white/80 mt-3"></p>
     </div>
 
     <div id="viewScenes" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
