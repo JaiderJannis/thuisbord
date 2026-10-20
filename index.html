@@ -162,6 +162,11 @@
                     <span class="text-[13px] font-bold leading-tight">Controle</span>
                     <span class="text-[10.5px] leading-tight opacity-70">Gezondheid en beveiliging</span>
                 </button>
+                <button id="navBtnReport" onclick="switchView('report'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer" style="display:none">
+                    <span class="text-2xl leading-none">📄</span>
+                    <span class="text-[13px] font-bold leading-tight">Maandrapport</span>
+                    <span class="text-[10.5px] leading-tight opacity-70">Afdrukken, pdf of mailen</span>
+                </button>
                 <button id="navBtnOverview" onclick="switchView('overview'); toggleHamburgerMenu(false);" class="nav-tile relative flex flex-col items-center justify-center text-center gap-1 px-2 py-4 rounded-2xl font-semibold bg-white/10 hover:bg-white/20 text-white transition cursor-pointer">
                     <span class="text-2xl leading-none">📊</span>
                     <span class="text-[13px] font-bold leading-tight">Overzicht</span>
@@ -1083,6 +1088,19 @@
                 <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
             </div>
             <div id="healthContainer" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="viewReport" class="hidden flex-1 p-4 sm:p-6 lg:p-8 flex-col">
+        <div class="max-w-[900px] w-full mx-auto flex-1 flex flex-col space-y-5">
+            <div class="rp-toolbar bg-[#152920] text-white rounded-[24px] px-6 py-5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">📄</div>
+                    <div><h2 class="text-xl sm:text-2xl font-bold">Maandrapport</h2><p class="text-xs text-[#b3c7bd]">Energie, kosten en vergelijking in één net overzicht.</p></div>
+                </div>
+                <button onclick="switchView('display')" class="bg-white/15 hover:bg-white/25 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition">← Terug naar Wanddisplay</button>
+            </div>
+            <div id="reportContainer" class="space-y-4"></div>
         </div>
     </div>
 
@@ -2088,6 +2106,7 @@
     <script defer src="js/guest.js"></script>
     <script defer src="js/timeline.js"></script>
     <script defer src="js/health.js"></script>
+    <script defer src="js/report.js"></script>
     <script defer src="js/weather-tips.js"></script>
     <script defer src="js/energy-story.js"></script>
     <script defer src="js/display-layout.js"></script>

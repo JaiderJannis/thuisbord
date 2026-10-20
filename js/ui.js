@@ -215,6 +215,7 @@ function renderAll() {
     if (typeof renderGuestView === 'function') renderGuestView();
     if (typeof renderTimelineView === 'function') renderTimelineView();
     if (typeof renderHealthView === 'function') renderHealthView();
+    if (typeof renderReportView === 'function') renderReportView();
     if (typeof renderGuestOverlay === 'function') renderGuestOverlay();
     if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
     if (typeof renderDisplayLayout === 'function') renderDisplayLayout();
@@ -232,7 +233,7 @@ window.switchView = function(view) {
     }
     if (view === 'userPortal') view = 'calendar';
     try {
-        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', report: 'Maandrapport', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
         const tEl = document.getElementById('subNavCurrentPageTitle');
         if (tEl && titles[view]) tEl.textContent = titles[view];
     } catch (e) { /* titel is een extraatje */ }
@@ -334,6 +335,13 @@ window.switchView = function(view) {
         if (typeof healthViewActive === 'function') healthViewActive(view === 'health');
     }
 
+    const vReport = document.getElementById('viewReport');
+    if (vReport) {
+        vReport.classList.toggle('hidden', view !== 'report');
+        vReport.classList.toggle('flex', view === 'report');
+        if (typeof reportViewActive === 'function') reportViewActive(view === 'report');
+    }
+
     const vGuest = document.getElementById('viewGuest');
     if (vGuest) {
         vGuest.classList.toggle('hidden', view !== 'guest');
@@ -389,6 +397,7 @@ window.switchView = function(view) {
     const btnGuest = document.getElementById('navBtnGuest');
     const btnTimeline = document.getElementById('navBtnTimeline');
     const btnHealth = document.getElementById('navBtnHealth');
+    const btnReport = document.getElementById('navBtnReport');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -411,6 +420,7 @@ window.switchView = function(view) {
     if (btnGuest) btnGuest.className = view === 'guest' ? activeClass : inactiveClass;
     if (btnTimeline) btnTimeline.className = view === 'timeline' ? activeClass : inactiveClass;
     if (btnHealth) btnHealth.className = view === 'health' ? activeClass : inactiveClass;
+    if (btnReport) btnReport.className = view === 'report' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if (btnAdmin) btnAdmin.className = (view === 'admin' ? activeClass : inactiveClass) + ' col-span-2';
 

@@ -77,7 +77,7 @@ const ADMIN_TAB_PERMISSION = {
 };
 const ADMIN_ONLY_TABS = ['gezinnen', 'rechten'];
 
-const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest', timeline: 'view_timeline', health: 'view_health' };
+const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest', timeline: 'view_timeline', health: 'view_health', report: 'view_overview' };
 
 function permDefault(key, role) {
     const item = PERM_BY_KEY[key];
@@ -168,6 +168,7 @@ function applyPermissionsToUI() {
     permSetShown(get('navBtnGuest'), permAllowed('view_guest'), 'flex');
     permSetShown(get('navBtnTimeline'), permAllowed('view_timeline'), 'flex');
     permSetShown(get('navBtnHealth'), permAllowed('view_health'), 'flex');
+    permSetShown(get('navBtnReport'), permAllowed('view_overview'), 'flex');
     permSetShown(get('navBtnLayout'), permAllowed('manage_display'), 'flex');
     permSetShown(get('headerWeatherBtn'), permAllowed('view_weather'), 'flex');
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();

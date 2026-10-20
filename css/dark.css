@@ -129,3 +129,9 @@ html.dark .house-item small{color:#9fb0a6}
 html.dark .house-ico{background:#26332c}
 html.dark .dl-panel{background:#1b2a22;border-color:#2f8f62}
 html.dark .dwidget{background:#1b2420}
+
+html.dark .rp-card{background:#16241d;box-shadow:none}
+html.dark .rp-tile{background:#1c2f25}
+html.dark .rp-h{color:#e6efe9}
+html.dark .rp-table th{color:#9fb0a6;border-color:#2a3d33}
+html.dark .rp-table td{border-color:#22362c}
