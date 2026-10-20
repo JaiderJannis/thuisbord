@@ -71,7 +71,7 @@ function renderDisplayAgenda() {
         <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#f4f7f4]">
             <span class="w-1.5 h-7 rounded-full bg-[#19975c] shrink-0"></span>
             <div>
-                <p class="text-sm font-bold text-[#1c2520]">${item.time} – ${item.title}</p>
+                <p class="text-sm font-bold text-[#1c2520]">${haEscape(item.time)} – ${haEscape(item.title)}</p>
             </div>
         </div>
     `).join('') + `</div>`;
@@ -92,7 +92,7 @@ function renderDisplayTasks() {
     listEl.innerHTML = tasks.map((task, idx) => `
         <label class="flex items-center gap-2.5 text-sm text-[#38443d] cursor-pointer hover:bg-stone-50 p-1.5 -mx-1.5 rounded-xl transition">
             <input type="checkbox" ${task.done ? 'checked' : ''} onchange="window.toggleTaskDone(${idx})" class="w-4 h-4 rounded accent-[#152920] cursor-pointer">
-            <span class="${task.done ? 'line-through text-stone-400' : ''}">${task.text}</span>
+            <span class="${task.done ? 'line-through text-stone-400' : ''}">${haEscape(task.text)}</span>
         </label>
     `).join('');
 }
@@ -118,10 +118,10 @@ function renderDisplayWaste() {
         const next = sorted.find(hasD);
         const nd = next ? Number(next.daysUntil) : null;
         const headline = !next ? '' : nd <= 0
-            ? `<p class="text-xs font-bold text-[#9e4516] mb-2">♻️ Vandaag wordt ${next.short || next.label} opgehaald</p>`
+            ? `<p class="text-xs font-bold text-[#9e4516] mb-2">♻️ Vandaag wordt ${haEscape(next.short || next.label)} opgehaald</p>`
             : nd === 1
-                ? `<p class="text-xs font-bold text-[#9e4516] mb-2">${eveningNow ? '🌙 Zet vanavond' : '♻️ Zet'} ${next.short || next.label} buiten: morgen wordt het opgehaald</p>`
-                : `<p class="text-xs text-[#68736d] mb-2">Eerstvolgende ophaling: <b class="text-[#1c2520]">${next.short || next.label}</b> over ${nd} dagen</p>`;
+                ? `<p class="text-xs font-bold text-[#9e4516] mb-2">${eveningNow ? '🌙 Zet vanavond' : '♻️ Zet'} ${haEscape(next.short || next.label)} buiten: morgen wordt het opgehaald</p>`
+                : `<p class="text-xs text-[#68736d] mb-2">Eerstvolgende ophaling: <b class="text-[#1c2520]">${haEscape(next.short || next.label)}</b> over ${nd} dagen</p>`;
         linked.innerHTML = `
             <div class="flex items-center justify-between mb-2.5">
                 <span class="text-xs font-bold uppercase tracking-wider text-[#1c2520]">♻️ Afvalkalender</span>
@@ -130,13 +130,13 @@ function renderDisplayWaste() {
             ${headline}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 ${sorted.map(item => `
-                    <div class="waste-row flex items-center gap-2.5 p-2 rounded-xl border ${item.border} bg-stone-50/50 ${hasD(item) && Number(item.daysUntil) <= 1 ? 'waste-row-urgent' : ''}">
-                        <div class="w-9 h-9 rounded-xl ${item.bg} ${item.text} flex items-center justify-center font-extrabold text-[10px] shrink-0">
-                            ${item.short}
+                    <div class="waste-row flex items-center gap-2.5 p-2 rounded-xl border ${haEscape(item.border)} bg-stone-50/50 ${hasD(item) && Number(item.daysUntil) <= 1 ? 'waste-row-urgent' : ''}">
+                        <div class="w-9 h-9 rounded-xl ${haEscape(item.bg)} ${haEscape(item.text)} flex items-center justify-center font-extrabold text-[10px] shrink-0">
+                            ${haEscape(item.short)}
                         </div>
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-bold text-[#1c2520] truncate">${item.stateValue}</p>
-                            <p class="text-[10px] text-[#68736d] truncate">${item.label}</p>
+                            <p class="text-xs font-bold text-[#1c2520] truncate">${haEscape(item.stateValue)}</p>
+                            <p class="text-[10px] text-[#68736d] truncate">${haEscape(item.label)}</p>
                         </div>
                         ${chip(item)}
                     </div>

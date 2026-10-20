@@ -36,7 +36,7 @@ function renderRobotsMaintenanceView() {
                                 ${rob.icon || '🤖'}
                             </div>
                             <div>
-                                <input type="text" value="${rob.name}" onchange="window.updateRobotField(${rIdx}, 'name', this.value)" class="text-xl font-extrabold text-[#1c2520] bg-transparent focus:outline-none focus:underline">
+                                <input type="text" value="${haEscape(rob.name)}" onchange="window.updateRobotField(${rIdx}, 'name', this.value)" class="text-xl font-extrabold text-[#1c2520] bg-transparent focus:outline-none focus:underline">
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${stMeta.pill}">${stMeta.text}</span>
                                     <span class="text-xs font-bold text-[#197447]">${rob.batteryPct != null ? '🔋 ' + rob.batteryPct + '%' : ''}</span>
@@ -81,7 +81,7 @@ function renderRobotsMaintenanceView() {
                                     <div class="p-3.5 rounded-2xl bg-[#f6f8f5] border border-stone-200/80 space-y-2">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <div>
-                                                <p class="text-xs font-extrabold text-[#1c2520]">${t.name}</p>
+                                                <p class="text-xs font-extrabold text-[#1c2520]">${haEscape(t.name)}</p>
                                                 <p class="text-[11px] text-[#68736d]">Laatst gereinigd/vervangen: <strong>${t.lastReset || 'Onbekend'}</strong> • Draaiuren: <strong>${t.usedHours}u / ${t.maxHours}u</strong></p>
                                             </div>
                                             <div class="flex items-center gap-1.5">

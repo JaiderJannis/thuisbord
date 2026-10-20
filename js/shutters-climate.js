@@ -12,15 +12,15 @@ function renderShutterCardHtml(sh, idx) {
              ondragstart="window.handleDeviceDragStart(event, 'shutter', ${idx})"
              ondragend="window.handleDeviceDragEnd(event)"
              ondragover="window.handleDeviceDragOver(event)"
-             ondrop="window.handleDeviceDrop(event, 'shutter', ${idx}, '${sh.room || 'Woonkamer'}')"
+             ondrop="window.handleDeviceDrop(event, 'shutter', ${idx}, '${escJsAttr(sh.room || 'Woonkamer')}')"
              class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
             <div>
                 <div class="flex items-start justify-between gap-2 mb-3">
                     <div class="flex items-start gap-2">
                         <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
                         <div>
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2 py-0.5 rounded-full">🪟 Rolluik • ${sh.room || 'Woonkamer'}</span>
-                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${sh.name}</h4>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e8f2ec] text-[#1c643f] px-2 py-0.5 rounded-full">🪟 Rolluik • ${haEscape(sh.room || 'Woonkamer')}</span>
+                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${haEscape(sh.name)}</h4>
                             <p class="text-[10px] font-mono text-[#68736d]">${sh.entityId || 'Lokale bediening'}</p>
                         </div>
                     </div>
@@ -84,15 +84,15 @@ function renderClimateCardHtml(cl, idx) {
              ondragstart="window.handleDeviceDragStart(event, 'climate', ${idx})"
              ondragend="window.handleDeviceDragEnd(event)"
              ondragover="window.handleDeviceDragOver(event)"
-             ondrop="window.handleDeviceDrop(event, 'climate', ${idx}, '${cl.room || 'Woonkamer'}')"
+             ondrop="window.handleDeviceDrop(event, 'climate', ${idx}, '${escJsAttr(cl.room || 'Woonkamer')}')"
              class="bg-white rounded-[24px] p-5 shadow-xs border border-stone-200/90 flex flex-col justify-between gap-4 transition cursor-grab active:cursor-grabbing">
             <div>
                 <div class="flex items-start justify-between gap-2 mb-3">
                     <div class="flex items-start gap-2">
                         <span title="Sleep om te verplaatsen" class="text-stone-400 hover:text-stone-700 font-bold text-base select-none px-1 cursor-grab">⠿</span>
                         <div>
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2 py-0.5 rounded-full">❄️ Airco / Klimaat • ${cl.room || 'Woonkamer'}</span>
-                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${cl.name}</h4>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#e0f2fe] text-[#0369a1] px-2 py-0.5 rounded-full">❄️ Airco / Klimaat • ${haEscape(cl.room || 'Woonkamer')}</span>
+                            <h4 class="text-base font-bold text-[#1c2520] mt-1">${haEscape(cl.name)}</h4>
                             <p class="text-[10px] font-mono text-[#68736d]">${cl.entityId || 'Lokale bediening'}</p>
                         </div>
                     </div>
@@ -189,7 +189,7 @@ function renderShuttersView() {
     const cur = info.find(r => r.rName === selectedRoom);
     const curPos = info.indexOf(cur);
     const esc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    const jsq = v => String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const jsq = escJsAttr;
 
     const HUES = [155, 205, 28, 285, 345, 60, 115, 235];
     const flowCards = info.map((r, i) => {
@@ -489,7 +489,7 @@ function renderAdminShuttersAndClimateLists() {
     const shRoomSelect = document.getElementById('newShutterRoom');
     const clRoomSelect = document.getElementById('newClimateRoom');
 
-    const roomOptionsHtml = rooms.map(r => `<option value="${r}">🏠 ${r}</option>`).join('');
+    const roomOptionsHtml = rooms.map(r => `<option value="${r}">🏠 ${haEscape(r)}</option>`).join('');
     if (ltRoomSelect) ltRoomSelect.innerHTML = roomOptionsHtml;
     if (shRoomSelect) shRoomSelect.innerHTML = roomOptionsHtml;
     if (clRoomSelect) clRoomSelect.innerHTML = roomOptionsHtml;
@@ -526,10 +526,10 @@ function renderAdminShuttersAndClimateLists() {
                     <button onclick="window.adminRemoveRoomLight(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                    <input type="text" value="${lt.name}" onchange="window.adminUpdateRoomLight(${idx}, 'name', this.value)" placeholder="Naam lamp" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                    <input type="text" value="${haEscape(lt.name)}" onchange="window.adminUpdateRoomLight(${idx}, 'name', this.value)" placeholder="Naam lamp" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
                     <div class="grid grid-cols-2 gap-2">
                         <select onchange="window.adminUpdateRoomLight(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
-                            ${rooms.map(r => `<option value="${r}" ${(lt.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                            ${rooms.map(r => `<option value="${haEscape(r)}" ${(lt.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${haEscape(r)}</option>`).join('')}
                         </select>
                         <input type="text" list="haEntitiesDatalist" value="${lt.entityId || ''}" onchange="window.adminUpdateRoomLight(${idx}, 'entityId', this.value)" placeholder="light.lamp..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-amber-800">
                     </div>
@@ -551,10 +551,10 @@ function renderAdminShuttersAndClimateLists() {
                     <button onclick="window.adminRemoveShutter(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                    <input type="text" value="${sh.name}" onchange="window.adminUpdateShutter(${idx}, 'name', this.value)" placeholder="Naam rolluik" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                    <input type="text" value="${haEscape(sh.name)}" onchange="window.adminUpdateShutter(${idx}, 'name', this.value)" placeholder="Naam rolluik" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
                     <div class="grid grid-cols-2 gap-2">
                         <select onchange="window.adminUpdateShutter(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
-                            ${rooms.map(r => `<option value="${r}" ${(sh.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                            ${rooms.map(r => `<option value="${haEscape(r)}" ${(sh.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${haEscape(r)}</option>`).join('')}
                         </select>
                         <input type="text" list="haEntitiesDatalist" value="${sh.entityId || ''}" onchange="window.adminUpdateShutter(${idx}, 'entityId', this.value)" placeholder="cover.rolluik..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#197447]">
                     </div>
@@ -576,10 +576,10 @@ function renderAdminShuttersAndClimateLists() {
                     <button onclick="window.adminRemoveClimate(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Verwijder</button>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                    <input type="text" value="${cl.name}" onchange="window.adminUpdateClimate(${idx}, 'name', this.value)" placeholder="Naam airco" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
+                    <input type="text" value="${haEscape(cl.name)}" onchange="window.adminUpdateClimate(${idx}, 'name', this.value)" placeholder="Naam airco" class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-[#1c2520]">
                     <div class="grid grid-cols-2 gap-2">
                         <select onchange="window.adminUpdateClimate(${idx}, 'room', this.value)" class="px-2 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-semibold">
-                            ${rooms.map(r => `<option value="${r}" ${(cl.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${r}</option>`).join('')}
+                            ${rooms.map(r => `<option value="${haEscape(r)}" ${(cl.room || rooms[0]) === r ? 'selected' : ''}>🏠 ${haEscape(r)}</option>`).join('')}
                         </select>
                         <input type="text" list="haEntitiesDatalist" value="${cl.entityId || ''}" onchange="window.adminUpdateClimate(${idx}, 'entityId', this.value)" placeholder="climate.airco..." class="px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-[11px] font-mono text-[#0369a1]">
                     </div>

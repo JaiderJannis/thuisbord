@@ -253,19 +253,19 @@ function renderNotifications() {
         music: 'bg-[#f1eefb] border-[#d9d0f0] text-[#4b3a85]'
     };
     const html = visible.map(i => {
-        const close = notifSticky(notifCatOf(i.key)) ? '<span class="w-1.5 shrink-0"></span>' : `<button onclick="window.dismissNotification('${haEscape(i.key).replace(/'/g, '&#39;')}')" aria-label="Melding sluiten" class="w-5 h-5 rounded-full hover:bg-black/10 cursor-pointer leading-none shrink-0">✕</button>`;
+        const close = notifSticky(notifCatOf(i.key)) ? '<span class="w-1.5 shrink-0"></span>' : `<button onclick="window.dismissNotification('${escJsAttr(i.key)}')" aria-label="Melding sluiten" class="w-5 h-5 rounded-full hover:bg-black/10 cursor-pointer leading-none shrink-0">✕</button>`;
         if (i.marquee) {
             // Rollende tekst naar links; de tekst staat twee keer achter elkaar voor een naadloze lus
             const secs = Math.max(10, Math.round(i.text.length * 0.32));
             const t = `<span class="notif-marquee-item">${haEscape(i.text)}</span>`;
             const go = notifTarget(i.key);
-            const ga = go ? ` onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter')window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open"` : '';
+            const ga = go ? ` onclick="window.notificationGo('${escJsAttr(i.key)}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter')window.notificationGo('${escJsAttr(i.key)}')" title="Open"` : '';
             return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold w-full sm:w-auto sm:max-w-[26rem] ${style[i.level]} ${go ? 'notif-link' : ''}" role="status" aria-label="${haEscape(i.text)}">
                 <span class="shrink-0 notif-ico ${i.anim || ''}"${ga}>${haEscape(i.icon)}</span>
                 <span class="notif-marquee flex-1 min-w-0" aria-hidden="true"${ga}><span class="notif-marquee-track" style="animation-duration:${secs}s">${t}${t}</span></span>${close}</div>`;
         }
         const go = notifTarget(i.key);
-        const ka = go ? `onclick="window.notificationGo('${haEscape(i.key).replace(/'/g, '&#39;')}')" title="Open" aria-label="${haEscape(i.text)}: openen"` : 'disabled';
+        const ka = go ? `onclick="window.notificationGo('${escJsAttr(i.key)}')" title="Open" aria-label="${haEscape(i.text)}: openen"` : 'disabled';
         return `<div class="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-bold ${style[i.level]} ${go ? 'notif-link' : ''}" role="status">
             <button type="button" ${ka} class="flex items-center gap-2 text-left ${go ? 'cursor-pointer' : 'cursor-default'}"><span class="notif-ico ${i.anim || ''}">${haEscape(i.icon)}</span><span>${haEscape(i.text)}</span>${go ? '<span class="opacity-60">›</span>' : ''}</button>${close}</div>`;
     }).join('');

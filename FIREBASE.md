@@ -154,3 +154,15 @@ Nieuwe bestanden: `js/maps.js`, `js/weather.js`. Externe diensten: Open-Meteo (w
 ## Scènes, planner en doelen
 De nieuwe velden `scenes`, `planner` en `budget` staan in de gezinsconfiguratie (appState) en worden door dezelfde generieke opslag bewaard als de rest. Er zijn **geen nieuwe Firestore-regels** nodig: enkel gezinsbeheerders schrijven de configuratie.
 Rechten: `view_scenes`, `control_scenes`, `manage_scenes`, `view_planner` en `manage_advice` (Beheer → Rechten).
+
+## Beveiligingscontrole (oktober 2026)
+
+Nagekeken: de code (invoer die in het scherm terechtkomt) en de regels (`firestore-stap4.rules`). In de app staat nu ook Menu → **Controle** (alleen gezinsbeheerders), die onder meer de regels live test met je eigen account.
+
+**Gerepareerd.** Gewone gezinsleden mogen volgens de regels `roomLights`, `shutters`, `climates`, `robots`, `tasks`, `agendaItems`, `appliances` en `haTodayEvents` schrijven. Namen, ruimtes, id's en teksten uit die velden werden zonder opschoning in het scherm gezet. Een gezinslid kon zo code laten uitvoeren in het scherm van een beheerder of het wandbord (en dus bij het Home Assistant-token). Nu worden die teksten overal geëscaped (`haEscape`) en komen ze veilig in `onclick`-teksten (`escJsAttr`).
+
+**Nog open (bewust, geen codefout).**
+- De Home Assistant-token staat in het gezinsdocument en elk gezinslid kan dat document lezen. Gebruik daarom in Home Assistant een apart gebruikersaccount zonder beheerrechten voor Thuisbord en maak daarvan het token.
+- De pushserver-sleutel en het wifi-wachtwoord van de gastmodus staan ook in het gezinsdocument.
+- Rechten die je een gezinslid per persoon geeft voor `edit_cameras`, `edit_laundry`, `edit_guest`, `edit_timeline` werken pas als de nieuwe velden (`cameras`, `laundry`, `guest`, `timeline`, `scenes`, `pushServer`) ook in `userFields()` in de regels en in `V2_USER_WRITABLE_FIELDS` in `js/firestore-v2.js` staan. Voor gezinsbeheerders werkt het al.
+- Er is geen Content-Security-Policy omdat de app Tailwind via een CDN gebruikt.

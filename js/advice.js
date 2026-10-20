@@ -223,7 +223,7 @@ function renderCustomAdviceList() {
     container.innerHTML = list.map((item, idx) => `
         <div class="flex items-center justify-between gap-2 bg-[#f6f8f5] px-3.5 py-2.5 rounded-xl border border-stone-200/70">
             <div>
-                <p class="text-xs font-bold text-[#1c2520]">${item.text}</p>
+                <p class="text-xs font-bold text-[#1c2520]">${haEscape(item.text)}</p>
                 <span class="text-[10px] font-semibold text-[#197447] bg-[#dcece3] px-2 py-0.5 rounded-full">${item.badge}</span>
             </div>
             <button onclick="window.removeCustomAdviceMessage(${idx})" class="text-xs font-bold text-red-600 hover:underline cursor-pointer shrink-0">Verwijder</button>
