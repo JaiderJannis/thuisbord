@@ -158,7 +158,9 @@ function applyPermissionsToUI() {
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();
     permSetShown(get('navBtnAdmin'), permHasAnyManage(), 'flex');
 
-    permSetShown(get('headerRoomsBtn'), permAllowed('view_rooms'), 'flex');
+    const roomsBtn = get('headerRoomsBtn');
+    permSetShown(roomsBtn, permAllowed('view_rooms'), 'flex');
+    if (roomsBtn && roomsBtn.parentElement && roomsBtn.parentElement.style) roomsBtn.parentElement.style.display = permAllowed('view_rooms') ? '' : 'none';
     permSetShown(get('headerActiveLightsBtn'), permAllowed('view_rooms'), 'flex');
     permSetShown(get('headerRobotsBtn'), permAllowed('view_robots'), 'flex');
 

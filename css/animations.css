@@ -74,3 +74,13 @@ button:not(.room-card):not(:disabled):active{transform:scale(.96)}
 .waste-row-urgent{animation:tbWasteHot 2.2s ease-in-out infinite}
 
 @media (prefers-reduced-motion:reduce){.scene-tile.is-running,.scene-tile.is-done,.scene-chip.is-running,.waste-row-urgent{animation:none!important}.scene-tile:hover{transform:none}}
+
+/* ===== Huis-menu ===== */
+@keyframes tbMenuIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+#houseMenu:not(.hidden){animation:tbMenuIn .16s ease-out both;transform-origin:top right}
+.house-item{width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;text-align:left;cursor:pointer;transition:background-color .15s ease}
+.house-item:hover{background:#eef5f0}
+.house-item b{display:block;font-size:13px;font-weight:800;color:#1c2520}
+.house-item small{display:block;font-size:11px;color:#68736d}
+.house-ico{width:36px;height:36px;border-radius:12px;background:#e8f2ec;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+@media (prefers-reduced-motion:reduce){#houseMenu:not(.hidden){animation:none}}

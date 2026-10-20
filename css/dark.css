@@ -122,3 +122,8 @@ html.dark .scene-edit{background:rgba(30,40,35,.9);color:#fff}
 html.dark .scene-chip{background:color-mix(in srgb,var(--c) 24%,#1b2420);border-color:color-mix(in srgb,var(--c) 50%,#1b2420);color:#eef3ef}
 html.dark .waste-chip{background:#2a342f;color:#c4d0c8}
 html.dark .waste-chip-warn{background:#4a2c18;color:#f6c9a8}
+html.dark #houseMenu{background:#1b2420;border-color:#2c3a33}
+html.dark .house-item:hover{background:#26332c}
+html.dark .house-item b{color:#eef3ef}
+html.dark .house-item small{color:#9fb0a6}
+html.dark .house-ico{background:#26332c}

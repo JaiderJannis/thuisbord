@@ -209,7 +209,13 @@ function renderMusicView() {
             : 'Nog geen verbinding met Home Assistant. Koppel Home Assistant en kies je spelers via Beheer → 🎵 Muziek.'}</p>`;
         return;
     }
-    const pauseAll = playingNow ? `<div class="col-span-full flex justify-end"><button type="button" onclick="window.musicPauseAll()" class="px-4 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-xs font-extrabold text-[#1c2520] ${permAllowed('control_music') ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}">⏸ Pauzeer alles (${playingNow})</button></div>` : '';
+    const pb = document.getElementById('musicPauseAllBtn');
+    if (pb) {
+        pb.classList.toggle('hidden', !playingNow);
+        pb.textContent = `⏸ Pauzeer alles (${playingNow})`;
+        pb.classList.toggle('opacity-60', !permAllowed('control_music'));
+    }
+    const pauseAll = '';
     const hint = configured ? '' : `<p class="col-span-full text-xs text-[#68736d]">Je ziet nu alle spelers uit Home Assistant. Kies er een paar bij Beheer → 🎵 Muziek om de lijst op te schonen.</p>`;
     container.innerHTML = hint + pauseAll + players.map((p, i) => musicPlayerCardHtml(p, i, map, players)).join('');
 }

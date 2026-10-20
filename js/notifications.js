@@ -7,6 +7,8 @@ const NOTIF_CATEGORIES = [
     { key: 'appliances', label: '🧺 Apparaat is klaar', hint: 'Wasmachine, droger, vaatwasser… (enkel apparaten met een gekoppelde entiteit)' },
     { key: 'cars',       label: '🚗 Auto',              hint: 'Portier open, lage bandendruk, batterij bijna leeg' },
     { key: 'robots',     label: '🤖 Robots',            hint: 'Storing, stofbak vol, onderhoud bijna nodig' },
+    { key: 'robotsActive', label: '🤖 Robot is bezig',  hint: 'Toont zolang een robotmaaier of -stofzuiger aan het werk is (verdwijnt vanzelf)' },
+    { key: 'climate',    label: '❄️ Airco aan',         hint: 'Toont zolang een airco aan staat, met de stand en gewenste temperatuur' },
     { key: 'waste',      label: '♻️ Afvalophaling',     hint: 'Vandaag of morgen is er ophaling' },
     { key: 'music',      label: '🎵 Muziek',            hint: 'Toont wat er nu speelt, als rollende tekst (Music Assistant)' },
     { key: 'connection', label: '📡 Verbinding',        hint: 'Geen live verbinding met Home Assistant' }
@@ -24,11 +26,13 @@ let notifSettingsHtmlCache = '';
 let notifBarHtmlCache = '';
 
 // Standaard niet weg te klikken: zaken die je niet mag missen. Per gezin aan te passen (notifSettings.sticky).
-const NOTIF_STICKY_DEFAULT = { connection: true, cars: true };
+const NOTIF_STICKY_DEFAULT = { connection: true, cars: true, robotsActive: true, climate: true };
 function notifCatOf(key) {
     const k = String(key || '');
     if (k.startsWith('done_')) return 'appliances';
     if (k.startsWith('car_')) return 'cars';
+    if (k.startsWith('robact_')) return 'robotsActive';
+    if (k.startsWith('clim_')) return 'climate';
     if (k.startsWith('rob_')) return 'robots';
     if (k.startsWith('waste_')) return 'waste';
     if (k.startsWith('music_')) return 'music';
@@ -132,6 +136,32 @@ function notifWasteItems() {
     return out;
 }
 
+// Robot die nu aan het werk is: verdwijnt vanzelf zodra hij stopt
+function notifRobotActiveItems() {
+    const out = [];
+    const txt = { cleaning: 'is aan het schoonmaken', mowing: 'is aan het maaien', returning: 'keert terug naar het dock' };
+    (appState.robots || []).forEach(rob => {
+        const st = String(rob.state || '').toLowerCase();
+        if (!txt[st]) return;
+        out.push({ key: `robact_${rob.id}`, icon: rob.icon || '🤖', level: 'info', text: `${rob.name || 'Robot'} ${txt[st]}` });
+    });
+    return out;
+}
+
+// Airco die aan staat (stand niet "uit")
+function notifClimateItems() {
+    const out = [];
+    const label = { cool: 'koelen', heat: 'verwarmen', heat_cool: 'automatisch', auto: 'automatisch', dry: 'drogen', fan_only: 'ventilator' };
+    (appState.climates || []).forEach((cl, i) => {
+        const mode = String(cl.hvacMode || 'off').toLowerCase();
+        if (mode === 'off' || mode === 'unavailable') return;
+        const t = Number(cl.targetTemp);
+        const temp = isFinite(t) && cl.targetTemp !== undefined && cl.targetTemp !== null && cl.targetTemp !== '' ? ` op ${t.toLocaleString('nl-BE', { maximumFractionDigits: 1 })}°` : '';
+        out.push({ key: `clim_${cl.id || i}`, icon: '❄️', level: 'info', text: `${cl.name || 'Airco'}: ${label[mode] || mode}${temp}` });
+    });
+    return out;
+}
+
 function notifMusicItems(map) {
     const out = [];
     if (typeof musicPlayersToShow !== 'function') return out;
@@ -158,6 +188,8 @@ function computeNotifications(now = Date.now()) {
     }
     if (notifEnabled('cars')) items.push(...notifCarItems(map));
     if (notifEnabled('robots')) items.push(...notifRobotItems(map));
+    if (notifEnabled('robotsActive')) items.push(...notifRobotActiveItems());
+    if (notifEnabled('climate')) items.push(...notifClimateItems());
     if (notifEnabled('waste')) items.push(...notifWasteItems());
     if (notifEnabled('music')) items.push(...notifMusicItems(map));
     if (notifEnabled('connection') && appState.haUrl && appState.haToken && !haWsConnected && now - NOTIF_PAGE_LOADED_MS > 20000) {

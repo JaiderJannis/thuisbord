@@ -349,3 +349,47 @@ window.moveRoomOrder = function(rIdx, dir) {
     renderShuttersView();
     persistStateToFirestore(true);
 };
+
+/* ---------- Huis-menu in de kopbalk: direct naar ruimtes, lampen, rolluiken of airco ---------- */
+function houseMenuClose() {
+    const m = document.getElementById('houseMenu'), b = document.getElementById('headerRoomsBtn');
+    if (m) m.classList.add('hidden');
+    if (b) b.setAttribute('aria-expanded', 'false');
+    const c = document.getElementById('houseMenuCaret');
+    if (c) c.style.transform = '';
+}
+window.toggleHouseMenu = function(ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    const m = document.getElementById('houseMenu'), b = document.getElementById('headerRoomsBtn');
+    if (!m || !b) return;
+    if (!m.classList.contains('hidden')) { houseMenuClose(); return; }
+    // korte samenvatting per optie
+    const lights = appState.roomLights || [], shutters = appState.shutters || [], climates = appState.climates || [];
+    const set = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
+    const lOn = lights.filter(l => l.state === 'on' || l.isOn === true).length;
+    const aOn = climates.filter(c => String(c.hvacMode || 'off') !== 'off').length;
+    set('houseMenuLights', lights.length ? `${lOn} van ${lights.length} aan` : 'Geen lampen');
+    set('houseMenuShutters', shutters.length ? `${shutters.length} rolluiken` : 'Geen rolluiken');
+    set('houseMenuClimate', climates.length ? `${aOn} van ${climates.length} aan` : 'Geen airco\'s');
+    const r = b.getBoundingClientRect ? b.getBoundingClientRect() : { left: 0, bottom: 0, right: 0 };
+    const w = 256, vw = (typeof window.innerWidth === 'number' && window.innerWidth) || 1024;
+    m.style.top = `${Math.round(r.bottom + 8)}px`;
+    m.style.left = `${Math.max(8, Math.min(vw - w - 8, Math.round(r.right - w)))}px`;
+    m.classList.remove('hidden');
+    b.setAttribute('aria-expanded', 'true');
+    const c = document.getElementById('houseMenuCaret');
+    if (c) c.style.transform = 'rotate(180deg)';
+};
+window.openHouseMenu = function(filter) {
+    houseMenuClose();
+    if (!['all', 'lights', 'shutters', 'climate'].includes(filter)) filter = 'all';
+    switchView('shutters');
+    window.setRoomsFilter(filter);
+};
+if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('click', (e) => {
+        const m = document.getElementById('houseMenu');
+        if (m && !m.classList.contains('hidden') && !(m.contains && m.contains(e.target))) houseMenuClose();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') houseMenuClose(); });
+}
