@@ -257,7 +257,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
                 { id: "rx_bin", icon: "🗑️", label: "Stofbak", entityId: "" }
             ],
             state: "docked",
-            batteryPct: 100,
+            batteryPct: null,
             lastRun: "Vandaag 09:15",
             tasks: [
                 { id: "rt1", name: "Stofbak & Filter reinigen", usedHours: 8, maxHours: 15, lastReset: "12 okt" },
@@ -272,7 +272,7 @@ const createDefaultHouseholdConfig = (name = "Jannis - Bellens") => ({
             name: "Robotmaaier",
             entityId: "",
             state: "docked",
-            batteryPct: 100,
+            batteryPct: null,
             lastRun: "Gisteren 16:30",
             tasks: [
                 { id: "rm1", name: "Maaimesjes vervangen / draaien", usedHours: 38, maxHours: 50, lastReset: "28 sep" },

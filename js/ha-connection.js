@@ -537,9 +537,9 @@ function applyLiveStatesFromHomeAssistant(statesArray) {
         if (rob.entityId && statesMap.has(rob.entityId.trim())) {
             const stObj = statesMap.get(rob.entityId.trim());
             rob.state = stObj.state;
-            const bat = stObj.attributes?.battery_level ?? stObj.attributes?.battery;
-            if (bat !== undefined && !isNaN( parseFloat(bat) )) {
-                rob.batteryPct = Math.round(parseFloat(bat));
+            if (typeof robotBatteryPct === 'function') {
+                rob.batteryPct = robotBatteryPct(rob, statesMap);
+                if (typeof robotAutoExtras === 'function') robotAutoExtras(rob, statesMap);
             }
             anyUpdated = true;
         }
