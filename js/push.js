@@ -55,10 +55,58 @@ function pushNotifyNew(visible) {
     return fresh;
 }
 
+/* ---------- Pushserver (meldingen ook als de app dicht is) ---------- */
+function pushServerCfg() {
+    const c = (typeof appState !== 'undefined' && appState && appState.pushServer) || {};
+    const url = String(c.url || '').trim().replace(/\/+$/, '');
+    return /^https:\/\//i.test(url) && c.key ? { url, key: String(c.key) } : null;
+}
+const pushB64 = (b) => { const p = '='.repeat((4 - b.length % 4) % 4), r = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, c => c.charCodeAt(0)); };
+async function pushServerSubscribe() {
+    const c = pushServerCfg();
+    if (!c || !navigator.serviceWorker || typeof PushManager === 'undefined') return 'geen';
+    try {
+        await pushRegisterWorker();
+        const reg = await navigator.serviceWorker.ready;
+        const vap = await (await fetch(c.url + '/vapid')).json();
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushB64(vap.publicKey) });
+        const r = await fetch(c.url + '/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ subscription: sub.toJSON(), household: (appState && appState.householdName) || '' }) });
+        return r.ok ? 'ok' : (r.status === 401 ? 'sleutel' : 'fout');
+    } catch (e) { return 'fout'; }
+}
+async function pushServerUnsubscribe() {
+    const c = pushServerCfg();
+    try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = reg && await reg.pushManager.getSubscription();
+        if (!sub) return;
+        if (c) fetch(c.url + '/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+        await sub.unsubscribe();
+    } catch (e) { /* negeren */ }
+}
+window.pushSaveServer = function() {
+    if (typeof currentRole !== 'undefined' && currentRole !== 'manager') return;
+    const u = (document.getElementById('pushSrvUrl') || {}).value || '', k = (document.getElementById('pushSrvKey') || {}).value || '';
+    appState.pushServer = { url: u.trim(), key: k.trim() };
+    try { persistStateToFirestore(true); } catch (e) { /* negeren */ }
+    pushHtmlCache = ''; renderPushSwitcher();
+    showToast(pushServerCfg() ? 'Pushserver opgeslagen. Zet meldingen aan op elk toestel.' : 'Pushserver gewist (of onvolledig).');
+};
+window.pushServerTest = async function() {
+    const c = pushServerCfg(); if (!c) { showToast('Vul eerst adres en sleutel in.'); return; }
+    try {
+        const r = await fetch(c.url + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ title: 'Thuisbord', body: '✅ Testmelding van je pushserver', tag: 'srv_test', household: (appState && appState.householdName) || '' }) });
+        const j = await r.json();
+        showToast(r.ok ? `Testmelding verstuurd naar ${j.sent} toestel(len).` : 'Server weigert: ' + (j.error || r.status));
+    } catch (e) { showToast('Pushserver niet bereikbaar. Controleer het adres en of Tailscale Funnel/Serve aan staat.'); }
+};
+
 window.togglePush = async function() {
     if (!pushSupported()) { showToast("Deze browser ondersteunt geen meldingen."); return; }
     if (pushWanted() && Notification.permission === 'granted') {
         try { localStorage.setItem(PUSH_KEY, 'off'); } catch (e) { /* negeren */ }
+        pushServerUnsubscribe();
         renderPushSwitcher();
         return;
     }
@@ -69,7 +117,10 @@ window.togglePush = async function() {
     if (perm === 'granted') {
         try { localStorage.setItem(PUSH_KEY, 'on'); } catch (e) { /* negeren */ }
         pushRegisterWorker();
-        pushShow('Thuisbord', '🔔 Meldingen staan aan op dit apparaat.', 'push_test');
+        const srv = pushServerCfg() ? await pushServerSubscribe() : 'geen';
+        if (srv === 'sleutel') showToast('Pushserver: sleutel klopt niet.');
+        else if (srv === 'fout') showToast('Pushserver niet bereikbaar. Meldingen werken nu alleen zolang de app open staat.');
+        pushShow('Thuisbord', srv === 'ok' ? '🔔 Meldingen staan aan, ook als de app dicht is.' : '🔔 Meldingen staan aan op dit apparaat.', 'push_test');
     } else {
         showToast("Meldingen zijn geblokkeerd. Sta ze toe in de instellingen van je browser voor deze site.");
     }
@@ -85,17 +136,30 @@ function renderPushSwitcher() {
     } else if (Notification.permission === 'denied') {
         label = 'Geblokkeerd'; sub = 'Sta meldingen toe in de browserinstellingen voor deze site.'; disabled = true;
     } else if (pushActive()) {
-        label = 'Aan'; sub = 'Je krijgt een melding op dit apparaat zolang de app open staat.'; on = true;
+        label = 'Aan'; sub = pushServerCfg() ? 'Je krijgt meldingen op dit apparaat, ook als de app dicht is (pushserver).' : 'Je krijgt een melding op dit apparaat zolang de app open staat.'; on = true;
     } else {
         label = 'Uit'; sub = 'Tik om meldingen op dit apparaat te ontvangen.';
     }
+    const mgr = typeof currentRole !== 'undefined' && currentRole === 'manager';
+    const cfg = (appState && appState.pushServer) || {};
+    const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const srvForm = mgr ? `
+        <details class="mt-2 rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5">
+            <summary class="text-[11px] font-bold text-[#a3b8ae] cursor-pointer">Pushserver (meldingen met dichte app)</summary>
+            <div class="space-y-2 mt-2">
+                <input id="pushSrvUrl" type="url" placeholder="https://pushserver.jouw-tailnet.ts.net" value="${esc(cfg.url)}" class="w-full px-3 py-2 rounded-xl bg-white/10 text-white text-xs placeholder-white/40 border border-white/10">
+                <input id="pushSrvKey" type="password" autocomplete="off" placeholder="SHARED_KEY uit je .env" value="${esc(cfg.key)}" class="w-full px-3 py-2 rounded-xl bg-white/10 text-white text-xs placeholder-white/40 border border-white/10">
+                <div class="flex gap-2"><button type="button" onclick="pushSaveServer()" class="flex-1 py-2 rounded-xl bg-[#34d399] text-[#0d2a1c] text-xs font-extrabold cursor-pointer">Opslaan</button>
+                <button type="button" onclick="pushServerTest()" class="flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">Testmelding</button></div>
+            </div>
+        </details>` : '';
     const html = `
         <p class="text-[11px] font-bold uppercase tracking-wider text-[#a3b8ae] px-1 mb-2">Meldingen</p>
         <button type="button" ${disabled ? 'disabled' : 'onclick="togglePush()"'} aria-pressed="${on}"
             class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl border border-white/10 text-left transition ${on ? 'bg-[#34d399]/15 text-white' : 'bg-white/5 text-white'} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10'}">
             <span class="min-w-0"><span class="block text-xs font-bold">🔔 Meldingen op dit apparaat</span><span class="block text-[10.5px] text-[#a3b8ae] leading-snug">${sub}</span></span>
             <span class="shrink-0 text-[11px] font-extrabold px-2.5 py-1 rounded-full ${on ? 'bg-[#34d399] text-[#0d2a1c]' : 'bg-white/15 text-white'}">${label}</span>
-        </button>`;
+        </button>${srvForm}`;
     if (html === pushHtmlCache) return;
     pushHtmlCache = html;
     box.innerHTML = html;

@@ -139,3 +139,19 @@ button:not(.room-card):not(:disabled):active{transform:scale(.96)}
 .ni-note{animation:niNote 1.2s ease-in-out infinite}
 #notificationsBar .bg-red-50{animation:niRing 2.2s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.notif-ico,#notificationsBar .bg-red-50{animation:none!important}}
+
+/* ===== Wasserij ===== */
+@keyframes ldWash{0%{transform:rotate(0) scale(1)}25%{transform:rotate(-14deg) scale(1.06)}50%{transform:rotate(0) scale(1)}75%{transform:rotate(14deg) scale(1.06)}100%{transform:rotate(0) scale(1)}}
+@keyframes ldTumble{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.ld-washer{animation:ldWash 1.4s ease-in-out infinite}
+.ld-dryer{animation:ldTumble 3s linear infinite}
+@keyframes niBubble{0%{transform:translateY(2px) scale(.9)}50%{transform:translateY(-3px) scale(1.12)}100%{transform:translateY(2px) scale(.9)}}
+@keyframes niTumble{to{transform:rotate(360deg)}}
+.ni-bubble{animation:niBubble 1.6s ease-in-out infinite}
+.ni-tumble{animation:niTumble 2.6s linear infinite}
+@media (prefers-reduced-motion:reduce){.ld-washer,.ld-dryer,.ni-bubble,.ni-tumble{animation:none!important}}
+
+/* ===== Camera's ===== */
+@keyframes camDot{0%,100%{opacity:1}50%{opacity:.25}}
+.cam-dot{animation:camDot 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.cam-dot{animation:none}}
