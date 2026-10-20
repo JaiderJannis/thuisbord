@@ -48,6 +48,8 @@ const PERM_ITEMS = [
     { key: 'view_timeline',   group: 'gebruik', icon: '🕒', label: 'Tijdlijn bekijken',             hint: 'Wat er vandaag in huis gebeurde (deuren, personen, robots, wasserij)', roles: PERM_BOTH },
     { key: 'edit_timeline',   group: 'gebruik', icon: '🛠️', label: 'Tijdlijn instellen',            hint: 'Kiezen welke soorten gebeurtenissen getoond worden',           roles: PERM_BOTH, requires: 'view_timeline', defaultUser: false },
     { key: 'view_health',     group: 'gebruik', icon: '🩺', label: 'Gezondheid & beveiliging',      hint: 'Controle van verbindingen, koppelingen, push en beveiliging',  roles: ['manager'] },
+    { key: 'view_telenet',   group: 'gebruik', icon: '📶', label: 'Internetverbruik (Telenet)',    hint: 'Verbruik en resterende dagen van je internetabonnement',       roles: PERM_BOTH },
+    { key: 'edit_telenet',   group: 'gebruik', icon: '🛠️', label: 'Telenet instellen',             hint: 'Kiezen welke entiteiten het verbruik en de limiet zijn',       roles: PERM_BOTH, requires: 'view_telenet', defaultUser: false },
     { key: 'view_planner',    group: 'gebruik', icon: '🧠', label: 'Slim advies & planner',         hint: 'Beste moment om wasmachine, droger of vaatwasser te starten', roles: PERM_BOTH },
     { key: 'choose_theme',    group: 'gebruik', icon: '🌙', label: 'Eigen weergave kiezen',         hint: 'Zelf licht/donker/automatisch kiezen. Uit = de beheerder bepaalt', roles: PERM_BOTH },
     // ----- beheer (enkel gezinsbeheerder) -----
@@ -77,7 +79,7 @@ const ADMIN_TAB_PERMISSION = {
 };
 const ADMIN_ONLY_TABS = ['gezinnen', 'rechten'];
 
-const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest', timeline: 'view_timeline', health: 'view_health', report: 'view_overview' };
+const VIEW_PERMISSION = { shutters: 'view_rooms', robots: 'view_robots', cars: 'view_cars', overview: 'view_overview', calendar: 'view_calendar', evcc: 'view_evcc', music: 'view_music', weather: 'view_weather', scenes: 'view_scenes', planner: 'view_planner', laundry: 'view_laundry', cameras: 'view_cameras', guest: 'view_guest', timeline: 'view_timeline', health: 'view_health', report: 'view_overview', telenet: 'view_telenet' };
 
 function permDefault(key, role) {
     const item = PERM_BY_KEY[key];
@@ -169,6 +171,7 @@ function applyPermissionsToUI() {
     permSetShown(get('navBtnTimeline'), permAllowed('view_timeline'), 'flex');
     permSetShown(get('navBtnHealth'), permAllowed('view_health'), 'flex');
     permSetShown(get('navBtnReport'), permAllowed('view_overview'), 'flex');
+    permSetShown(get('navBtnTelenet'), permAllowed('view_telenet'), 'flex');
     permSetShown(get('navBtnLayout'), permAllowed('manage_display'), 'flex');
     permSetShown(get('headerWeatherBtn'), permAllowed('view_weather'), 'flex');
     if (typeof renderWeatherHeader === 'function') renderWeatherHeader();

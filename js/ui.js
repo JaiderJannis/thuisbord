@@ -216,6 +216,7 @@ function renderAll() {
     if (typeof renderTimelineView === 'function') renderTimelineView();
     if (typeof renderHealthView === 'function') renderHealthView();
     if (typeof renderReportView === 'function') renderReportView();
+    if (typeof renderTelenetView === 'function') renderTelenetView();
     if (typeof renderGuestOverlay === 'function') renderGuestOverlay();
     if (typeof renderDisplayScenesRow === 'function') renderDisplayScenesRow();
     if (typeof renderDisplayLayout === 'function') renderDisplayLayout();
@@ -233,7 +234,7 @@ window.switchView = function(view) {
     }
     if (view === 'userPortal') view = 'calendar';
     try {
-        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', report: 'Rapport', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
+        const titles = { scenes: 'Scènes', planner: 'Slim advies', laundry: 'Wasserij', cameras: 'Camera\'s', guest: 'Gastmodus', timeline: 'Tijdlijn', health: 'Controle', report: 'Rapport', telenet: 'Internet', overview: 'Overzicht', display: 'Wanddisplay', admin: 'Beheer', calendar: 'Agenda', weer: 'Weer' };
         const tEl = document.getElementById('subNavCurrentPageTitle');
         if (tEl && titles[view]) tEl.textContent = titles[view];
     } catch (e) { /* titel is een extraatje */ }
@@ -342,6 +343,13 @@ window.switchView = function(view) {
         if (typeof reportViewActive === 'function') reportViewActive(view === 'report');
     }
 
+    const vTelenet = document.getElementById('viewTelenet');
+    if (vTelenet) {
+        vTelenet.classList.toggle('hidden', view !== 'telenet');
+        vTelenet.classList.toggle('flex', view === 'telenet');
+        if (view === 'telenet') { telenetHtmlCache = ''; if (typeof renderTelenetView === 'function') renderTelenetView(); }
+    }
+
     const vGuest = document.getElementById('viewGuest');
     if (vGuest) {
         vGuest.classList.toggle('hidden', view !== 'guest');
@@ -398,6 +406,7 @@ window.switchView = function(view) {
     const btnTimeline = document.getElementById('navBtnTimeline');
     const btnHealth = document.getElementById('navBtnHealth');
     const btnReport = document.getElementById('navBtnReport');
+    const btnTelenet = document.getElementById('navBtnTelenet');
     const btnCal = document.getElementById('navBtnCalendar');
     const btnAdmin = document.getElementById('navBtnAdmin');
 
@@ -421,6 +430,7 @@ window.switchView = function(view) {
     if (btnTimeline) btnTimeline.className = view === 'timeline' ? activeClass : inactiveClass;
     if (btnHealth) btnHealth.className = view === 'health' ? activeClass : inactiveClass;
     if (btnReport) btnReport.className = view === 'report' ? activeClass : inactiveClass;
+    if (btnTelenet) btnTelenet.className = view === 'telenet' ? activeClass : inactiveClass;
     if (btnCal) btnCal.className = view === 'calendar' ? activeClass : inactiveClass;
     if (btnAdmin) btnAdmin.className = (view === 'admin' ? activeClass : inactiveClass) + ' col-span-2';
 
