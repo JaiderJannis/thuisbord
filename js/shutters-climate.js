@@ -298,8 +298,9 @@ function renderShuttersView() {
 }
 
 const ROOM_EMOJI_MAP = [
+    [/toilet|\bwc\b/i, '🚽'],
     [/woon|living|salon|zit/i, '🛋️'], [/keuken|kitchen/i, '🍳'], [/slaap|bed|kamer van/i, '🛏️'],
-    [/bad|douche|toilet|wc/i, '🛁'], [/kantoor|werk|office|studio/i, '💻'], [/garage|carport/i, '🚗'],
+    [/toilet|\bwc\b|\btoilette/i, '🚽'], [/bad|douche/i, '🛁'], [/kantoor|werk|office|studio/i, '💻'], [/garage|carport/i, '🚗'],
     [/tuin|veranda|terras|patio|buiten|garden/i, '🌿'], [/hal|gang|inkom|trap/i, '🚪'],
     [/zolder|attic|vliering/i, '🪜'], [/kelder|berging|bijkeuken|wasruimte|wasplaats/i, '🧺'],
     [/kind|speel|baby/i, '🧸'], [/eet/i, '🍽️'], [/gast/i, '🛌']
