@@ -218,10 +218,8 @@ function renderDisplayBars(L, canEdit) {
                 <button type="button" onclick="window.dlCancel()" class="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold cursor-pointer hover:bg-stone-50">Annuleren</button>
                 <button type="button" onclick="window.dlDone()" class="px-4 py-2 rounded-xl bg-[#152920] text-white text-xs font-extrabold cursor-pointer">✓ Klaar</button>
             </div></div>`;
-    } else if (multi || canEdit) {
-        html = `<div class="flex items-center justify-between gap-2 mb-1">
-            <div class="flex flex-wrap items-center gap-1.5">${multi ? L.screens.map(s => `<button type="button" onclick="window.dlGoScreen('${s.id}',true)" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold cursor-pointer ${s.id === dlScreen ? 'bg-[#152920] text-white' : 'bg-white/80 border border-stone-200 text-[#38443d] hover:bg-white'}">${dlEsc(s.name)}</button>`).join('') : ''}</div>
-            ${canEdit ? `<button type="button" onclick="window.dlStartEdit()" class="px-3 py-1.5 rounded-full bg-white/80 border border-stone-200 text-[11px] font-bold text-[#38443d] hover:bg-white cursor-pointer">✏️ Indeling aanpassen</button>` : ''}</div>`;
+    } else if (multi) {
+        html = `<div class="flex flex-wrap items-center gap-1.5 mb-1">${L.screens.map(s => `<button type="button" onclick="window.dlGoScreen('${s.id}',true)" class="px-3.5 py-1.5 rounded-full text-xs font-extrabold cursor-pointer ${s.id === dlScreen ? 'bg-[#152920] text-white' : 'bg-white/80 border border-stone-200 text-[#38443d] hover:bg-white'}">${dlEsc(s.name)}</button>`).join('')}</div>`;
     }
     if (bar._h === html) return;
     bar._h = html;
