@@ -11,6 +11,7 @@ function renderRobotsMaintenanceView() {
     if (active && container.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) return; // niet storen tijdens typen
     const robots = appState.robots || [];
     const haMap = haStatesMap();
+    robots.forEach(r => { if (r.entityId) { const b = robotBatteryPct(r, haMap); r.batteryPct = b; robotAutoExtras(r, haMap); } });
 
     const statusLabels = {
         cleaning: { text: "Aan het schoonmaken", pill: "bg-emerald-100 text-emerald-800" },
@@ -38,7 +39,7 @@ function renderRobotsMaintenanceView() {
                                 <input type="text" value="${rob.name}" onchange="window.updateRobotField(${rIdx}, 'name', this.value)" class="text-xl font-extrabold text-[#1c2520] bg-transparent focus:outline-none focus:underline">
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${stMeta.pill}">${stMeta.text}</span>
-                                    <span class="text-xs font-bold text-[#197447]">🔋 ${rob.batteryPct ?? 100}%</span>
+                                    <span class="text-xs font-bold text-[#197447]">${rob.batteryPct != null ? '🔋 ' + rob.batteryPct + '%' : ''}</span>
                                 </div>
                             </div>
                         </div>
@@ -160,6 +161,44 @@ function renderRobotExtrasHtml(rob, rIdx, haMap) {
             ${rows || '<p class="text-[11px] text-[#68736d] italic">Nog geen extra entiteiten. Kies hieronder een voorbeeld of voeg er zelf een toe.</p>'}
             <div class="flex flex-wrap gap-1.5">${presetBtns}</div>
         </div>`;
+}
+
+// Zoekt in alle HA-entiteiten naar een sensor van deze robot (zelfde naamdeel + trefwoord), bv. sensor.noo_noo_batterij
+function robotGuessEntity(rob, keywords, map, preferNumeric) {
+    if (!rob || !rob.entityId || !map || typeof map.forEach !== 'function') return '';
+    const base = (String(rob.entityId).split('.')[1] || '').toLowerCase();
+    if (!base) return '';
+    let best = '';
+    map.forEach((st, id) => {
+        if (best || !/^(sensor|binary_sensor)\./.test(id)) return;
+        const low = id.toLowerCase();
+        if (!low.includes(base) || !keywords.some(k => low.includes(k))) return;
+        if (preferNumeric && !/^-?\d+([.,]\d+)?$/.test(String(st && st.state).trim())) return;
+        best = id;
+    });
+    return best;
+}
+// Batterij: eerst de eigen sensor, dan de attributen van de robot zelf; anders onbekend (null), nooit een verzonnen 100%.
+function robotBatteryPct(rob, map) {
+    const own = rob.batteryEntity && haStateObj(map, rob.batteryEntity);
+    const id = own ? rob.batteryEntity : robotGuessEntity(rob, ['batterij', 'battery'], map, true);
+    const st = id ? haStateObj(map, id) : null;
+    if (st && haIsUsable(st) && !isNaN(parseFloat(st.state))) return Math.round(parseFloat(st.state));
+    const base = haStateObj(map, rob.entityId);
+    const a = base && base.attributes ? (base.attributes.battery_level ?? base.attributes.battery) : undefined;
+    return a !== undefined && !isNaN(parseFloat(a)) ? Math.round(parseFloat(a)) : null;
+}
+// Lege extra's (bv. "Stofbak") automatisch koppelen aan de bijpassende sensor van de robot
+function robotAutoExtras(rob, map) {
+    let changed = false;
+    (rob.extras || []).forEach(ex => {
+        if (ex.entityId) return;
+        const preset = ROBOT_EXTRA_PRESETS.find(p => p.label.toLowerCase() === String(ex.label || '').toLowerCase());
+        if (!preset) return;
+        const hit = robotGuessEntity(rob, preset.keywords, map, false);
+        if (hit) { ex.entityId = hit; changed = true; }
+    });
+    return changed;
 }
 
 // Probeert een passende entiteit te vinden bij deze robot (bv. sensor.<robot>_dust_bin)
