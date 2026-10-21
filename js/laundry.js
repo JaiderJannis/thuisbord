@@ -1,6 +1,7 @@
 'use strict';
 /* Wasserij: wasmachine en droger live volgen via Home Assistant (bv. de SmartThings-integratie voor Samsung).
-   appState.laundry = { devices: [ { id, name, icon, kind:'washer'|'dryer', entities:{ state, job, completion, program, power } } ] }
+   appState.laundry = { devices: [ { id, name, icon, kind:'washer'|'dryer', entities:{ state, job, completion, program, power }, extras:[entity_id,...] } ] }
+   - extras:     willekeurige extra entiteiten (LocalThings: stroom, spanning, kinderslot, centrifuge...), getoond als tegels
    - state:      machinestatus (run / pause / stop)
    - job:        fase (wassen, spoelen, centrifugeren, drogen, afkoelen, klaar...)
    - completion: tijdstip waarop het programma klaar is (timestamp-sensor), of resterende minuten
@@ -47,6 +48,14 @@ function laundryPretty(t) {
 }
 
 /* ---------- status van één toestel ---------- */
+// Mooi label voor een extra entiteit: friendly name zonder de naam van het toestel ervoor
+function laundryExtraLabel(dev, st) {
+    let n = String((st.attributes && st.attributes.friendly_name) || st.entity_id.split('.')[1].replace(/_/g, ' '));
+    const dn = String(dev.name || '').trim();
+    if (dn && n.toLowerCase().startsWith(dn.toLowerCase() + ' ') && n.length > dn.length + 1) n = n.slice(dn.length + 1);
+    n = n.replace(/^((wasruimte|wasmachine|droger|plug)\s+)+(?=\S)/i, '');
+    return n.charAt(0).toUpperCase() + n.slice(1);
+}
 function laundryStatus(dev, map, now = Date.now()) {
     const e = dev.entities || {};
     const val = (id) => { if (!id) return null; const st = haStateObj(map, id); return st && haIsUsable(st) ? st : null; };
@@ -54,7 +63,19 @@ function laundryStatus(dev, map, now = Date.now()) {
     const state = sSt ? String(sSt.state).toLowerCase() : '';
     const jobRaw = jSt ? String(jSt.state) : '';
     const job = jobRaw.toLowerCase();
-    const powerW = wSt ? haNumber(wSt) : null;
+    // extra entiteiten (LocalThings e.d.): alles wat je erbij hangt als tegel tonen
+    const extras = (Array.isArray(dev.extras) ? dev.extras : []).map(id => {
+        const st = haStateObj(map, id);
+        if (!st) return null;
+        const attrs = st.attributes || {};
+        const fv = haFriendlyValue(st, attrs.friendly_name || id);
+        return { id, label: laundryExtraLabel(dev, st), text: id.startsWith('select.') && haIsUsable(st) ? laundryPretty(st.state) : fv.text, unit: attrs.unit_of_measurement || '', usable: haIsUsable(st), domain: id.split('.')[0], raw: st.state };
+    }).filter(Boolean);
+    let powerW = wSt ? haNumber(wSt) : null;
+    if (powerW === null) {
+        const px = extras.find(x => x.usable && /^(W|kW)$/.test(x.unit) && x.domain === 'sensor');
+        if (px) { const n = parseFloat(String(px.raw).replace(',', '.')); if (!isNaN(n)) powerW = px.unit === 'kW' ? n * 1000 : n; }
+    }
     const jobIdle = !job || ['none', 'finish', 'finished', 'unknown', 'off'].includes(job);
 
     let kind = 'unknown';
@@ -84,7 +105,7 @@ function laundryStatus(dev, map, now = Date.now()) {
     if (pSt) { const v = String(pSt.state); if (!['unknown', 'unavailable', 'none', ''].includes(v.toLowerCase())) program = laundryPretty(v); }
 
     const phase = jSt && !jobIdle ? (LAUNDRY_JOB_NL[job] !== undefined ? LAUNDRY_JOB_NL[job] : (LAUNDRY_JOB_NL[jobRaw] !== undefined ? LAUNDRY_JOB_NL[jobRaw] : laundryPretty(jobRaw))) : '';
-    return { kind, phase, program, remaining, finishAt, powerW, hasAny: !!(sSt || jSt || cSt || pSt || wSt), jobRaw };
+    return { kind, phase, program, remaining, finishAt, powerW, hasAny: !!(sSt || jSt || cSt || pSt || wSt || extras.some(x => x.usable)), jobRaw, extras };
 }
 
 // Houdt per toestel bij sinds wanneer het draait en wat de langste resterende tijd was (voor de voortgangsbalk)
@@ -130,37 +151,67 @@ function laundryDur(min) {
 const laundryClock = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 /* ---------- herkenning van entiteiten ---------- */
+// Geeft per soort (wasmachine / droger) EEN gecentraliseerd voorstel: rollen + alle overige entiteiten als extra's.
+function laundryRoleOf(id, name, st) {
+    const dom = id.split('.')[0];
+    const unit = (st && st.attributes && st.attributes.unit_of_measurement) || '';
+    const t = `${id} ${name}`.toLowerCase();
+    if (/(kinderslot|child_lock|socket|power_on_behavior|stopcontact)/.test(t)) return '';
+    if (dom === 'binary_sensor') return /(vermogen|power|running|bezig|active)/.test(t) ? 'state_bin' : '';
+    if (/(job_state|job state|cycle_phase|phase|fase)/.test(t)) return 'job';
+    if (/(completion|finish|end_time|klaar om|remaining)/.test(t)) return 'completion';
+    if (/(machine_state|machine state|washer_state|dryer_state|operating_state|status)/.test(t)) return 'state';
+    if (dom === 'select' || /(program|programma|cycle|course)/.test(t)) {
+        if (/(centrifuge|spin|temperature|temperatuur|water|soil|vuil|extra|rinse|spoel|option)/.test(t)) return '';
+        return /(job|phase)/.test(t) ? 'job' : 'program';
+    }
+    if (dom === 'sensor' && /(power|vermogen)/.test(t) && !/(energy|energie|plug)/.test(t) && (!unit || /^k?W$/.test(unit))) return 'power';
+    return '';
+}
 function laundryDetect() {
     const found = [];
     const list = (typeof discoveredHaEntities !== 'undefined' ? discoveredHaEntities : []) || [];
     const kinds = [['washer', /(washer|wasmachine|washing)/i, 'Wasmachine', '🫧'], ['dryer', /(dryer|droger|tumble)/i, 'Droger', '👕']];
-    const roleOf = (id, name, dom) => {
-        const t = `${id} ${name}`.toLowerCase();
-        if (/(job_state|job state|cycle_phase|phase|fase)/.test(t)) return 'job';
-        if (/(completion|finish|end_time|klaar om|remaining)/.test(t)) return 'completion';
-        if (/(machine_state|machine state|washer_state|dryer_state|operating_state|status)/.test(t)) return 'state';
-        if (dom === 'select' || /(program|programma|cycle|course|mode)/.test(t)) return /(job|phase)/.test(t) ? 'job' : 'program';
-        if (/(power|vermogen)/.test(t) && !/energy/.test(t)) return 'power';
-        return '';
-    };
     kinds.forEach(([kind, re, label, icon]) => {
-        const ents = list.filter(s => s && /^(sensor|select|switch|binary_sensor)\./.test(s.entity_id) && re.test(`${s.entity_id} ${(s.attributes && s.attributes.friendly_name) || ''}`));
+        const ents = list.filter(s => s && /^(sensor|select|switch|binary_sensor|number|button)\./.test(s.entity_id) && re.test(`${s.entity_id} ${(s.attributes && s.attributes.friendly_name) || ''}`));
         if (!ents.length) return;
-        const groups = new Map();
+        const entities = {}, extras = [];
+        let stateBin = '';
         ents.forEach(s => {
-            const [dom, obj] = s.entity_id.split('.');
-            const prefix = obj.replace(/_(machine_state|job_state|completion_time|power|energy|program|cycle|course|status|state|phase|remaining_time|operating_state|cycle_phase|washing_course|drying_course)$/, '') || obj;
-            if (!groups.has(prefix)) groups.set(prefix, {});
-            const role = roleOf(s.entity_id, (s.attributes && s.attributes.friendly_name) || '', dom);
-            const g = groups.get(prefix);
-            if (role && !g[role]) g[role] = s.entity_id;
+            const role = laundryRoleOf(s.entity_id, (s.attributes && s.attributes.friendly_name) || '', s);
+            if (role === 'state_bin') { if (!stateBin) stateBin = s.entity_id; extras.push(s.entity_id); return; }
+            if (role && !entities[role]) entities[role] = s.entity_id;
+            else extras.push(s.entity_id);
         });
-        groups.forEach((entities, prefix) => {
-            if (!Object.keys(entities).length) return;
-            found.push({ kind, name: label, icon, entities, hint: prefix });
-        });
+        if (!entities.state && stateBin) entities.state = stateBin;
+        found.push({ kind, name: label, icon, entities, extras: extras.filter(id => !Object.values(entities).includes(id)), hint: kind });
     });
     return found;
+}
+// Alle entiteiten van een voorstel (rollen + extra's)
+const laundryFoundIds = (f) => Object.values(f.entities).concat(f.extras || []);
+// Wat ontbreekt er nog bij een bestaand toestel?
+function laundryMissing(f, dev) {
+    const have = new Set(Object.values(dev.entities || {}).concat(dev.extras || []));
+    const entities = {};
+    Object.keys(f.entities).forEach(r => { if (!(dev.entities || {})[r] && !have.has(f.entities[r])) entities[r] = f.entities[r]; });
+    const taken = new Set(Object.values(entities));
+    const extras = (f.extras || []).concat(Object.keys(f.entities).filter(r => (dev.entities || {})[r] && (dev.entities || {})[r] !== f.entities[r]).map(r => f.entities[r]))
+        .filter(id => !have.has(id) && !taken.has(id));
+    return { entities, extras: Array.from(new Set(extras)) };
+}
+// Voeg entiteiten toe aan een bestaand toestel (rollen invullen, rest als extra)
+function laundryAttach(dev, entities, extras) {
+    dev.entities = dev.entities || {};
+    dev.extras = Array.isArray(dev.extras) ? dev.extras : [];
+    let n = 0;
+    Object.keys(entities || {}).forEach(r => {
+        const id = entities[r];
+        if (!dev.entities[r]) { dev.entities[r] = id; n++; }
+        else if (!dev.extras.includes(id) && !Object.values(dev.entities).includes(id)) { dev.extras.push(id); n++; }
+    });
+    (extras || []).forEach(id => { if (!dev.extras.includes(id) && !Object.values(dev.entities).includes(id)) { dev.extras.push(id); n++; } });
+    return n;
 }
 
 /* ---------- weergave ---------- */
@@ -208,15 +259,25 @@ function laundryCardHtml(d, map) {
                 <div class="rounded-2xl bg-[#f6f8f5] px-2 py-2.5"><p class="text-[10px] font-bold uppercase text-[#68736d]">Programma</p><p class="text-xs font-extrabold text-[#1c2520] mt-0.5 truncate">${st.program ? laEsc(st.program) : (d.entities && d.entities.program ? '—' : 'niet gekoppeld')}</p></div>
                 <div class="rounded-2xl bg-[#f6f8f5] px-2 py-2.5"><p class="text-[10px] font-bold uppercase text-[#68736d]">Vermogen</p><p class="text-xs font-extrabold text-[#1c2520] mt-0.5">${st.powerW !== null ? `${Math.round(st.powerW)} W` : '—'}</p></div>
             </div>
+            ${st.extras && st.extras.length ? `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">${st.extras.map(x => `<div class="rounded-2xl bg-[#f6f8f5] px-2 py-2"><p class="text-[10px] font-bold uppercase text-[#68736d] truncate">${laEsc(x.label)}</p><p class="text-xs font-extrabold text-[#1c2520] mt-0.5 truncate">${laEsc(x.text)}</p></div>`).join('')}</div>` : ''}
             ${plan}${missing}
         </article>`;
 }
 
 function laundryEditHtml() {
     const L = ensureLaundry();
-    const detected = laundryDetect().filter(f => !L.devices.some(d => Object.values(f.entities).some(id => Object.values(d.entities || {}).includes(id))));
+    const L2 = L;
+    // per soort een voorstel; alleen tonen wat er nog niet bij een toestel hoort
+    const detected = laundryDetect().map(f => {
+        const dev = L2.devices.find(d => d.kind === f.kind);
+        const all = laundryFoundIds(f);
+        const used = new Set(); L2.devices.forEach(d => Object.values(d.entities || {}).concat(d.extras || []).forEach(id => used.add(id)));
+        const fresh = all.filter(id => !used.has(id));
+        return Object.assign({}, f, { dev, fresh });
+    }).filter(f => f.fresh.length);
     const list = (typeof discoveredHaEntities !== 'undefined' ? discoveredHaEntities : []) || [];
-    const seen = list.filter(s => s && /(washer|wasmachine|dryer|droger)/i.test(`${s.entity_id} ${(s.attributes && s.attributes.friendly_name) || ''}`)).slice(0, 40);
+    const seen = list.filter(s => s && /(washer|wasmachine|dryer|droger|wasruimte|plug|power_meter)/i.test(`${s.entity_id} ${(s.attributes && s.attributes.friendly_name) || ''}`)).slice(0, 60);
+    const devOptions = (sel) => L.devices.map((d, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${laEsc(d.name || (d.kind === 'dryer' ? 'Droger' : 'Wasmachine'))}</option>`).join('');
     const devRows = L.devices.map((d, i) => `
         <div class="rounded-2xl bg-[#f6f8f5] border border-stone-200/70 p-4 space-y-3">
             <div class="flex flex-wrap items-end gap-3">
@@ -229,6 +290,11 @@ function laundryEditHtml() {
                 <div><label class="block text-[11px] font-bold text-[#38443d] mb-1">${label}</label>
                 <input type="text" list="haEntitiesDatalist" value="${laEsc((d.entities || {})[k] || '')}" placeholder="${ph}" onchange="window.laundrySetEntity(${i},'${k}',this.value)" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono"></div>`).join('')}
             </div>
+            <div class="space-y-2">
+                <p class="text-[11px] font-bold text-[#38443d]">Extra entiteiten (stroom, spanning, kinderslot, centrifugesnelheid, watertemperatuur …) <span class="font-normal text-[#68736d]">· worden als tegels getoond</span></p>
+                <div class="flex flex-wrap gap-2">${(d.extras || []).map((id, j) => `<span class="inline-flex items-center gap-1 rounded-full bg-white border border-stone-200 pl-3 pr-1 py-1 text-[11px] font-mono text-[#38443d]">${laEsc(id.split('.')[1])}<button type="button" onclick="window.laundryExtraRemove(${i},${j})" class="w-5 h-5 rounded-full hover:bg-red-50 text-red-600 font-bold cursor-pointer" aria-label="Verwijder">×</button></span>`).join('') || '<span class="text-[11px] text-[#68736d] italic">Nog geen extra\'s.</span>'}</div>
+                <input type="text" list="haEntitiesDatalist" placeholder="Entiteit zoeken en toevoegen, bv. sensor.lsc_power_plug_stroom" onchange="window.laundryExtraAdd(${i},this.value);this.value=''" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono bg-white">
+            </div>
         </div>`).join('');
     return `
         <div class="bg-white rounded-[26px] p-6 shadow-sm space-y-5 border-2 border-[#19975c]/40">
@@ -240,12 +306,12 @@ function laundryEditHtml() {
                 <button type="button" onclick="window.laundryToggleEdit()" class="px-5 py-2.5 rounded-xl bg-[#152920] text-white text-sm font-bold cursor-pointer">✓ Klaar</button></div>
             </div>
             ${detected.length ? `<div class="rounded-2xl bg-[#eef6f1] border border-[#cfe5d8] p-4 space-y-2"><p class="text-xs font-extrabold text-[#1c643f]">🔎 Automatisch herkend in Home Assistant</p>
-                ${detected.map((f, i) => `<div class="flex flex-wrap items-center justify-between gap-2"><span class="text-xs text-[#1c2520]"><b>${laEsc(f.name)}</b> <span class="text-[#68736d] font-mono">${laEsc(Object.values(f.entities).join(', '))}</span></span>
-                    <button type="button" onclick="window.laundryAddDetected(${i})" class="px-3 py-1.5 rounded-lg bg-[#19975c] text-white text-xs font-bold cursor-pointer">+ Toevoegen</button></div>`).join('')}</div>` : ''}
+                ${detected.map((f, i) => `<div class="flex flex-wrap items-center justify-between gap-2"><span class="text-xs text-[#1c2520]"><b>${laEsc(f.name)}</b>: ${f.fresh.length} ${f.fresh.length === 1 ? 'entiteit' : 'entiteiten'} <span class="text-[#68736d] font-mono">${laEsc(f.fresh.slice(0, 3).map(id => id.split('.')[1]).join(', '))}${f.fresh.length > 3 ? ' …' : ''}</span></span>
+                    <button type="button" onclick="window.laundryAddDetected(${i})" class="px-3 py-1.5 rounded-lg bg-[#19975c] text-white text-xs font-bold cursor-pointer">${f.dev ? `+ Toevoegen aan ${laEsc(f.dev.name || f.name)}` : '+ Toevoegen als nieuw toestel'}</button></div>`).join('')}</div>` : ''}
             ${devRows || '<p class="text-xs text-[#68736d] italic">Nog geen toestellen.</p>'}
             <details class="rounded-2xl border border-stone-200/80 bg-[#f6f8f5]">
-                <summary class="cursor-pointer select-none px-4 py-2.5 text-xs font-extrabold text-[#1c2520]">🧪 Wat ziet Home Assistant? (${seen.length} entiteiten met wasmachine/droger in de naam)</summary>
-                <div class="px-4 pb-4 pt-1 overflow-x-auto">${seen.length ? `<table class="w-full text-[11px]"><tbody>${seen.map(s => `<tr class="border-t border-stone-200/70"><td class="py-1.5 pr-3 font-mono text-[#38443d]">${laEsc(s.entity_id)}</td><td class="py-1.5 font-bold text-[#1c2520]">${laEsc(s.state)}</td></tr>`).join('')}</tbody></table>`
+                <summary class="cursor-pointer select-none px-4 py-2.5 text-xs font-extrabold text-[#1c2520]">🧪 Wat ziet Home Assistant? (${seen.length} entiteiten met wasmachine, droger of plug in de naam: kies "+ aan toestel…" om er een bij te zetten)</summary>
+                <div class="px-4 pb-4 pt-1 overflow-x-auto">${seen.length ? `<table class="w-full text-[11px]"><tbody>${seen.map(s => `<tr class="border-t border-stone-200/70"><td class="py-1.5 pr-3 font-mono text-[#38443d]">${laEsc(s.entity_id)}</td><td class="py-1.5 pr-3 font-bold text-[#1c2520]">${laEsc(s.state)}</td><td class="py-1.5">${L.devices.length ? `<select onchange="if(this.value!==''){window.laundryExtraAdd(Number(this.value),'${escJsAttr(s.entity_id)}');}this.value=''" class="px-2 py-1 rounded-lg border border-stone-200 text-[11px] bg-white cursor-pointer"><option value="">+ aan toestel…</option>${devOptions(-1)}</select>` : ''}</td></tr>`).join('')}</tbody></table>`
                     : '<p class="text-xs text-[#68736d]">Er zijn geen passende entiteiten gevonden. Haal eerst de entiteiten op bij Beheer → Home Assistant, of controleer of de SmartThings-integratie je toestellen toont.</p>'}
                 <p class="text-[10.5px] text-[#68736d] mt-2">Zie je hier een entiteit met het gekozen programma (vaak een <code>select.</code> of <code>sensor.</code> met "cycle" of "course"), koppel die dan bij "Programma".</p></div>
             </details>
@@ -297,9 +363,34 @@ window.laundryAdd = function(kind) {
 window.laundryAddDetected = function(i) {
     if (!permGuard('edit_laundry')) return;
     const L = ensureLaundry();
-    const f = laundryDetect().filter(x => !L.devices.some(d => Object.values(x.entities).some(id => Object.values(d.entities || {}).includes(id))))[i];
+    const used = new Set(); L.devices.forEach(d => Object.values(d.entities || {}).concat(d.extras || []).forEach(id => used.add(id)));
+    const f = laundryDetect().map(x => Object.assign({}, x, { fresh: laundryFoundIds(x).filter(id => !used.has(id)) })).filter(x => x.fresh.length)[i];
     if (!f) return;
-    L.devices.push({ id: 'ld' + Date.now().toString(36), name: f.name, icon: f.icon, kind: f.kind, entities: Object.assign({}, f.entities) });
+    const dev = L.devices.find(d => d.kind === f.kind);
+    if (dev) {
+        // gecentraliseerd: bij het bestaande toestel van dezelfde soort voegen, geen nieuwe machine maken
+        const m = laundryMissing(f, dev);
+        const n = laundryAttach(dev, m.entities, m.extras);
+        showToast(n ? `${n} toegevoegd aan ${dev.name || f.name}.` : 'Alles stond er al bij.');
+    } else {
+        L.devices.push({ id: 'ld' + Date.now().toString(36), name: f.name, icon: f.icon, kind: f.kind, entities: Object.assign({}, f.entities), extras: f.extras.slice() });
+    }
+    laRerender();
+};
+window.laundryExtraAdd = function(i, value) {
+    if (!permGuard('edit_laundry')) return;
+    const d = ensureLaundry().devices[i];
+    const v = String(value || '').trim();
+    if (!d || !v) return;
+    if (!/^[a-z_]+\.[a-z0-9_]+$/.test(v)) { showToast('Dat is geen geldige entiteit (bv. sensor.wasmachine_stroom).'); return; }
+    if (laundryAttach(d, {}, [v]) === 0) { showToast('Die entiteit hoort al bij dit toestel.'); return; }
+    laRerender();
+};
+window.laundryExtraRemove = function(i, j) {
+    if (!permGuard('edit_laundry')) return;
+    const d = ensureLaundry().devices[i];
+    if (!d || !Array.isArray(d.extras)) return;
+    d.extras.splice(j, 1);
     laRerender();
 };
 window.laundrySet = function(i, field, value) {

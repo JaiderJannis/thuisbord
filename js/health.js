@@ -12,7 +12,7 @@ let hlHtmlCache = '';
 function healthLinkedEntities(st) {
     const out = [], add = (label, id) => { id = String(id || '').trim(); if (id) out.push({ label, id }); };
     (st.robots || []).forEach(r => { add('Robot ' + (r.name || ''), r.entityId); (r.extras || []).forEach(x => add((r.name || 'Robot') + ' · ' + (x.label || ''), x.entityId)); });
-    ((st.laundry && st.laundry.devices) || []).forEach(d => Object.entries(d.entities || {}).forEach(([k, v]) => add((d.name || 'Wasserij') + ' · ' + k, v)));
+    ((st.laundry && st.laundry.devices) || []).forEach(d => { Object.entries(d.entities || {}).forEach(([k, v]) => add((d.name || 'Wasserij') + ' · ' + k, v)); (d.extras || []).forEach(v => add((d.name || 'Wasserij') + ' · extra', v)); });
     ((st.cameras && st.cameras.items) || []).forEach(c => add("Camera " + (c.name || ''), c.entityId));
     (st.roomLights || []).forEach(l => add('Lamp ' + (l.name || ''), l.entityId));
     (st.shutters || []).forEach(l => add('Rolluik ' + (l.name || ''), l.entityId));
