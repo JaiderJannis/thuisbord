@@ -668,7 +668,7 @@
                 </div>
 
                 <!-- COLUMN 3: Stroomprijs Vandaag & Morgen (EPEX Live / HA) -->
-                <div id="dispBlk_price" class="dblock bg-white rounded-[26px] p-6 shadow-sm flex flex-col justify-between">
+                <div id="dispBlk_price" class="dblock bg-white rounded-[26px] p-6 shadow-sm flex flex-col">
                     <div>
                         <div class="flex items-center justify-between gap-2">
                             <h3 id="priceCardTitle" class="text-xl font-bold text-[#1c2520]">Stroomprijs</h3>
@@ -723,6 +723,9 @@
                             <p id="expensivePriceText" class="text-sm text-[#38443d] mt-0.5">€ 0,39</p>
                         </div>
                     </div>
+
+                    <!-- Vult de ruimte onder de prijzen: weer nu en regen komende 2 uur -->
+                    <button id="priceWeatherMini" type="button" onclick="switchView('weather')" title="Weer en regenradar" class="hidden w-full text-left mt-5 flex-1 min-h-[96px] rounded-2xl bg-[#f4f7f4] hover:bg-[#edf3ee] p-3.5 cursor-pointer transition"></button>
                 </div>
 
                 <!-- COLUMN 4: Agenda Vandaag, Taken & Live Recycle Afvalkalender -->
@@ -809,6 +812,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
                 <!-- Links (4 kolommen): Afspraken Vandaag & Taken Vandaag -->
                 <div class="lg:col-span-4 flex flex-col gap-5">
+                    <div id="agendaCalendarsBox" class="hidden bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/70"></div>
+
                     <div class="bg-white rounded-[26px] p-6 shadow-sm border border-stone-200/70">
                         <h3 class="text-lg font-bold text-[#1c2520] mb-1">📅 Afspraak voor Vandaag Toevoegen</h3>
                         <p class="text-xs text-[#68736d] mb-3">Verschijnt direct bij 'Agenda vandaag' op het wanddisplay.</p>
@@ -2141,6 +2146,7 @@
     <script defer src="js/report.js"></script>
     <script defer src="js/telenet.js"></script>
     <script defer src="js/push-rules.js"></script>
+    <script defer src="js/agenda-today.js"></script>
     <script defer src="js/weather-tips.js"></script>
     <script defer src="js/energy-story.js"></script>
     <script defer src="js/display-layout.js"></script>

@@ -53,7 +53,8 @@ function renderGoogleCalendarTab() {
 
 function renderDisplayAgenda() {
     const container = document.getElementById('agendaContainer');
-    const combinedToday = [...(appState.haTodayEvents || []), ...(appState.agendaItems || [])];
+    const live = typeof agendaLiveLines === 'function' ? agendaLiveLines() : (appState.haTodayEvents || []);
+    const combinedToday = [...live, ...(appState.agendaItems || [])];
 
     if (combinedToday.length === 0) {
         container.innerHTML = `
@@ -68,8 +69,8 @@ function renderDisplayAgenda() {
     }
 
     container.innerHTML = `<div class="space-y-2 mt-1">` + combinedToday.map(item => `
-        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#f4f7f4]">
-            <span class="w-1.5 h-7 rounded-full bg-[#19975c] shrink-0"></span>
+        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#f4f7f4] ${item.past ? 'opacity-50' : ''}">
+            <span class="w-1.5 h-7 rounded-full ${item.past ? 'bg-stone-300' : 'bg-[#19975c]'} shrink-0"></span>
             <div>
                 <p class="text-sm font-bold text-[#1c2520]">${haEscape(item.time)} – ${haEscape(item.title)}</p>
             </div>
