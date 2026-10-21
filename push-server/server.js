@@ -46,9 +46,24 @@ webpush.setVapidDetails(cfg.mail, cfg.pub, cfg.priv);
 let subs = readJson('subscriptions.json', []);
 const saveSubs = () => writeJson('subscriptions.json', subs);
 
+/* OWNER-START */
+// Elke server hoort bij één gezin (de eigenaar van deze Home Assistant). Meldingen uit Home Assistant gaan enkel naar toestellen van dat gezin.
+function subsFor(list, household) { return list.filter(x => !household || x.household === household); }
+// Mag dit gezin regels op de server zetten? HOUSEHOLD in .env gaat voor; anders is het eerste gezin dat regels stuurt de eigenaar.
+function ownerCheck(owner, env, hh) {
+    hh = String(hh || '');
+    if (env) return hh === env ? { ok: true, owner: env } : { ok: false };
+    if (!hh) return owner ? { ok: false } : { ok: true, owner: '' };
+    if (!owner) return { ok: true, owner: hh };
+    return hh === owner ? { ok: true, owner } : { ok: false };
+}
+/* OWNER-END */
+let owner = process.env.HOUSEHOLD || String((readJson('owner.json', {}) || {}).household || '');
+const toOwner = () => owner || undefined;
+
 async function sendAll(payload, onlyHousehold) {
     const body = JSON.stringify(payload);
-    const targets = subs.filter(s => !onlyHousehold || s.household === onlyHousehold);
+    const targets = subsFor(subs, onlyHousehold);
     let ok = 0, gone = 0;
     await Promise.all(targets.map(async s => {
         try { await webpush.sendNotification(s.sub, body, { TTL: 3600, urgency: 'normal' }); ok++; }
@@ -89,7 +104,7 @@ function stroomRule(r, ev, to) {
     const since = running.get(k); running.delete(k);
     if (now - since < (Number(r.minMinuten) || 5) * 60000) return;
     const name = (ev.new_state.attributes && ev.new_state.attributes.friendly_name) || ev.entity_id;
-    sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam} is klaar').replace('{naam}', name), tag: k })
+    sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam} is klaar').replace('{naam}', name), tag: k }, toOwner())
         .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
 }
 
@@ -106,7 +121,7 @@ function handleStateChange(ev) {
         if (now - (lastFire.get(k) || 0) < 30000) return;   // niet vaker dan 1x per 30 s per melding
         lastFire.set(k, now);
         const name = (ev.new_state.attributes && ev.new_state.attributes.friendly_name) || ev.entity_id;
-        sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam}: {nieuw}').replace('{naam}', name).replace('{nieuw}', to).replace('{oud}', from || ''), tag: r.tag || ev.entity_id })
+        sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam}: {nieuw}').replace('{naam}', name).replace('{nieuw}', to).replace('{oud}', from || ''), tag: r.tag || ev.entity_id }, toOwner())
             .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
     });
 }
@@ -148,7 +163,7 @@ function runPlans() {
         const t = Date.parse(p.op), key = p.id + '@' + p.op;
         if (t > now || firedPlans.has(key)) return;
         firedPlans.add(key); changed = true;
-        if (now - t < 6 * 3600000) sendAll({ title: p.titel, body: p.tekst, tag: p.tag }).then(x => console.log(`[plan] ${p.id} -> ${x.sent} verstuurd`));
+        if (now - t < 6 * 3600000) sendAll({ title: p.titel, body: p.tekst, tag: p.tag }, toOwner()).then(x => console.log(`[plan] ${p.id} -> ${x.sent} verstuurd`));
     });
     if (changed) { writeJson('plannen-gedaan.json', Array.from(firedPlans).slice(-300)); }
 }
@@ -158,11 +173,11 @@ setInterval(runPlans, 30000);
 let haTimer = null, haAlerted = false;
 function haDown() {
     if (haTimer || haAlerted) return;
-    haTimer = setTimeout(() => { haTimer = null; haAlerted = true; sendAll({ title: 'Thuisbord', body: '📡 Home Assistant is al 5 minuten niet bereikbaar', tag: 'ha_offline' }); }, 5 * 60000);
+    haTimer = setTimeout(() => { haTimer = null; haAlerted = true; sendAll({ title: 'Thuisbord', body: '📡 Home Assistant is al 5 minuten niet bereikbaar', tag: 'ha_offline' }, toOwner()); }, 5 * 60000);
 }
 function haUp() {
     if (haTimer) { clearTimeout(haTimer); haTimer = null; }
-    if (haAlerted) { haAlerted = false; sendAll({ title: 'Thuisbord', body: '✅ Home Assistant is weer bereikbaar', tag: 'ha_offline' }); }
+    if (haAlerted) { haAlerted = false; sendAll({ title: 'Thuisbord', body: '✅ Home Assistant is weer bereikbaar', tag: 'ha_offline' }, toOwner()); }
 }
 
 function connectHa() {
@@ -290,7 +305,7 @@ async function checkRain() {
         const now = Date.now(), d = rainDecision(rainSlots(await r.json(), now), regenState, now);
         regenState = d.st; writeJson('regen-state.json', regenState);
         if (d.alert !== null) {
-            const x = await sendAll({ title: 'Thuisbord', body: `🌧️ Regen verwacht over ongeveer ${d.alert} min${regen.naam ? ' (' + regen.naam + ')' : ''}`, tag: 'regen' }, regen.household || undefined);
+            const x = await sendAll({ title: 'Thuisbord', body: `🌧️ Regen verwacht over ongeveer ${d.alert} min${regen.naam ? ' (' + regen.naam + ')' : ''}`, tag: 'regen' }, owner || regen.household || undefined);
             console.log(`[regen] melding over ${d.alert} min -> ${x.sent} verstuurd`);
         }
     } catch (e) { console.warn('Regencontrole mislukt:', e && e.message); }
@@ -313,7 +328,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, {});
     const u = (req.url || '').split('?')[0];
     try {
-        if (req.method === 'GET' && u === '/health') return send(res, 200, { ok: true, abonnementen: subs.length, knmi: !!KNMI.key });
+        if (req.method === 'GET' && u === '/health') return send(res, 200, { ok: true, abonnementen: subs.length, knmi: !!KNMI.key, eigenaar: !!owner });
         if (req.method === 'GET' && u === '/vapid') return send(res, 200, { publicKey: cfg.pub });
         if (!keyOk(req)) return send(res, 401, { error: 'sleutel klopt niet' });
         if (req.method === 'POST' && u === '/subscribe') {
@@ -347,6 +362,9 @@ http.createServer(async (req, res) => {
         if (req.method === 'GET' && u === '/rules') return send(res, 200, { rules });
         if (req.method === 'POST' && u === '/rules') {
             const b = await readBody(req);
+            const oc = ownerCheck(owner, process.env.HOUSEHOLD || '', b.household);
+            if (!oc.ok) return send(res, 403, { error: 'deze server hoort bij een ander gezin' });
+            if (oc.owner !== owner) { owner = oc.owner; writeJson('owner.json', { household: owner }); console.log('Eigenaar van deze server:', owner); }
             const clean = cleanRules(b.rules);
             if (!clean) return send(res, 400, { error: 'ongeldige regels' });
             writeJson('rules.json', clean); rules = clean;
@@ -358,7 +376,7 @@ http.createServer(async (req, res) => {
         }
         if (req.method === 'POST' && u === '/notify') {
             const b = await readBody(req);
-            const r = await sendAll({ title: String(b.title || 'Thuisbord').slice(0, 80), body: String(b.body || '').slice(0, 300), tag: String(b.tag || 'thuisbord').slice(0, 60) }, b.household);
+            const r = await sendAll({ title: String(b.title || 'Thuisbord').slice(0, 80), body: String(b.body || '').slice(0, 300), tag: String(b.tag || 'thuisbord').slice(0, 60) }, b.household || toOwner());
             return send(res, 200, r);
         }
         send(res, 404, { error: 'onbekend' });
