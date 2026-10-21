@@ -256,7 +256,33 @@ function renderWeatherView() {
 
 /* ============================ REGENRADAR ============================ */
 
-const radar = { frames: [], host: '', idx: 0, playing: true, timer: null, fetchedAt: 0, layers: [], active: false, loading: false, error: '' };
+const radar = { frames: [], host: '', idx: 0, playing: true, timer: null, fetchedAt: 0, layers: [], active: false, loading: false, error: '', holder: null };
+// Voorspelling (KNMI, via je pushserver): kaartbeelden van nu tot +2 uur
+const radarFc = { on: false, times: [], layers: [], urls: [], busy: false, again: false, fetchedAt: 0, moveTimer: null };
+
+function radarFcProject(lat, lon) {
+    const R = 6378137, la = Math.max(-85, Math.min(85, lat)) * Math.PI / 180;
+    return [R * lon * Math.PI / 180, R * Math.log(Math.tan(Math.PI / 4 + la / 2))];
+}
+// Kaartvenster -> GetMap-vraag in meters (EPSG:3857) en een beeldgrootte met dezelfde verhouding (max 800 px)
+function radarFcRequest(b, wPx, hPx) {
+    const sw = radarFcProject(b.south, b.west), ne = radarFcProject(b.north, b.east);
+    const k = Math.min(1, 800 / Math.max(wPx, hPx, 1));
+    return { bbox: [sw[0], sw[1], ne[0], ne[1]].map(Math.round), w: Math.max(64, Math.round(wPx * k)), h: Math.max(64, Math.round(hPx * k)) };
+}
+function radarFcLabel(iso, now) {
+    const t = Date.parse(iso);
+    if (isNaN(t)) return '';
+    const min = Math.round((t - (now === undefined ? Date.now() : now)) / 60000);
+    if (Math.abs(min) <= 5) return 'nu';
+    const a = Math.abs(min), txt = a >= 60 ? `${Math.floor(a / 60)} u${a % 60 ? ' ' + (a % 60) + ' min' : ''}` : `${a} min`;
+    return (min > 0 ? '+' : '−') + txt;
+}
+// Het beeldenstel dat nu getoond wordt: verleden (RainViewer) of voorspelling (KNMI)
+function radarSet() {
+    if (radarFc.on) return { fc: true, layers: radarFc.layers, times: radarFc.times };
+    return { fc: false, layers: radar.layers, times: radar.frames.map(f => f.time) };
+}
 
 // Verwachting voor de komende 2 uur (Open-Meteo, per kwartier). De radar zelf toont enkel het verleden: RainViewer stopte de voorspelling op 1 januari 2026.
 function weatherRainForecastHtml() {
@@ -284,12 +310,13 @@ function weatherRadarCardHtml(loc) {
                 <h3 class="text-base font-bold text-[#1c2520]">🛰️ Regenradar <span class="text-xs font-semibold text-[#68736d]">· afgelopen 2 uur</span></h3>
                 <div class="flex items-center gap-2">
                     <span id="radarTimeLabel" class="text-xs font-extrabold text-[#2b6fb5] min-w-[4.5rem] text-right"></span>
+                    ${typeof pushServerCfg === 'function' && pushServerCfg() ? `<button type="button" id="radarModeBtn" onclick="window.weatherRadarMode()" class="px-3 h-9 rounded-full bg-white border border-stone-200 text-xs font-bold text-[#152920] cursor-pointer">${radarFc.on ? '⏪ Verleden' : '🔮 Voorspelling'}</button>` : ''}
                     <button type="button" id="radarPlayBtn" onclick="window.weatherRadarToggle()" class="w-9 h-9 rounded-full bg-[#152920] text-white text-sm cursor-pointer" aria-label="Afspelen of pauzeren">${radar.playing ? '⏸' : '▶'}</button>
                 </div>
             </div>
             <div id="weatherRadarMap" class="weather-map w-full h-[320px] sm:h-[440px] rounded-2xl overflow-hidden bg-[#e8f2ec] flex items-center justify-center text-xs text-[#68736d]">Kaart laden…</div>
             <input id="radarSlider" type="range" min="0" max="0" value="0" oninput="window.weatherRadarSeek(this.value)" class="w-full mt-3 accent-[#152920]" aria-label="Radarbeeld kiezen">
-            <p class="text-[10.5px] text-[#8a958f] mt-1.5">Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a>, de afgelopen 2 uur (de gratis radar heeft geen voorspelling meer) · ${loc ? '🏠 ' + haEscape(loc.name) : ''}</p>
+            <p class="text-[10.5px] text-[#8a958f] mt-1.5"><span id="radarSourceNote">${radarFc.on ? 'Voorspelling: KNMI (neerslagverwachting tot +2 uur, via je pushserver)' : 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a>, de afgelopen 2 uur'}</span> · ${loc ? '🏠 ' + haEscape(loc.name) : ''}</p>
             ${weatherRainForecastHtml()}
         </section>`;
 }
@@ -322,30 +349,103 @@ function weatherRadarBuildLayers(h, L) {
 }
 
 function weatherRadarShow(i) {
-    if (!radar.layers.length) return;
-    radar.idx = ((i % radar.layers.length) + radar.layers.length) % radar.layers.length;
-    radar.layers.forEach((l, k) => l.setOpacity(k === radar.idx ? 0.72 : 0));
-    const f = radar.frames[radar.idx];
+    const set = radarSet();
+    if (!set.layers.length) return;
+    const other = set.fc ? radar.layers : radarFc.layers;
+    other.forEach(l => { try { l.setOpacity(0); } catch (e) { /* weg */ } });
+    radar.idx = ((i % set.layers.length) + set.layers.length) % set.layers.length;
+    set.layers.forEach((l, k) => l.setOpacity(k === radar.idx ? 0.72 : 0));
     const label = document.getElementById('radarTimeLabel');
-    if (label && f) {
-        const last = radar.idx === radar.frames.length - 1;
-        label.textContent = last ? 'nu' : new Date(f.time * 1000).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    if (label) {
+        if (set.fc) label.textContent = radarFcLabel(set.times[radar.idx]);
+        else if (set.times[radar.idx] !== undefined) label.textContent = radar.idx === set.times.length - 1 ? 'nu' : new Date(set.times[radar.idx] * 1000).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
     }
     const slider = document.getElementById('radarSlider');
-    if (slider) { slider.max = String(radar.frames.length - 1); slider.value = String(radar.idx); }
+    if (slider) { slider.max = String(set.layers.length - 1); slider.value = String(radar.idx); }
 }
 
 function weatherRadarStopTimer() { if (radar.timer !== null) { clearInterval(radar.timer); radar.timer = null; } }
 
 function weatherRadarStartTimer() {
     weatherRadarStopTimer();
-    if (!radar.active || !radar.playing || radar.layers.length < 2) return;
+    const n = radarSet().layers.length;
+    if (!radar.active || !radar.playing || n < 2) return;
     radar.timer = setInterval(() => {
-        // aan het einde even blijven staan op "nu"
-        const atEnd = radar.idx === radar.frames.length - 1;
-        weatherRadarShow(atEnd ? 0 : radar.idx + 1);
+        const set = radarSet();
+        // aan het einde even blijven staan, daarna opnieuw
+        weatherRadarShow(radar.idx >= set.layers.length - 1 ? 0 : radar.idx + 1);
     }, RADAR_FRAME_MS);
 }
+
+function radarFcClear(h) {
+    radarFc.layers.forEach(l => { try { (h || radar.holder).map.removeLayer(l); } catch (e) { /* weg */ } });
+    radarFc.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) { /* weg */ } });
+    radarFc.layers = []; radarFc.urls = [];
+}
+
+function radarModeUi() {
+    const b = document.getElementById('radarModeBtn');
+    if (b) b.textContent = radarFc.on ? '⏪ Verleden' : '🔮 Voorspelling';
+    const n = document.getElementById('radarSourceNote');
+    if (n) n.innerHTML = radarFc.on ? 'Voorspelling: <a href="https://dataplatform.knmi.nl/" target="_blank" rel="noopener" class="underline">KNMI</a> (neerslagverwachting tot +2 uur, via je pushserver)' : 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a>, de afgelopen 2 uur';
+}
+
+async function radarFcLoad(reloadImagesOnly) {
+    const h = radar.holder, c = typeof pushServerCfg === 'function' ? pushServerCfg() : null, L = window.L;
+    if (!h || !c || !L) return;
+    if (radarFc.busy) { radarFc.again = true; return; }
+    radarFc.busy = true;
+    const label = document.getElementById('radarTimeLabel');
+    const hdr = { 'X-Key': c.key };
+    try {
+        if (label) label.textContent = 'KNMI laden…';
+        if (!reloadImagesOnly || !radarFc.times.length) {
+            const r = await fetch(c.url + '/knmi/times', { headers: hdr });
+            const j = await r.json().catch(() => ({}));
+            if (r.status === 401) throw new Error('sleutel van de pushserver klopt niet');
+            if (r.status === 404) throw new Error('KNMI_KEY staat nog niet in .env op de server (of de server is niet bijgewerkt)');
+            if (!r.ok) throw new Error(j.error || 'server antwoordde ' + r.status);
+            radarFc.times = j.times || [];
+            if (!radarFc.times.length) throw new Error('KNMI gaf geen voorspellingsbeelden');
+        }
+        const b = h.map.getBounds(), sz = h.map.getSize();
+        const rq = radarFcRequest({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() }, sz.x, sz.y);
+        const bounds = [[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]];
+        const urls = [], layers = [];
+        const times = radarFc.times.slice();
+        for (let i = 0; i < times.length; i += 4) {
+            const part = await Promise.all(times.slice(i, i + 4).map(async t => {
+                const r = await fetch(`${c.url}/knmi/map?bbox=${rq.bbox.join(',')}&w=${rq.w}&h=${rq.h}&time=${encodeURIComponent(t)}`, { headers: hdr });
+                if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'beeld ophalen mislukt (' + r.status + ')'); }
+                return URL.createObjectURL(await r.blob());
+            }));
+            part.forEach(u => urls.push(u));
+        }
+        urls.forEach(u => layers.push(L.imageOverlay(u, bounds, { pane: 'radarPane', opacity: 0, interactive: false }).addTo(h.map)));
+        radarFcClear(h);
+        radarFc.layers = layers; radarFc.urls = urls; radarFc.fetchedAt = Date.now();
+        if (radarFc.on) { radar.idx = 0; weatherRadarShow(0); weatherRadarStartTimer(); }
+    } catch (e) {
+        radarFc.on = false; radarModeUi();
+        if (label) label.textContent = '';
+        showToast('Voorspelling lukt niet: ' + (e && e.message ? e.message : 'pushserver niet bereikbaar (staat Tailscale aan?)'));
+        radar.idx = Math.max(0, radar.layers.length - 1); weatherRadarShow(radar.idx); weatherRadarStartTimer();
+    } finally {
+        radarFc.busy = false;
+        if (radarFc.again) { radarFc.again = false; if (radarFc.on) radarFcLoad(true); }
+    }
+}
+
+window.weatherRadarMode = async function() {
+    if (typeof pushServerCfg !== 'function' || !pushServerCfg()) { showToast('Stel eerst de pushserver in (menu → Pushserver).'); return; }
+    if (radarFc.on) {
+        radarFc.on = false; radarFcClear(); radarModeUi();
+        radar.idx = Math.max(0, radar.layers.length - 1); weatherRadarShow(radar.idx); weatherRadarStartTimer();
+        return;
+    }
+    radarFc.on = true; radarModeUi();
+    await radarFcLoad(false);
+};
 
 async function weatherMountRadar() {
     const loc = weatherLocation();
@@ -360,10 +460,14 @@ async function weatherMountRadar() {
         holder.locKey = `${loc.lat},${loc.lon}`;
     });
     if (!h) return;
+    radar.holder = h;
+    if (!h.fcBound) { h.fcBound = true; h.map.on('moveend', () => { if (!radarFc.on) return; clearTimeout(radarFc.moveTimer); radarFc.moveTimer = setTimeout(() => radarFcLoad(true), 900); }); }
     const L = window.L;
     if (h.locKey !== `${loc.lat},${loc.lon}`) { h.locKey = `${loc.lat},${loc.lon}`; h.home.setLatLng([loc.lat, loc.lon]); h.map.setView([loc.lat, loc.lon], 8); }
     if (radar.frames.length && h.radarKey !== radar.fetchedAt) { h.radarKey = radar.fetchedAt; weatherRadarBuildLayers(h, L); }
-    if (radar.layers.length) { weatherRadarShow(radar.idx); weatherRadarStartTimer(); }
+    if (radarFc.on && !radarFc.layers.length && !radarFc.busy) radarFcLoad(false);
+    else if (radarFc.on && Date.now() - radarFc.fetchedAt > 5 * 60000 && !radarFc.busy) radarFcLoad(false);
+    if (radarSet().layers.length) { weatherRadarShow(radar.idx); weatherRadarStartTimer(); }
     else if (radar.error) { const label = document.getElementById('radarTimeLabel'); if (label) label.textContent = radar.error; }
 }
 
