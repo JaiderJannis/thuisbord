@@ -258,7 +258,7 @@ function renderWeatherView() {
 
 const radar = { frames: [], host: '', idx: 0, playing: true, timer: null, fetchedAt: 0, layers: [], active: false, loading: false, error: '', holder: null };
 // Voorspelling (KNMI, via je pushserver): kaartbeelden van nu tot +2 uur
-const radarFc = { on: false, times: [], layers: [], urls: [], busy: false, again: false, fetchedAt: 0, moveTimer: null };
+const radarFc = { auto: false, on: false, times: [], layers: [], urls: [], busy: false, again: false, fetchedAt: 0, moveTimer: null };
 
 function radarFcProject(lat, lon) {
     const R = 6378137, la = Math.max(-85, Math.min(85, lat)) * Math.PI / 180;
@@ -390,7 +390,7 @@ function radarModeUi() {
     if (n) n.innerHTML = radarFc.on ? 'Voorspelling: <a href="https://dataplatform.knmi.nl/" target="_blank" rel="noopener" class="underline">KNMI</a> (neerslagverwachting tot +2 uur, via je pushserver)' : 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a>, de afgelopen 2 uur';
 }
 
-async function radarFcLoad(reloadImagesOnly) {
+async function radarFcLoad(reloadImagesOnly, silent) {
     const h = radar.holder, c = typeof pushServerCfg === 'function' ? pushServerCfg() : null, L = window.L;
     if (!h || !c || !L) return;
     if (radarFc.busy) { radarFc.again = true; return; }
@@ -428,7 +428,7 @@ async function radarFcLoad(reloadImagesOnly) {
     } catch (e) {
         radarFc.on = false; radarModeUi();
         if (label) label.textContent = '';
-        showToast('Voorspelling lukt niet: ' + (e && e.message ? e.message : 'pushserver niet bereikbaar (staat Tailscale aan?)'));
+        if (!silent) showToast('Voorspelling lukt niet: ' + (e && e.message ? e.message : 'pushserver niet bereikbaar (staat Tailscale aan?)'));
         radar.idx = Math.max(0, radar.layers.length - 1); weatherRadarShow(radar.idx); weatherRadarStartTimer();
     } finally {
         radarFc.busy = false;
@@ -439,10 +439,12 @@ async function radarFcLoad(reloadImagesOnly) {
 window.weatherRadarMode = async function() {
     if (typeof pushServerCfg !== 'function' || !pushServerCfg()) { showToast('Stel eerst de pushserver in (menu → Pushserver).'); return; }
     if (radarFc.on) {
+        try { localStorage.setItem('radarPref', 'past'); } catch (e) { /* negeren */ }
         radarFc.on = false; radarFcClear(); radarModeUi();
         radar.idx = Math.max(0, radar.layers.length - 1); weatherRadarShow(radar.idx); weatherRadarStartTimer();
         return;
     }
+    try { localStorage.setItem('radarPref', 'fc'); } catch (e) { /* negeren */ }
     radarFc.on = true; radarModeUi();
     await radarFcLoad(false);
 };
@@ -465,8 +467,14 @@ async function weatherMountRadar() {
     const L = window.L;
     if (h.locKey !== `${loc.lat},${loc.lon}`) { h.locKey = `${loc.lat},${loc.lon}`; h.home.setLatLng([loc.lat, loc.lon]); h.map.setView([loc.lat, loc.lon], 8); }
     if (radar.frames.length && h.radarKey !== radar.fetchedAt) { h.radarKey = radar.fetchedAt; weatherRadarBuildLayers(h, L); }
-    if (radarFc.on && !radarFc.layers.length && !radarFc.busy) radarFcLoad(false);
-    else if (radarFc.on && Date.now() - radarFc.fetchedAt > 5 * 60000 && !radarFc.busy) radarFcLoad(false);
+    // Voorspelling is de standaard zodra de pushserver is ingesteld (tenzij je zelf voor "Verleden" koos). Lukt het niet, dan blijft de gewone radar stil staan.
+    if (!radarFc.auto) {
+        radarFc.auto = true;
+        let pref = ''; try { pref = localStorage.getItem('radarPref') || ''; } catch (e) { /* negeren */ }
+        if (pref !== 'past' && typeof pushServerCfg === 'function' && pushServerCfg()) { radarFc.on = true; radarModeUi(); radarFcLoad(false, true); }
+    }
+    if (radarFc.on && !radarFc.layers.length && !radarFc.busy) radarFcLoad(false, true);
+    else if (radarFc.on && Date.now() - radarFc.fetchedAt > 5 * 60000 && !radarFc.busy) radarFcLoad(false, true);
     if (radarSet().layers.length) { weatherRadarShow(radar.idx); weatherRadarStartTimer(); }
     else if (radar.error) { const label = document.getElementById('radarTimeLabel'); if (label) label.textContent = radar.error; }
 }

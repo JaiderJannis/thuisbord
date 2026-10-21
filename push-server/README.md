@@ -101,6 +101,9 @@ Zet Tailscale ook op je telefoon(s) (app + inloggen met hetzelfde account). Dit 
 4. Open Thuisbord → **Weer** → bij de regenradar staat nu **🔮 Voorspelling**. Tik erop voor het beeld van nu tot +2 uur.
 De server bewaart de beelden 5 minuten, want KNMI staat 1000 verzoeken per uur toe. Het toestel moet de pushserver kunnen bereiken (Tailscale aan).
 
+## Stap 6c · Melding als er regen verwacht wordt
+Staat aan zodra je in Thuisbord op **📤 Meldingsregels maken en naar de server sturen** tikt (aan/uit via het vinkje "🌧️ Melding als er regen verwacht wordt" in het Pushserver-blok). De server kijkt elke 10 minuten naar de verwachting op de locatie van je weerpagina (Open-Meteo, geen sleutel nodig) en stuurt één melding per bui, zoals "🌧️ Regen verwacht over ongeveer 25 min". Niet als het al regent, en niet vaker dan eens per 3 uur.
+
 ## Stap 7a · De regels automatisch laten maken (aanbevolen)
 Open Thuisbord als beheerder → menu → **Pushserver** → tik op **📤 Meldingsregels maken en naar de server sturen**. Thuisbord maakt dan regels uit je instellingen (wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg, internetlimiet) en stuurt ze naar de server. Je hoeft niets in de console te typen. Doe dit opnieuw na elke wijziging aan je apparaten. Let op: de server moet eerst de nieuwste versie hebben (`cd /tmp/tb && git pull`, dan `cp /tmp/tb/push-server/server.js /opt/thuisbord-push/ && systemctl restart thuisbord-push`).
 
