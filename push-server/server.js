@@ -182,6 +182,76 @@ function connectHa() {
     ws.on('error', e => console.warn('HA-fout:', e.message));
 }
 
+/* KNMI-START */
+// KNMI-regenvoorspelling (Web Map Service). De sleutel gaat als Authorization-header mee, dus de server haalt de beelden op voor de app.
+const KNMI = { key: process.env.KNMI_KEY || '', base: 'https://api.dataplatform.knmi.nl/wms/adaguc-server', dataset: 'radar_forecast_2.0', layer: 'precipitation_nowcast' };
+
+function isoDurMs(sv) {
+    const m = /^P(?:T)?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i.exec(String(sv || '').trim());
+    if (!m) return 0;
+    return ((Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0)) * 1000;
+}
+
+// Alle tijdstippen uit de GetCapabilities (lijst "a,b,c" of interval "begin/einde/PT5M"), oplopend en uniek
+function parseNowcastTimes(xml, layer) {
+    xml = String(xml || '');
+    const i = xml.indexOf('<Name>' + layer + '</Name>');
+    const part = i >= 0 ? xml.slice(i) : xml;
+    const m = part.match(/<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/i);
+    if (!m) return [];
+    const out = new Set();
+    m[1].split(',').forEach(tok => {
+        tok = tok.trim(); if (!tok) return;
+        const p = tok.split('/');
+        if (p.length === 3) {
+            const a = Date.parse(p[0]), b = Date.parse(p[1]), step = isoDurMs(p[2]);
+            if (!isNaN(a) && !isNaN(b) && step > 0) for (let t = a; t <= b && out.size < 3000; t += step) out.add(t);
+        } else { const t = Date.parse(tok); if (!isNaN(t)) out.add(t); }
+    });
+    return Array.from(out).sort((x, y) => x - y);
+}
+
+// Kies de beelden vanaf nu tot +2 uur, ongeveer elke 10 minuten (spaart het quotum van 1000 verzoeken per uur)
+function pickNowcastTimes(all, now) {
+    let sel = all.filter(t => t >= now - 15 * 60000 && t <= now + 125 * 60000);
+    if (!sel.length) sel = all.slice(-13);
+    const out = [];
+    sel.forEach(t => { if (!out.length || t - out[out.length - 1] >= 9 * 60000) out.push(t); });
+    return out.slice(0, 16).map(t => new Date(t).toISOString().replace('.000Z', 'Z'));
+}
+
+// Alleen geldige kaartvragen doorlaten. Geeft de GetMap-query terug of null.
+function knmiMapQuery(sp) {
+    const bbox = String(sp.get('bbox') || '').split(',').map(Number);
+    const w = parseInt(sp.get('w'), 10), h = parseInt(sp.get('h'), 10), t = String(sp.get('time') || '');
+    if (bbox.length !== 4 || bbox.some(n => !isFinite(n) || Math.abs(n) > 3e7) || bbox[0] >= bbox[2] || bbox[1] >= bbox[3]) return null;
+    if (!(w >= 64 && w <= 1280 && h >= 64 && h <= 1280)) return null;
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(t)) return null;
+    return `DATASET=${KNMI.dataset}&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=${KNMI.layer}&STYLES=&FORMAT=image/png&TRANSPARENT=TRUE&CRS=EPSG:3857&BBOX=${bbox.map(n => Math.round(n)).join(',')}&WIDTH=${w}&HEIGHT=${h}&TIME=${t}`;
+}
+/* KNMI-END */
+
+let knmiCaps = { at: 0, times: [] };
+const knmiImgs = new Map();           // query -> { at, buf }
+async function knmiTimes() {
+    if (Date.now() - knmiCaps.at < 120000 && knmiCaps.times.length) return knmiCaps.times;
+    const r = await fetch(`${KNMI.base}?DATASET=${KNMI.dataset}&SERVICE=WMS&REQUEST=GetCapabilities`, { headers: { Authorization: KNMI.key } });
+    if (!r.ok) throw new Error('KNMI antwoordde ' + r.status);
+    knmiCaps = { at: Date.now(), times: pickNowcastTimes(parseNowcastTimes(await r.text(), KNMI.layer), Date.now()) };
+    return knmiCaps.times;
+}
+async function knmiImage(query) {
+    const hit = knmiImgs.get(query);
+    if (hit && Date.now() - hit.at < 300000) return hit.buf;
+    const r = await fetch(`${KNMI.base}?${query}`, { headers: { Authorization: KNMI.key } });
+    const type = String(r.headers.get('content-type') || '');
+    if (!r.ok || !/^image\//.test(type)) throw new Error('KNMI gaf geen beeld (' + r.status + ')');
+    const buf = Buffer.from(await r.arrayBuffer());
+    knmiImgs.set(query, { at: Date.now(), buf });
+    if (knmiImgs.size > 300) knmiImgs.delete(knmiImgs.keys().next().value);
+    return buf;
+}
+
 /* ---------- HTTP ---------- */
 const send = (res, code, obj) => {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': cfg.origin, 'Access-Control-Allow-Headers': 'Content-Type, X-Key', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' });
@@ -197,7 +267,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204, {});
     const u = (req.url || '').split('?')[0];
     try {
-        if (req.method === 'GET' && u === '/health') return send(res, 200, { ok: true, abonnementen: subs.length });
+        if (req.method === 'GET' && u === '/health') return send(res, 200, { ok: true, abonnementen: subs.length, knmi: !!KNMI.key });
         if (req.method === 'GET' && u === '/vapid') return send(res, 200, { publicKey: cfg.pub });
         if (!keyOk(req)) return send(res, 401, { error: 'sleutel klopt niet' });
         if (req.method === 'POST' && u === '/subscribe') {
@@ -213,6 +283,20 @@ http.createServer(async (req, res) => {
             subs = subs.filter(s => s.sub.endpoint !== (b.endpoint || ''));
             saveSubs();
             return send(res, 200, { ok: true });
+        }
+        if (req.method === 'GET' && u === '/knmi/times') {
+            if (!KNMI.key) return send(res, 404, { error: 'KNMI_KEY staat niet in .env' });
+            try { return send(res, 200, { times: await knmiTimes() }); } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
+        }
+        if (req.method === 'GET' && u === '/knmi/map') {
+            if (!KNMI.key) return send(res, 404, { error: 'KNMI_KEY staat niet in .env' });
+            const q = knmiMapQuery(new URL(req.url, 'http://x').searchParams);
+            if (!q) return send(res, 400, { error: 'ongeldige kaartvraag' });
+            try {
+                const buf = await knmiImage(q);
+                res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': cfg.origin });
+                return res.end(buf);
+            } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
         }
         if (req.method === 'GET' && u === '/rules') return send(res, 200, { rules });
         if (req.method === 'POST' && u === '/rules') {

@@ -94,6 +94,13 @@ Zet Tailscale ook op je telefoon(s) (app + inloggen met hetzelfde account). Dit 
    - **Android**: Chrome volstaat.
 4. Druk op **Testmelding**. Sluit de app volledig en probeer nog eens: de melding moet toch binnenkomen.
 
+## Stap 6b · Regenvoorspelling van KNMI op je kaart (optioneel)
+1. Vraag een gratis **Web Map Service (WMS)**-sleutel aan op het [KNMI Developer Portal](https://developer.dataplatform.knmi.nl/).
+2. Zet in de container in `/opt/thuisbord-push/.env` een nieuwe regel: `KNMI_KEY=jouw-sleutel` (deel de sleutel nooit).
+3. Werk de server bij en herstart: `systemctl restart thuisbord-push`.
+4. Open Thuisbord → **Weer** → bij de regenradar staat nu **🔮 Voorspelling**. Tik erop voor het beeld van nu tot +2 uur.
+De server bewaart de beelden 5 minuten, want KNMI staat 1000 verzoeken per uur toe. Het toestel moet de pushserver kunnen bereiken (Tailscale aan).
+
 ## Stap 7a · De regels automatisch laten maken (aanbevolen)
 Open Thuisbord als beheerder → menu → **Pushserver** → tik op **📤 Meldingsregels maken en naar de server sturen**. Thuisbord maakt dan regels uit je instellingen (wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg, internetlimiet) en stuurt ze naar de server. Je hoeft niets in de console te typen. Doe dit opnieuw na elke wijziging aan je apparaten. Let op: de server moet eerst de nieuwste versie hebben (`cd /tmp/tb && git pull`, dan `cp /tmp/tb/push-server/server.js /opt/thuisbord-push/ && systemctl restart thuisbord-push`).
 
