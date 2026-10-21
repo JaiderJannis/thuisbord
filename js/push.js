@@ -72,8 +72,39 @@ async function pushServerSubscribe() {
         let sub = await reg.pushManager.getSubscription();
         if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushB64(vap.publicKey) });
         const r = await fetch(c.url + '/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ subscription: sub.toJSON(), household: (appState && appState.householdName) || '' }) });
+        if (r.ok) { try { localStorage.setItem('pushSrvLast', JSON.stringify({ url: c.url, key: c.key, household: (appState && appState.householdName) || '' })); } catch (e) { /* negeren */ } }
         return r.ok ? 'ok' : (r.status === 401 ? 'sleutel' : 'fout');
     } catch (e) { return 'fout'; }
+}
+
+// Dit toestel hoort bij één gezin tegelijk. Logt iemand van een ander gezin in (of heeft dat gezin een andere/geen pushserver),
+// dan wordt het toestel afgemeld bij de vorige server, zodat het geen meldingen van een ander gezin blijft krijgen.
+function pushReconcilePlan(saved, household, cfg) {
+    if (!saved) return cfg ? 'subscribe' : 'none';
+    const same = saved.household === household && cfg && cfg.url === saved.url;
+    if (same) return 'none';
+    return cfg ? 'switch' : 'unsub';
+}
+let pushReconKey = '';
+async function pushServerReconcile() {
+    try {
+        const hh = (appState && appState.householdName) || '';
+        if (!hh) return;
+        const cfg = pushServerCfg(), key = hh + '|' + (cfg ? cfg.url : '');
+        if (key === pushReconKey) return;
+        pushReconKey = key;
+        let saved = null; try { saved = JSON.parse(localStorage.getItem('pushSrvLast') || 'null'); } catch (e) { saved = null; }
+        const plan = pushReconcilePlan(saved, hh, cfg);
+        if (plan === 'unsub' || plan === 'switch') {
+            try {
+                const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+                const sub = reg && await reg.pushManager.getSubscription();
+                if (sub && saved) await fetch(saved.url + '/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': saved.key }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+            } catch (e) { /* negeren */ }
+            try { localStorage.removeItem('pushSrvLast'); } catch (e) { /* negeren */ }
+        }
+        if ((plan === 'switch' || plan === 'subscribe') && pushActive()) pushServerSubscribe();
+    } catch (e) { /* negeren */ }
 }
 async function pushServerUnsubscribe() {
     const c = pushServerCfg();
@@ -130,6 +161,7 @@ window.togglePush = async function() {
 function renderPushSwitcher() {
     const box = document.getElementById('pushSwitcher');
     if (!box) return;
+    pushServerReconcile();
     let label, sub, on = false, disabled = false;
     if (!pushSupported()) {
         label = 'Niet beschikbaar'; sub = 'Deze browser kan geen meldingen tonen. Op iPhone: voeg de app eerst toe aan het beginscherm.'; disabled = true;

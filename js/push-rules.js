@@ -119,9 +119,10 @@ window.pushRulesSend = async function(silent) {
     const say = (m) => { if (silent !== true) showToast(m); };
     if (!rules.length && !plannen.length && !regen) { say('Niets gevonden om te melden. Koppel eerst wasmachine, auto of robot met een entiteit.'); return; }
     try {
-        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen }) });
+        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen, household: (appState && appState.householdName) || '' }) });
         const j = await r.json().catch(() => ({}));
         if (r.status === 401) say('Pushserver: sleutel klopt niet.');
+        else if (r.status === 403) say('Deze pushserver hoort bij een ander gezin. Gebruik een eigen server of pas HOUSEHOLD in .env aan.');
         else if (!r.ok) say('Server weigert de regels: ' + (j.error || r.status));
         else { try { localStorage.setItem('pushRulesSync', String(Date.now())); } catch (e) { /* negeren */ } say(`${j.regels} meldingsregels staan nu op de server${j.plannen ? ` + ${j.plannen} geplande (afval)` : ''}${j.regen ? ' + regenmelding' : ''}${skipped.length ? ` (${skipped.length} overgeslagen)` : ''}.`); }
     } catch (e) { say('Pushserver niet bereikbaar. Staat Tailscale aan en is de server bijgewerkt?'); }
