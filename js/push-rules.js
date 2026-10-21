@@ -78,7 +78,13 @@ function pushRulesBuild() {
             }
         } catch (e) { /* negeren */ }
     }
-    return { rules, skipped, plannen: on('waste') ? pushPlansBuild() : [] };
+    // Regen op je locatie: de server controleert zelf de verwachting (standaard aan)
+    let regen = null;
+    try {
+        const loc = typeof weatherLocation === 'function' ? weatherLocation() : null;
+        if (loc && st.pushRain !== false) regen = { lat: loc.lat, lon: loc.lon, naam: loc.name || '', household: st.householdName || '' };
+    } catch (e) { /* negeren */ }
+    return { rules, skipped, plannen: on('waste') ? pushPlansBuild() : [], regen };
 }
 
 // Stroomgebaseerde "klaar": vermogen was minstens 5 W en zakt eronder (na minstens 5 minuten)
@@ -109,15 +115,15 @@ window.pushRulesSend = async function(silent) {
     if (typeof currentRole !== 'undefined' && currentRole !== 'manager' && currentRole !== 'admin') return;
     const c = typeof pushServerCfg === 'function' ? pushServerCfg() : null;
     if (!c) { showToast('Vul eerst het adres en de sleutel van de pushserver in en tik op Opslaan.'); return; }
-    const { rules, skipped, plannen } = pushRulesBuild();
+    const { rules, skipped, plannen, regen } = pushRulesBuild();
     const say = (m) => { if (silent !== true) showToast(m); };
-    if (!rules.length && !plannen.length) { say('Niets gevonden om te melden. Koppel eerst wasmachine, auto of robot met een entiteit.'); return; }
+    if (!rules.length && !plannen.length && !regen) { say('Niets gevonden om te melden. Koppel eerst wasmachine, auto of robot met een entiteit.'); return; }
     try {
-        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen }) });
+        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen }) });
         const j = await r.json().catch(() => ({}));
         if (r.status === 401) say('Pushserver: sleutel klopt niet.');
         else if (!r.ok) say('Server weigert de regels: ' + (j.error || r.status));
-        else { try { localStorage.setItem('pushRulesSync', String(Date.now())); } catch (e) { /* negeren */ } say(`${j.regels} meldingsregels staan nu op de server${j.plannen ? ` + ${j.plannen} geplande (afval)` : ''}${skipped.length ? ` (${skipped.length} overgeslagen)` : ''}.`); }
+        else { try { localStorage.setItem('pushRulesSync', String(Date.now())); } catch (e) { /* negeren */ } say(`${j.regels} meldingsregels staan nu op de server${j.plannen ? ` + ${j.plannen} geplande (afval)` : ''}${j.regen ? ' + regenmelding' : ''}${skipped.length ? ` (${skipped.length} overgeslagen)` : ''}.`); }
     } catch (e) { say('Pushserver niet bereikbaar. Staat Tailscale aan en is de server bijgewerkt?'); }
 };
 
@@ -127,9 +133,17 @@ function pushRulesAutoSync() {
         if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;
         if (typeof pushServerCfg !== 'function' || !pushServerCfg() || typeof pushActive === 'function' && !pushActive()) return;
         if (Date.now() - Number(localStorage.getItem('pushRulesSync') || 0) < 6 * 3600000) return;
-        if (!(appState.liveWasteItems || []).length && !(appState.cars || []).length && !(appState.robots || []).length) return;
         window.pushRulesSend(true);
     } catch (e) { /* negeren */ }
 }
 setTimeout(pushRulesAutoSync, 20000);
 setInterval(pushRulesAutoSync, 10 * 60000);
+
+// Regenmelding aan/uit (per gezin)
+window.pushSetRain = function(on) {
+    if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;
+    appState.pushRain = !!on;
+    try { persistStateToFirestore(true); } catch (e) { /* negeren */ }
+    window.pushRulesSend(true);
+    showToast(on ? 'Regenmelding staat aan.' : 'Regenmelding staat uit.');
+};

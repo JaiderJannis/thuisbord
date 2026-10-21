@@ -252,6 +252,52 @@ async function knmiImage(query) {
     return buf;
 }
 
+/* REGEN-START */
+// Regenmelding: de server kijkt zelf naar de verwachting op jouw locatie (Open-Meteo, per kwartier) en stuurt een push, ook als de app dicht is
+function rainSlots(j, now) {
+    const m = j && j.minutely_15, out = [];
+    if (!m || !Array.isArray(m.time) || !Array.isArray(m.precipitation)) return out;
+    m.time.forEach((t, i) => { const start = Number(t) * 1000; if (start + 900000 > now && out.length < 8) out.push({ start, mm: Number(m.precipitation[i]) || 0 }); });
+    return out;
+}
+// Meldt één keer per bui: niet als het al regent, en pas na minstens 3 uur weer
+function rainDecision(slots, st, now) {
+    st = Object.assign({ lastAlert: 0 }, st || {});
+    if (!slots.length) return { alert: null, st };
+    const WET = 0.1;
+    if (slots[0].mm >= WET) return { alert: null, st: Object.assign({}, st, { wet: true }) };
+    const idx = slots.findIndex(x => x.mm >= WET);
+    if (idx === -1) return { alert: null, st: Object.assign({}, st, { wet: false }) };
+    if (now - st.lastAlert < 3 * 3600000) return { alert: null, st };
+    const min = Math.max(5, Math.round((slots[idx].start - now) / 300000) * 5);
+    return { alert: min, st: Object.assign({}, st, { wet: false, lastAlert: now }) };
+}
+function cleanRegen(r) {
+    if (!r || typeof r !== 'object') return null;
+    const lat = Number(r.lat), lon = Number(r.lon);
+    if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    return { lat: Math.round(lat * 1000) / 1000, lon: Math.round(lon * 1000) / 1000, naam: String(r.naam || '').slice(0, 60), household: String(r.household || '').slice(0, 80) };
+}
+/* REGEN-END */
+
+let regen = cleanRegen(readJson('regen.json', null));
+let regenState = readJson('regen-state.json', { lastAlert: 0 });
+async function checkRain() {
+    if (!regen) return;
+    try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${regen.lat}&longitude=${regen.lon}&minutely_15=precipitation&forecast_minutely_15=8&timezone=UTC&timeformat=unixtime`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const now = Date.now(), d = rainDecision(rainSlots(await r.json(), now), regenState, now);
+        regenState = d.st; writeJson('regen-state.json', regenState);
+        if (d.alert !== null) {
+            const x = await sendAll({ title: 'Thuisbord', body: `🌧️ Regen verwacht over ongeveer ${d.alert} min${regen.naam ? ' (' + regen.naam + ')' : ''}`, tag: 'regen' }, regen.household || undefined);
+            console.log(`[regen] melding over ${d.alert} min -> ${x.sent} verstuurd`);
+        }
+    } catch (e) { console.warn('Regencontrole mislukt:', e && e.message); }
+}
+setInterval(checkRain, 10 * 60000);
+setTimeout(checkRain, 20000);
+
 /* ---------- HTTP ---------- */
 const send = (res, code, obj) => {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': cfg.origin, 'Access-Control-Allow-Headers': 'Content-Type, X-Key', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' });
@@ -306,8 +352,9 @@ http.createServer(async (req, res) => {
             writeJson('rules.json', clean); rules = clean;
             let np = 0;
             if (b.plannen !== undefined) { const pl = cleanPlans(b.plannen); if (pl) { plans = pl; writeJson('plannen.json', pl); np = pl.length; } }
-            console.log('Regels ontvangen van de app:', clean.length, 'plannen:', np);
-            return send(res, 200, { ok: true, regels: clean.length, plannen: np });
+            if (b.regen !== undefined) { regen = cleanRegen(b.regen); writeJson('regen.json', regen); if (regen) setTimeout(checkRain, 2000); }
+            console.log('Regels ontvangen van de app:', clean.length, 'plannen:', np, 'regenmelding:', regen ? 'aan' : 'uit');
+            return send(res, 200, { ok: true, regels: clean.length, plannen: np, regen: !!regen });
         }
         if (req.method === 'POST' && u === '/notify') {
             const b = await readBody(req);
