@@ -14,7 +14,8 @@ const LAUNDRY_ROLES = [
     ['job', 'Fase / cyclus', 'bv. sensor.wasmachine_job_state'],
     ['completion', 'Klaar om (tijdstip of minuten)', 'bv. sensor.wasmachine_completion_time'],
     ['program', 'Programma', 'bv. select.wasmachine_cycle (niet altijd beschikbaar)'],
-    ['power', 'Vermogen (W)', 'bv. sensor.wasmachine_power']
+    ['power', 'Vermogen (W)', 'bv. sensor.wasmachine_power'],
+    ['temp', 'Wastemperatuur', 'bv. select.wasmachine_wastemperatuur (wasmachine)']
 ];
 const LAUNDRY_JOB_NL = {
     wash: 'Wassen', prewash: 'Voorwas', rinse: 'Spoelen', spin: 'Centrifugeren', drying: 'Drogen', cooling: 'Afkoelen',
@@ -52,7 +53,7 @@ async function laundryTranslateFetch(id, raw) {
 // Vraagt vertalingen op voor het programma en alle select-extra's van alle toestellen
 function laundryTranslateAll(map) {
     ensureLaundry().devices.forEach(d => {
-        const ids = [(d.entities || {}).program].concat((d.extras || []).filter(x => /^select\./.test(x)), (d.entities || {}).job).filter(Boolean);
+        const ids = [(d.entities || {}).program, (d.entities || {}).temp].concat((d.extras || []).filter(x => /^select\./.test(x)), (d.entities || {}).job).filter(Boolean);
         ids.forEach(id => { const st = haStateObj(map, id); if (st && haIsUsable(st)) laundryTranslateFetch(id, String(st.state)); });
     });
 }
@@ -80,10 +81,13 @@ function laundryPretty(t) {
 
 /* ---------- status van één toestel ---------- */
 // Mooi label voor een extra entiteit: friendly name zonder de naam van het toestel ervoor
+// "40" -> "40°C"; teksten die al een eenheid/woord hebben blijven zoals ze zijn
+function laundryTempText(t) { const x = String(t || '').trim(); return /^\d+([.,]\d+)?$/.test(x) ? x + '°C' : x; }
 function laundryExtraLabel(dev, st) {
     let n = String((st.attributes && st.attributes.friendly_name) || st.entity_id.split('.')[1].replace(/_/g, ' '));
     const dn = String(dev.name || '').trim();
     if (dn && n.toLowerCase().startsWith(dn.toLowerCase() + ' ') && n.length > dn.length + 1) n = n.slice(dn.length + 1);
+    n = n.replace(/^[^()]{0,40}\([^)]*\)\s+(?=\S)/, '');
     n = n.replace(/^((wasruimte|wasmachine|droger|plug)\s+)+(?=\S)/i, '');
     return n.charAt(0).toUpperCase() + n.slice(1);
 }
@@ -100,8 +104,10 @@ function laundryStatus(dev, map, now = Date.now()) {
         if (!st) return null;
         const attrs = st.attributes || {};
         const fv = haFriendlyValue(st, attrs.friendly_name || id);
-        return { id, label: laundryExtraLabel(dev, st), text: id.startsWith('select.') && haIsUsable(st) ? (laundryTrText(id, String(st.state)) || laundryPretty(st.state)) : fv.text, unit: attrs.unit_of_measurement || '', usable: haIsUsable(st), domain: id.split('.')[0], raw: st.state };
+        return { id, label: laundryExtraLabel(dev, st), text: id.startsWith('select.') && haIsUsable(st) ? (/(temperatuur|temperature)/i.test(id) ? laundryTempText(laundryTrText(id, String(st.state)) || laundryPretty(st.state)) : (laundryTrText(id, String(st.state)) || laundryPretty(st.state))) : fv.text, unit: attrs.unit_of_measurement || '', usable: haIsUsable(st), domain: id.split('.')[0], raw: st.state };
     }).filter(Boolean);
+    // programma/temperatuur: ook herkennen als je ze (nog) als extra hebt toegevoegd
+    const exSel = (re) => extras.find(x => x.usable && x.domain === 'select' && re.test(x.id));
     let powerW = wSt ? haNumber(wSt) : null;
     if (powerW === null) {
         const px = extras.find(x => x.usable && /^(W|kW)$/.test(x.unit) && x.domain === 'sensor');
@@ -133,10 +139,17 @@ function laundryStatus(dev, map, now = Date.now()) {
     if (finishAt !== null) remaining = Math.max(0, Math.round((finishAt - now) / 60000));
 
     let program = '';
+    const pExtra = !pSt && exSel(/(programma|program|course|cycle)/) && !/(temperatuur|temperature)/.test(exSel(/(programma|program|course|cycle)/).id) ? exSel(/(programma|program|course|cycle)/) : null;
+    if (pExtra) program = pExtra.text;
     if (pSt) { const v = String(pSt.state); if (!['unknown', 'unavailable', 'none', ''].includes(v.toLowerCase())) program = laundryTrText(e.program, v) || laundryPretty(v); }
 
+    // wastemperatuur (alleen zinvol bij wasmachine)
+    let temp = '';
+    const tSt = val(e.temp), tEx = tSt ? null : exSel(/(wastemperatuur|water_temperature|wash_temp|temperatuur|temperature)/);
+    if (tSt) temp = laundryTempText(laundryTrText(e.temp, String(tSt.state)) || laundryPretty(tSt.state));
+    else if (tEx) temp = laundryTempText(tEx.text);
     const phase = jSt && !jobIdle ? (LAUNDRY_JOB_NL[job] !== undefined ? LAUNDRY_JOB_NL[job] : (LAUNDRY_JOB_NL[jobRaw] !== undefined ? LAUNDRY_JOB_NL[jobRaw] : laundryPretty(jobRaw))) : '';
-    return { kind, phase, program, remaining, finishAt, powerW, hasAny: !!(sSt || jSt || cSt || pSt || wSt || extras.some(x => x.usable)), jobRaw, extras };
+    return { kind, phase, program, temp, remaining, finishAt, powerW, hasAny: !!(sSt || jSt || cSt || pSt || wSt || tSt || extras.some(x => x.usable)), jobRaw, extras };
 }
 
 // Houdt per toestel bij sinds wanneer het draait en wat de langste resterende tijd was (voor de voortgangsbalk)
@@ -167,6 +180,8 @@ function laundryNotifItems(map) {
         if (st.kind !== 'running' && st.kind !== 'paused') return;
         const name = d.name || (d.kind === 'dryer' ? 'Droger' : 'Wasmachine');
         const bits = [st.kind === 'paused' ? 'gepauzeerd' : (st.phase || 'bezig')];
+        if (st.program) bits.push(st.program);
+        if (st.temp && d.kind !== 'dryer') bits.push(st.temp);
         if (st.remaining !== null && st.kind === 'running') bits.push(`nog ${laundryDur(st.remaining)}`);
         out.push({ key: `laun_${d.id}`, icon: d.kind === 'dryer' ? '👕' : '🫧', anim: d.kind === 'dryer' ? 'ni-tumble' : 'ni-bubble', level: 'info', text: `${name}: ${bits.join(' · ')}` });
     });
@@ -192,6 +207,7 @@ function laundryRoleOf(id, name, st) {
     if (/(job_state|job state|cycle_phase|phase|fase)/.test(t)) return 'job';
     if (/(completion|finish|end_time|klaar om|remaining)/.test(t)) return 'completion';
     if (/(machine_state|machine state|washer_state|dryer_state|operating_state|status)/.test(t)) return 'state';
+    if (dom === 'select' && /(wastemperatuur|water_temperature|wash_temp|temperatuur|temperature)/.test(t)) return 'temp';
     if (dom === 'select' || /(program|programma|cycle|course)/.test(t)) {
         if (/(centrifuge|spin|temperature|temperatuur|water|soil|vuil|extra|rinse|spoel|option)/.test(t)) return '';
         return /(job|phase)/.test(t) ? 'job' : 'program';
@@ -276,7 +292,7 @@ function laundryCardHtml(d, map) {
                 <div class="flex items-center gap-3 min-w-0">
                     <span class="ld-ico ${running ? (isDryer ? 'ld-dryer' : 'ld-washer') : ''} w-14 h-14 rounded-2xl bg-[#e8f2ec] flex items-center justify-center text-3xl shrink-0">${laEsc(icon)}</span>
                     <div class="min-w-0"><h3 class="text-lg font-extrabold text-[#1c2520] truncate">${laEsc(d.name || (isDryer ? 'Droger' : 'Wasmachine'))}</h3>
-                    <p class="text-xs text-[#68736d]">${st.phase ? laEsc(st.phase) : (running ? 'Bezig' : '&nbsp;')}${st.program ? ` · ${laEsc(st.program)}` : ''}</p></div>
+                    <p class="text-xs text-[#68736d]">${st.phase ? laEsc(st.phase) : (running ? 'Bezig' : '&nbsp;')}${st.program ? ` · ${laEsc(st.program)}` : ''}${st.temp && !isDryer ? ` · ${laEsc(st.temp)}` : ''}</p></div>
                 </div>
                 <span class="text-[11px] font-extrabold px-3 py-1.5 rounded-full whitespace-nowrap ${chips[1]}">${chips[0]}</span>
             </div>
