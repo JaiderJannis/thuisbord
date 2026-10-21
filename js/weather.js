@@ -203,14 +203,6 @@ function renderWeatherView() {
         const info = weatherCodeInfo(cur.code, cur.isDay);
         const today = daily[0] || {};
         const sun = (s) => String(s || '').slice(11, 16);
-        const summary = weatherRainSummary(rain);
-        const maxMm = Math.max(1, ...(rain || []).map(r => r.mm));
-        const rainBars = (rain && rain.length) ? `
-            <div class="flex items-end gap-1.5 h-16 mt-3">${rain.map(r => `
-                <div class="flex-1 flex flex-col justify-end h-full" title="${haEscape(String(r.time).slice(11, 16))}: ${r.mm.toFixed(1)} mm">
-                    <div class="rounded-t-md ${r.mm >= 0.1 ? 'bg-[#4a90d9]' : 'bg-stone-200'}" style="height:${r.mm >= 0.1 ? Math.max(12, Math.round(r.mm / maxMm * 100)) : 6}%"></div>
-                </div>`).join('')}</div>
-            <div class="flex justify-between text-[10px] font-semibold text-[#68736d] mt-1"><span>nu</span><span>+30 min</span><span>+1 u</span><span>+2 u</span></div>` : '';
         const lo = Math.min(...daily.map(d => d.min)), hi = Math.max(...daily.map(d => d.max));
         const span = Math.max(1, hi - lo);
         html = `
@@ -222,14 +214,6 @@ function renderWeatherView() {
                     <p class="text-xs font-semibold text-[#68736d] mt-1">${loc ? '📍 ' + haEscape(loc.name) : ''}${today.max !== undefined ? ` · ↑ ${Math.round(today.max)}° ↓ ${Math.round(today.min)}°` : ''}${today.sunrise ? ` · 🌅 ${sun(today.sunrise)} · 🌇 ${sun(today.sunset)}` : ''}</p>
                 </div>
             </section>
-
-            ${summary ? `
-            <section class="bg-white rounded-[26px] p-6 shadow-sm">
-                <div class="flex items-center justify-between gap-3">
-                    <h3 class="text-base font-bold text-[#1c2520]">☔ Regen komende 2 uur</h3>
-                    <span class="text-xs font-bold ${summary.wet ? 'text-[#2b6fb5]' : 'text-[#197447]'}">${haEscape(summary.text)}</span>
-                </div>${rainBars}
-            </section>` : ''}
 
             ${weatherRadarCardHtml(loc)}
 
@@ -274,11 +258,30 @@ function renderWeatherView() {
 
 const radar = { frames: [], host: '', idx: 0, playing: true, timer: null, fetchedAt: 0, layers: [], active: false, loading: false, error: '' };
 
+// Verwachting voor de komende 2 uur (Open-Meteo, per kwartier). De radar zelf toont enkel het verleden: RainViewer stopte de voorspelling op 1 januari 2026.
+function weatherRainForecastHtml() {
+    const rain = weatherData && weatherData.rain, summary = weatherRainSummary(rain);
+    if (!summary) return '';
+    const maxMm = Math.max(1, ...rain.map(r => r.mm));
+    return `
+        <div class="mt-4 pt-4 border-t border-stone-100">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-[#1c2520]">☔ Verwachting komende 2 uur</h4>
+                <span class="text-xs font-bold ${summary.wet ? 'text-[#2b6fb5]' : 'text-[#197447]'}">${haEscape(summary.text)}</span>
+            </div>
+            <div class="flex items-end gap-1.5 h-16 mt-3">${rain.map(r => `
+                <div class="flex-1 flex flex-col justify-end h-full" title="${haEscape(String(r.time).slice(11, 16))}: ${r.mm.toFixed(1)} mm">
+                    <div class="rounded-t-md ${r.mm >= 0.1 ? 'bg-[#4a90d9]' : 'bg-stone-200'}" style="height:${r.mm >= 0.1 ? Math.max(12, Math.round(r.mm / maxMm * 100)) : 6}%"></div>
+                </div>`).join('')}</div>
+            <div class="flex justify-between text-[10px] font-semibold text-[#68736d] mt-1"><span>nu</span><span>+30 min</span><span>+1 u</span><span>+2 u</span></div>
+        </div>`;
+}
+
 function weatherRadarCardHtml(loc) {
     return `
         <section class="bg-white rounded-[26px] p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <h3 class="text-base font-bold text-[#1c2520]">🛰️ Regenradar</h3>
+                <h3 class="text-base font-bold text-[#1c2520]">🛰️ Regenradar <span class="text-xs font-semibold text-[#68736d]">· afgelopen 2 uur</span></h3>
                 <div class="flex items-center gap-2">
                     <span id="radarTimeLabel" class="text-xs font-extrabold text-[#2b6fb5] min-w-[4.5rem] text-right"></span>
                     <button type="button" id="radarPlayBtn" onclick="window.weatherRadarToggle()" class="w-9 h-9 rounded-full bg-[#152920] text-white text-sm cursor-pointer" aria-label="Afspelen of pauzeren">${radar.playing ? '⏸' : '▶'}</button>
@@ -286,7 +289,8 @@ function weatherRadarCardHtml(loc) {
             </div>
             <div id="weatherRadarMap" class="weather-map w-full h-[320px] sm:h-[440px] rounded-2xl overflow-hidden bg-[#e8f2ec] flex items-center justify-center text-xs text-[#68736d]">Kaart laden…</div>
             <input id="radarSlider" type="range" min="0" max="0" value="0" oninput="window.weatherRadarSeek(this.value)" class="w-full mt-3 accent-[#152920]" aria-label="Radarbeeld kiezen">
-            <p class="text-[10.5px] text-[#8a958f] mt-1.5">Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a> (laatste 2 uur) · ${loc ? '🏠 ' + haEscape(loc.name) : ''}</p>
+            <p class="text-[10.5px] text-[#8a958f] mt-1.5">Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" class="underline">RainViewer</a>, de afgelopen 2 uur (de gratis radar heeft geen voorspelling meer) · ${loc ? '🏠 ' + haEscape(loc.name) : ''}</p>
+            ${weatherRainForecastHtml()}
         </section>`;
 }
 
