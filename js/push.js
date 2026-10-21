@@ -152,7 +152,7 @@ function renderPushSwitcher() {
                 <div class="flex gap-2"><button type="button" onclick="pushSaveServer()" class="flex-1 py-2 rounded-xl bg-[#34d399] text-[#0d2a1c] text-xs font-extrabold cursor-pointer">Opslaan</button>
                 <button type="button" onclick="pushServerTest()" class="flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">Testmelding</button></div>
                 <button type="button" onclick="pushRulesSend()" class="w-full py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">📤 Meldingsregels maken en naar de server sturen</button>
-                <p class="text-[10px] text-[#a3b8ae] leading-snug">Maakt uit je bord regels voor: wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg en internetlimiet. Druk hier opnieuw op na elke wijziging aan je apparaten.</p>
+                <p class="text-[10px] text-[#a3b8ae] leading-snug">Maakt uit je bord regels voor: toestel klaar (wasmachine, droger, vaatwasser), autoportier open, bandendruk en batterij laag, robot klaar of storing, stofbak vol, water leeg, afvalophaling en internetlimiet. Ook Home Assistant langer dan 5 minuten weg meldt de server zelf. Alleen wat bij Meldingen aanstaat. Wordt ook vanzelf ververst als je de app opent.</p>
             </div>
         </details>` : '';
     const html = `

@@ -97,7 +97,7 @@ Zet Tailscale ook op je telefoon(s) (app + inloggen met hetzelfde account). Dit 
 ## Stap 7a · De regels automatisch laten maken (aanbevolen)
 Open Thuisbord als beheerder → menu → **Pushserver** → tik op **📤 Meldingsregels maken en naar de server sturen**. Thuisbord maakt dan regels uit je instellingen (wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water leeg, internetlimiet) en stuurt ze naar de server. Je hoeft niets in de console te typen. Doe dit opnieuw na elke wijziging aan je apparaten. Let op: de server moet eerst de nieuwste versie hebben (`cd /tmp/tb && git pull`, dan `cp /tmp/tb/push-server/server.js /opt/thuisbord-push/ && systemctl restart thuisbord-push`).
 
-Afvalophaling, airco en muziek kunnen niet via de server (die hangen van de klok of van de app af).
+De knop zet ook toestellen zonder statussensor (via het stroomverbruik), bandendruk, robot klaar en de afvalophaling (de avond ervoor om 18:00 en 's ochtends om 7:00) klaar. Als Home Assistant langer dan 5 minuten weg is, meldt de server dat zelf. Airco en muziek kunnen niet via de server (live weergave, geen gebeurtenis).
 
 ## Stap 7b · Zelf bepalen wanneer er een melding komt
 Pas `/opt/thuisbord-push/rules.json` aan (wordt binnen 5 seconden automatisch ingelezen):
