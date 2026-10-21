@@ -179,10 +179,15 @@ function laundryNotifItems(map) {
         const st = laundryStatus(d, map);
         if (st.kind !== 'running' && st.kind !== 'paused') return;
         const name = d.name || (d.kind === 'dryer' ? 'Droger' : 'Wasmachine');
-        const bits = [st.kind === 'paused' ? 'gepauzeerd' : (st.phase || 'bezig')];
+        // "Wassen" bij een wasmachine en "Drogen" bij een droger zeggen niets nieuws: weglaten
+        const obvious = (d.kind === 'dryer' ? /^(drogen|drying)$/i : /^(wassen|wash)$/i).test(st.phase || '');
+        const bits = [];
+        if (st.kind === 'paused') bits.push('gepauzeerd');
+        else if (st.phase && !obvious) bits.push(st.phase);
         if (st.program) bits.push(st.program);
         if (st.temp && d.kind !== 'dryer') bits.push(st.temp);
         if (st.remaining !== null && st.kind === 'running') bits.push(`nog ${laundryDur(st.remaining)}`);
+        if (!bits.length) bits.push('bezig');
         out.push({ key: `laun_${d.id}`, icon: d.kind === 'dryer' ? '👕' : '🫧', anim: d.kind === 'dryer' ? 'ni-tumble' : 'ni-bubble', level: 'info', text: `${name}: ${bits.join(' · ')}` });
     });
     return out;
