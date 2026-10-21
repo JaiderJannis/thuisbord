@@ -26,6 +26,37 @@ const LAUNDRY_JOB_NL = {
 const LAUNDRY_RUN = new Set(['run', 'running', 'on', 'active', 'washing', 'drying', 'in_progress', 'busy', 'working']);
 const LAUNDRY_PAUSE = new Set(['pause', 'paused']);
 
+// Vertaalde tekst van select/sensor-waarden: de REST-API geeft de ruwe code (bv. "1c"), Home Assistant zelf toont "Eco 40-60".
+// We vragen de vertaling op via /api/template (state_translated) en onthouden ze per entiteit + waarde.
+const laundryTr = new Map();       // "entity|raw" -> tekst ('' = geen vertaling beschikbaar)
+const laundryTrBusy = new Set();
+const laundryTrKey = (id, raw) => id + '|' + raw;
+function laundryTrText(id, raw) { const v = laundryTr.get(laundryTrKey(id, raw)); return v ? v : ''; }
+async function laundryTranslateFetch(id, raw) {
+    const k = laundryTrKey(id, raw);
+    if (laundryTr.has(k) || laundryTrBusy.has(k)) return;
+    const baseUrl = typeof getCleanHaUrl === 'function' ? getCleanHaUrl() : '';
+    const token = ((appState && appState.haToken) || '').trim();
+    if (!baseUrl || !token || typeof fetch !== 'function') return;
+    laundryTrBusy.add(k);
+    try {
+        const res = await fetch(`${baseUrl}/api/template`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template: `{{ state_translated('${id}') }}` }) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const t = String(await res.text()).trim();
+        laundryTr.set(k, t && t !== raw && !/^(unknown|unavailable)$/i.test(t) ? t : '');
+        laundryHtmlCache = ''; renderLaundryView();
+    } catch (e) { laundryTr.set(k, ''); }
+    laundryTrBusy.delete(k);
+}
+// Vraagt vertalingen op voor het programma en alle select-extra's van alle toestellen
+function laundryTranslateAll(map) {
+    ensureLaundry().devices.forEach(d => {
+        const ids = [(d.entities || {}).program].concat((d.extras || []).filter(x => /^select\./.test(x)), (d.entities || {}).job).filter(Boolean);
+        ids.forEach(id => { const st = haStateObj(map, id); if (st && haIsUsable(st)) laundryTranslateFetch(id, String(st.state)); });
+    });
+}
+
 const laundryRun = new Map();      // id -> { since, max }  (alleen in het geheugen)
 let laundryEdit = false;
 let laundryHtmlCache = '';
@@ -69,7 +100,7 @@ function laundryStatus(dev, map, now = Date.now()) {
         if (!st) return null;
         const attrs = st.attributes || {};
         const fv = haFriendlyValue(st, attrs.friendly_name || id);
-        return { id, label: laundryExtraLabel(dev, st), text: id.startsWith('select.') && haIsUsable(st) ? laundryPretty(st.state) : fv.text, unit: attrs.unit_of_measurement || '', usable: haIsUsable(st), domain: id.split('.')[0], raw: st.state };
+        return { id, label: laundryExtraLabel(dev, st), text: id.startsWith('select.') && haIsUsable(st) ? (laundryTrText(id, String(st.state)) || laundryPretty(st.state)) : fv.text, unit: attrs.unit_of_measurement || '', usable: haIsUsable(st), domain: id.split('.')[0], raw: st.state };
     }).filter(Boolean);
     let powerW = wSt ? haNumber(wSt) : null;
     if (powerW === null) {
@@ -102,7 +133,7 @@ function laundryStatus(dev, map, now = Date.now()) {
     if (finishAt !== null) remaining = Math.max(0, Math.round((finishAt - now) / 60000));
 
     let program = '';
-    if (pSt) { const v = String(pSt.state); if (!['unknown', 'unavailable', 'none', ''].includes(v.toLowerCase())) program = laundryPretty(v); }
+    if (pSt) { const v = String(pSt.state); if (!['unknown', 'unavailable', 'none', ''].includes(v.toLowerCase())) program = laundryTrText(e.program, v) || laundryPretty(v); }
 
     const phase = jSt && !jobIdle ? (LAUNDRY_JOB_NL[job] !== undefined ? LAUNDRY_JOB_NL[job] : (LAUNDRY_JOB_NL[jobRaw] !== undefined ? LAUNDRY_JOB_NL[jobRaw] : laundryPretty(jobRaw))) : '';
     return { kind, phase, program, remaining, finishAt, powerW, hasAny: !!(sSt || jSt || cSt || pSt || wSt || extras.some(x => x.usable)), jobRaw, extras };
@@ -322,6 +353,7 @@ function renderLaundryView() {
     const L = ensureLaundry();
     const map = haStatesMap();
     laundryTrack(map);
+    laundryTranslateAll(map);
     const running = L.devices.filter(d => laundryStatus(d, map).kind === 'running').length;
     const badge = document.getElementById('menuLaundryBadge');
     if (badge) badge.textContent = running ? `▶ ${running}` : '';
