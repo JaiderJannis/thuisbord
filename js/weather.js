@@ -161,7 +161,29 @@ function weatherTick() {
 
 /* ============================ HEADER ============================ */
 
+// Klein weerblokje op het display (onder de stroomprijs): weer nu en regen komende 2 uur
+let priceWeatherHtml = '';
+function renderPriceWeatherMini() {
+    const box = document.getElementById('priceWeatherMini');
+    if (!box) return;
+    const allowed = typeof permAllowed !== 'function' || !currentRole || permAllowed('view_weather');
+    if (!weatherData || !allowed) { box.classList.add('hidden'); if (priceWeatherHtml) { priceWeatherHtml = ''; box.innerHTML = ''; } return; }
+    const c = weatherData.cur, info = weatherCodeInfo(c.code, c.isDay), loc = weatherLocation();
+    const rain = weatherData.rain || [], summary = weatherRainSummary(rain);
+    const maxMm = Math.max(1, ...rain.map(r => r.mm));
+    const bars = rain.length ? `<div class="flex items-end gap-1 flex-1 min-h-[34px] max-h-[64px] mt-2">${rain.map(r => `<div class="flex-1 rounded-t-sm ${r.mm >= 0.1 ? 'bg-[#4a90d9]' : 'bg-stone-300'}" style="height:${r.mm >= 0.1 ? Math.max(18, Math.round(r.mm / maxMm * 100)) : 8}%" title="${haEscape(String(r.time).slice(11, 16))}: ${r.mm.toFixed(1)} mm"></div>`).join('')}</div>
+        <div class="flex justify-between text-[9.5px] font-semibold text-[#8a958f] mt-1"><span>nu</span><span>+1 u</span><span>+2 u</span></div>` : '';
+    const html = `<div class="h-full flex flex-col justify-center">
+        <div class="flex items-center gap-2.5"><span class="text-3xl leading-none">${info.icon}</span>
+            <div class="min-w-0"><p class="text-lg font-extrabold text-[#1c2520] leading-tight">${Math.round(c.temp)}° <span class="text-[13px] font-semibold text-[#55605a]">${haEscape(info.text)}</span></p>
+            <p class="text-[10.5px] font-semibold text-[#68736d] truncate">${loc ? '📍 ' + haEscape(loc.name) + ' · ' : ''}wind ${Math.round(c.wind)} km/u</p></div></div>
+        ${summary ? `<p class="text-xs font-bold mt-2 ${summary.wet ? 'text-[#2b6fb5]' : 'text-[#197447]'}">☔ ${haEscape(summary.text)}</p>` : ''}${bars}</div>`;
+    box.classList.remove('hidden');
+    if (html !== priceWeatherHtml) { priceWeatherHtml = html; box.innerHTML = html; }
+}
+
 function renderWeatherHeader() {
+    renderPriceWeatherMini();
     const allowed = typeof permAllowed !== 'function' || !currentRole || permAllowed('view_weather');
     const line = document.getElementById('liveWeather');
     const icon = document.getElementById('headerWeatherIcon');
