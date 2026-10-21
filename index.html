@@ -2,6 +2,16 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
+    <script>
+    /* Adres netjes houden: op github.io altijd https, en zonder "index.html" achteraan */
+    (function () {
+        try {
+            var l = location;
+            if (l.protocol === 'http:' && /\.github\.io$/.test(l.hostname)) { l.replace('https://' + l.host + l.pathname + l.search + l.hash); return; }
+            if (/\/index\.html$/.test(l.pathname) && history.replaceState) history.replaceState(null, '', l.pathname.replace(/index\.html$/, '') + l.search + l.hash);
+        } catch (e) { /* negeren */ }
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thuisbord - Slimme Live Energie Display & Multi-Gezin Beheer</title>
     <meta name="theme-color" content="#18261f">
