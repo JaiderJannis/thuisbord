@@ -61,7 +61,10 @@ function ownerCheck(owner, env, hh) {
 let owner = process.env.HOUSEHOLD || String((readJson('owner.json', {}) || {}).household || '');
 const toOwner = () => owner || undefined;
 
+// Vaste titel voor alle meldingen (instelbaar in de app; '' = geen titel). null = elke melding houdt zijn eigen titel per soort.
+let pushTitle = (() => { const t = readJson('titel.json', null); return t && typeof t.titel === 'string' ? t.titel.slice(0, 60) : null; })();
 async function sendAll(payload, onlyHousehold) {
+    if (pushTitle !== null && payload) payload = Object.assign({}, payload, { title: pushTitle });
     const body = JSON.stringify(payload);
     const targets = subsFor(subs, onlyHousehold);
     let ok = 0, gone = 0;
@@ -173,11 +176,11 @@ setInterval(runPlans, 30000);
 let haTimer = null, haAlerted = false;
 function haDown() {
     if (haTimer || haAlerted) return;
-    haTimer = setTimeout(() => { haTimer = null; haAlerted = true; sendAll({ title: 'Thuisbord', body: '📡 Home Assistant is al 5 minuten niet bereikbaar', tag: 'ha_offline' }, toOwner()); }, 5 * 60000);
+    haTimer = setTimeout(() => { haTimer = null; haAlerted = true; sendAll({ title: '📡 Home Assistant', body: '📡 Home Assistant is al 5 minuten niet bereikbaar', tag: 'ha_offline' }, toOwner()); }, 5 * 60000);
 }
 function haUp() {
     if (haTimer) { clearTimeout(haTimer); haTimer = null; }
-    if (haAlerted) { haAlerted = false; sendAll({ title: 'Thuisbord', body: '✅ Home Assistant is weer bereikbaar', tag: 'ha_offline' }, toOwner()); }
+    if (haAlerted) { haAlerted = false; sendAll({ title: '📡 Home Assistant', body: '✅ Home Assistant is weer bereikbaar', tag: 'ha_offline' }, toOwner()); }
 }
 
 function connectHa() {
@@ -305,7 +308,7 @@ async function checkRain() {
         const now = Date.now(), d = rainDecision(rainSlots(await r.json(), now), regenState, now);
         regenState = d.st; writeJson('regen-state.json', regenState);
         if (d.alert !== null) {
-            const x = await sendAll({ title: 'Thuisbord', body: `🌧️ Regen verwacht over ongeveer ${d.alert} min${regen.naam ? ' (' + regen.naam + ')' : ''}`, tag: 'regen' }, owner || regen.household || undefined);
+            const x = await sendAll({ title: '🌧️ Regen', body: `🌧️ Regen verwacht over ongeveer ${d.alert} min${regen.naam ? ' (' + regen.naam + ')' : ''}`, tag: 'regen' }, owner || regen.household || undefined);
             console.log(`[regen] melding over ${d.alert} min -> ${x.sent} verstuurd`);
         }
     } catch (e) { console.warn('Regencontrole mislukt:', e && e.message); }
@@ -368,6 +371,7 @@ http.createServer(async (req, res) => {
             const clean = cleanRules(b.rules);
             if (!clean) return send(res, 400, { error: 'ongeldige regels' });
             writeJson('rules.json', clean); rules = clean;
+            if (b.titel !== undefined) { pushTitle = (typeof b.titel === 'string') ? b.titel.slice(0, 60) : null; writeJson('titel.json', { titel: pushTitle }); }
             let np = 0;
             if (b.plannen !== undefined) { const pl = cleanPlans(b.plannen); if (pl) { plans = pl; writeJson('plannen.json', pl); np = pl.length; } }
             if (b.regen !== undefined) { regen = cleanRegen(b.regen); writeJson('regen.json', regen); if (regen) setTimeout(checkRain, 2000); }
