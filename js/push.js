@@ -29,7 +29,10 @@ function pushRegisterWorker() {
     } catch (e) { /* geen service worker: val terug op gewone meldingen */ }
 }
 
+// Titel boven de meldingen: instelbaar (leeg = geen titel); standaard "Thuisbord"
+function pushTitleText() { const t = typeof appState !== 'undefined' && appState ? appState.pushTitle : undefined; return typeof t === 'string' ? t : 'Thuisbord'; }
 async function pushShow(title, body, tag) {
+    if (typeof title === 'string' && title.startsWith('Thuisbord')) title = (pushTitleText() + title.slice(9)).trim();
     const options = { body, tag, icon: 'icon-192.png', badge: 'icon-192.png', renotify: false };
     try {
         if (typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
@@ -183,6 +186,8 @@ function renderPushSwitcher() {
                 <input id="pushSrvKey" type="password" autocomplete="off" placeholder="SHARED_KEY uit je .env" value="${esc(cfg.key)}" class="w-full px-3 py-2 rounded-xl bg-white/10 text-white text-xs placeholder-white/40 border border-white/10">
                 <div class="flex gap-2"><button type="button" onclick="pushSaveServer()" class="flex-1 py-2 rounded-xl bg-[#34d399] text-[#0d2a1c] text-xs font-extrabold cursor-pointer">Opslaan</button>
                 <button type="button" onclick="pushServerTest()" class="flex-1 py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">Testmelding</button></div>
+                <div><label class="block text-[11px] font-bold text-[#a3b8ae] mb-1">Titel boven de meldingen (leeg = geen titel)</label>
+                <input id="pushTitleInp" type="text" maxlength="40" placeholder="Thuisbord" value="${esc(pushTitleText())}" onchange="pushSetTitle(this.value)" class="w-full px-3 py-2 rounded-xl bg-white/10 text-white text-xs placeholder-white/40 border border-white/10"></div>
                 <label class="flex items-start gap-2 text-[11px] text-white/90 cursor-pointer"><input type="checkbox" ${appState && appState.pushRain === false ? '' : 'checked'} onchange="pushSetRain(this.checked)" class="mt-0.5"> <span>🌧️ Melding als er regen verwacht wordt op mijn locatie (ook met gesloten app)</span></label>
                 <button type="button" onclick="pushRulesSend()" class="w-full py-2 rounded-xl bg-white/15 text-white text-xs font-bold cursor-pointer">📤 Meldingsregels maken en naar de server sturen</button>
                 <p class="text-[10px] text-[#a3b8ae] leading-snug">Maakt uit je bord regels voor: toestel klaar (wasmachine, droger, vaatwasser), autoportier open, bandendruk en batterij laag, robot klaar of storing, stofbak vol, water leeg, afvalophaling en internetlimiet. Ook Home Assistant langer dan 5 minuten weg meldt de server zelf. Alleen wat bij Meldingen aanstaat. Wordt ook vanzelf ververst als je de app opent.</p>

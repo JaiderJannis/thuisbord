@@ -61,7 +61,10 @@ function ownerCheck(owner, env, hh) {
 let owner = process.env.HOUSEHOLD || String((readJson('owner.json', {}) || {}).household || '');
 const toOwner = () => owner || undefined;
 
+// Eigen titel boven de meldingen (instelbaar in de app; '' = geen titel). null = standaard "Thuisbord".
+let pushTitle = (() => { const t = readJson('titel.json', null); return t && typeof t.titel === 'string' ? t.titel.slice(0, 60) : null; })();
 async function sendAll(payload, onlyHousehold) {
+    if (pushTitle !== null && payload && payload.title === 'Thuisbord') payload = Object.assign({}, payload, { title: pushTitle });
     const body = JSON.stringify(payload);
     const targets = subsFor(subs, onlyHousehold);
     let ok = 0, gone = 0;
@@ -368,6 +371,7 @@ http.createServer(async (req, res) => {
             const clean = cleanRules(b.rules);
             if (!clean) return send(res, 400, { error: 'ongeldige regels' });
             writeJson('rules.json', clean); rules = clean;
+            if (b.titel !== undefined) { pushTitle = (typeof b.titel === 'string') ? b.titel.slice(0, 60) : null; writeJson('titel.json', { titel: pushTitle }); }
             let np = 0;
             if (b.plannen !== undefined) { const pl = cleanPlans(b.plannen); if (pl) { plans = pl; writeJson('plannen.json', pl); np = pl.length; } }
             if (b.regen !== undefined) { regen = cleanRegen(b.regen); writeJson('regen.json', regen); if (regen) setTimeout(checkRain, 2000); }

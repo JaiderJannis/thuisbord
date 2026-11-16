@@ -119,7 +119,7 @@ window.pushRulesSend = async function(silent) {
     const say = (m) => { if (silent !== true) showToast(m); };
     if (!rules.length && !plannen.length && !regen) { say('Niets gevonden om te melden. Koppel eerst wasmachine, auto of robot met een entiteit.'); return; }
     try {
-        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen, household: (appState && appState.householdName) || '' }) });
+        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen, titel: typeof pushTitleText === 'function' ? pushTitleText() : undefined, household: (appState && appState.householdName) || '' }) });
         const j = await r.json().catch(() => ({}));
         if (r.status === 401) say('Pushserver: sleutel klopt niet.');
         else if (r.status === 403) say('Deze pushserver hoort bij een ander gezin. Gebruik een eigen server of pas HOUSEHOLD in .env aan.');
@@ -141,6 +141,13 @@ setTimeout(pushRulesAutoSync, 20000);
 setInterval(pushRulesAutoSync, 10 * 60000);
 
 // Regenmelding aan/uit (per gezin)
+window.pushSetTitle = function(v) {
+    if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;
+    appState.pushTitle = String(v == null ? '' : v).slice(0, 40);
+    try { persistStateToFirestore(true); } catch (e) { /* negeren */ }
+    window.pushRulesSend(true);
+    showToast(appState.pushTitle ? `Titel van meldingen: ${appState.pushTitle}` : 'Meldingen krijgen geen titel meer.');
+};
 window.pushSetRain = function(on) {
     if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;
     appState.pushRain = !!on;
