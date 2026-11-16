@@ -23,7 +23,7 @@ function pushRulesBuild() {
         const name = d.name || (d.kind === 'dryer' ? 'Droger' : 'Wasmachine');
         const id = prId(d.entities && d.entities.state), pw = prId(d.entities && d.entities.power);
         if (!id && pw) add(prPowerRule(map, pw, name, d.kind === 'dryer' ? '👕' : '🧺', `laun_${d.id}`));
-        else if (id) add({ naam: `${name} klaar`, entity: id, van: PR_RUN, nietNaar: PR_NOT_DONE, titel: 'Thuisbord', tekst: `${d.kind === 'dryer' ? '👕' : '🧺'} ${name} is klaar`, tag: `laun_${d.id}` });
+        else if (id) add({ naam: `${name} klaar`, entity: id, van: PR_RUN, nietNaar: PR_NOT_DONE, titel: `${d.kind === 'dryer' ? '👕 Droger' : '🧺 Wasserij'}`, tekst: `${d.kind === 'dryer' ? '👕' : '🧺'} ${name} is klaar`, tag: `laun_${d.id}` });
         else skipped.push(`${name}: geen status- of stroomsensor gekoppeld`);
     });
 
@@ -39,29 +39,29 @@ function pushRulesBuild() {
         const doors = { df: 'bestuurder voor', pf: 'passagier voor', dr: 'bestuurder achter', pr: 'passagier achter' };
         Object.keys(doors).forEach(p => {
             const id = prId(e['door_open_' + p]);
-            if (id) add({ naam: `${name}: portier open (${doors[p]})`, entity: id, naar: 'on', titel: 'Thuisbord', tekst: `🚪 ${name}: portier open (${doors[p]})`, tag: `car_${car.id}_door_${p}` });
+            if (id) add({ naam: `${name}: portier open (${doors[p]})`, entity: id, naar: 'on', titel: '🚪 Portier', tekst: `🚪 ${name}: portier open (${doors[p]})`, tag: `car_${car.id}_door_${p}` });
         });
         ['df', 'pf', 'dr', 'pr'].forEach(p => {
             const tid = prId(e['tp_' + p]); if (!tid) return;
             const u = prUnit(map, tid).toLowerCase(), v = parseFloat(String((haStateObj(map, tid) || {}).state));
             const bar = typeof NOTIF_TIRE_WARN_BAR === 'number' ? NOTIF_TIRE_WARN_BAR : 1.9;
             const lim = u === 'kpa' || (!u && v > 10) ? bar * 100 : (u === 'psi' ? bar / 0.0689476 : bar);
-            add({ naam: `${name}: bandendruk laag (${doors[p]})`, entity: tid, onder: Math.round(lim * 100) / 100, titel: 'Thuisbord', tekst: `🛞 ${name}: bandendruk laag (${doors[p]})`, tag: `car_${car.id}_tire_${p}` });
+            add({ naam: `${name}: bandendruk laag (${doors[p]})`, entity: tid, onder: Math.round(lim * 100) / 100, titel: '🛞 Banden', tekst: `🛞 ${name}: bandendruk laag (${doors[p]})`, tag: `car_${car.id}_tire_${p}` });
         });
         const bid = prId(e.battery);
-        if (bid) add({ naam: `${name}: batterij laag`, entity: bid, onder: typeof NOTIF_CAR_BATTERY_WARN === 'number' ? NOTIF_CAR_BATTERY_WARN : 20, titel: 'Thuisbord', tekst: `🪫 ${name}: batterij bijna leeg`, tag: `car_${car.id}_battery` });
+        if (bid) add({ naam: `${name}: batterij laag`, entity: bid, onder: typeof NOTIF_CAR_BATTERY_WARN === 'number' ? NOTIF_CAR_BATTERY_WARN : 20, titel: '🔋 Auto', tekst: `🪫 ${name}: batterij bijna leeg`, tag: `car_${car.id}_battery` });
     });
 
     // Robots
     (on('robots') ? (st.robots || []) : []).forEach(rob => {
         const name = rob.name || 'Robot', id = prId(rob.entityId);
-        if (id) add({ naam: `${name}: storing`, entity: id, naar: 'error', titel: 'Thuisbord', tekst: `🚨 ${name}: storing, controleer de robot`, tag: `rob_${rob.id}_error` });
-        if (id) add({ naam: `${name}: klaar`, entity: id, van: ['cleaning', 'mowing', 'returning'], naar: 'docked', titel: 'Thuisbord', tekst: `${String(rob.entityId || '').startsWith('lawn_mower.') ? '🚜' : '🤖'} ${name} is klaar en staat terug op het dock`, tag: `rob_${rob.id}_klaar` });
+        if (id) add({ naam: `${name}: storing`, entity: id, naar: 'error', titel: '🤖 Robot', tekst: `🚨 ${name}: storing, controleer de robot`, tag: `rob_${rob.id}_error` });
+        if (id) add({ naam: `${name}: klaar`, entity: id, van: ['cleaning', 'mowing', 'returning'], naar: 'docked', titel: '🤖 Robot', tekst: `${String(rob.entityId || '').startsWith('lawn_mower.') ? '🚜' : '🤖'} ${name} is klaar en staat terug op het dock`, tag: `rob_${rob.id}_klaar` });
         (rob.extras || []).forEach(ex => {
             const eid = prId(ex.entityId); if (!eid) return;
             const label = String(ex.label || ''), pct = prUnit(map, eid) === '%';
-            if (/stofbak|\bbin\b|dust|vuil|container|afval/i.test(label) && pct) add({ naam: `${name}: ${label} vol`, entity: eid, boven: 90, titel: 'Thuisbord', tekst: `🗑️ ${name}: ${label.toLowerCase()} is vol`, tag: `rob_${rob.id}_${ex.id}` });
-            else if (/water|tank|reservoir/i.test(label) && pct) add({ naam: `${name}: ${label} leeg`, entity: eid, onder: 10, titel: 'Thuisbord', tekst: `💧 ${name}: ${label.toLowerCase()} bijna leeg`, tag: `rob_${rob.id}_${ex.id}` });
+            if (/stofbak|\bbin\b|dust|vuil|container|afval/i.test(label) && pct) add({ naam: `${name}: ${label} vol`, entity: eid, boven: 90, titel: '🤖 Robot', tekst: `🗑️ ${name}: ${label.toLowerCase()} is vol`, tag: `rob_${rob.id}_${ex.id}` });
+            else if (/water|tank|reservoir/i.test(label) && pct) add({ naam: `${name}: ${label} leeg`, entity: eid, onder: 10, titel: '🤖 Robot', tekst: `💧 ${name}: ${label.toLowerCase()} bijna leeg`, tag: `rob_${rob.id}_${ex.id}` });
         });
     });
 
@@ -73,8 +73,8 @@ function pushRulesBuild() {
             if (uid && a.limit > 0) {
                 const u = prUnit(map, uid).toLowerCase(), f = u === 'mb' || u === 'mib' ? 1024 : (u === 'tb' || u === 'tib' ? 1 / 1024 : 1);
                 const r2 = (n) => Math.round(n * 100) / 100;
-                add({ naam: 'Internet 90%', entity: uid, boven: r2(a.limit * 0.9 * f), titel: 'Thuisbord', tekst: '📶 Je internetverbruik zit op 90% van je limiet', tag: 'net_90' });
-                add({ naam: 'Internet limiet bereikt', entity: uid, boven: r2(a.limit * f), titel: 'Thuisbord', tekst: '🚫 Je internetlimiet is bereikt', tag: 'net_100' });
+                add({ naam: 'Internet 90%', entity: uid, boven: r2(a.limit * 0.9 * f), titel: '📶 Internet', tekst: '📶 Je internetverbruik zit op 90% van je limiet', tag: 'net_90' });
+                add({ naam: 'Internet limiet bereikt', entity: uid, boven: r2(a.limit * f), titel: '📶 Internet', tekst: '🚫 Je internetlimiet is bereikt', tag: 'net_100' });
             }
         } catch (e) { /* negeren */ }
     }
@@ -90,7 +90,7 @@ function pushRulesBuild() {
 // Stroomgebaseerde "klaar": vermogen was minstens 5 W en zakt eronder (na minstens 5 minuten)
 function prPowerRule(map, id, name, icon, tag) {
     const kw = prUnit(map, id).toLowerCase() === 'kw';
-    return { naam: `${name} klaar`, entity: id, stroomBoven: kw ? 0.005 : 5, minMinuten: 5, titel: 'Thuisbord', tekst: `${icon} ${name} is klaar`, tag };
+    return { naam: `${name} klaar`, entity: id, stroomBoven: kw ? 0.005 : 5, minMinuten: 5, titel: '🧺 Wasserij', tekst: `${icon} ${name} is klaar`, tag };
 }
 
 // Afvalophaling: de avond ervoor om 18:00 en 's ochtends om 7:00, op basis van het aantal dagen dat de sensor opgeeft
@@ -105,7 +105,7 @@ function pushPlansBuild(now) {
         const ymd = day.getFullYear() + '-' + String(day.getMonth() + 1).padStart(2, '0') + '-' + String(day.getDate()).padStart(2, '0');
         [[1, 18, `♻️ Morgen wordt ${label} opgehaald: buiten zetten`, 'eve'], [0, 7, `♻️ Vandaag wordt ${label} opgehaald`, 'dag']].forEach(([back, h, tekst, k]) => {
             const x = at(back, h);
-            if (x.getTime() > t0) out.push({ id: `waste_${label}_${ymd}_${k}`, op: x.toISOString(), titel: 'Thuisbord', tekst, tag: `waste_${label}` });
+            if (x.getTime() > t0) out.push({ id: `waste_${label}_${ymd}_${k}`, op: x.toISOString(), titel: '♻️ Afval', tekst, tag: `waste_${label}` });
         });
     });
     return out;
@@ -119,7 +119,7 @@ window.pushRulesSend = async function(silent) {
     const say = (m) => { if (silent !== true) showToast(m); };
     if (!rules.length && !plannen.length && !regen) { say('Niets gevonden om te melden. Koppel eerst wasmachine, auto of robot met een entiteit.'); return; }
     try {
-        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen, titel: typeof pushTitleText === 'function' ? pushTitleText() : undefined, household: (appState && appState.householdName) || '' }) });
+        const r = await fetch(c.url + '/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Key': c.key }, body: JSON.stringify({ rules, plannen, regen, titel: typeof pushTitleOverride === 'function' ? pushTitleOverride() : null, household: (appState && appState.householdName) || '' }) });
         const j = await r.json().catch(() => ({}));
         if (r.status === 401) say('Pushserver: sleutel klopt niet.');
         else if (r.status === 403) say('Deze pushserver hoort bij een ander gezin. Gebruik een eigen server of pas HOUSEHOLD in .env aan.');
@@ -143,10 +143,12 @@ setInterval(pushRulesAutoSync, 10 * 60000);
 // Regenmelding aan/uit (per gezin)
 window.pushSetTitle = function(v) {
     if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;
-    appState.pushTitle = String(v == null ? '' : v).slice(0, 40);
+    const t = String(v == null ? '' : v).trim().slice(0, 40);
+    if (t === '') delete appState.pushTitle;          // leeg: elke soort krijgt zijn eigen titel
+    else appState.pushTitle = t === '-' ? '' : t;     // "-": helemaal geen titel
     try { persistStateToFirestore(true); } catch (e) { /* negeren */ }
     window.pushRulesSend(true);
-    showToast(appState.pushTitle ? `Titel van meldingen: ${appState.pushTitle}` : 'Meldingen krijgen geen titel meer.');
+    showToast(t === '' ? 'Elke melding krijgt een titel per soort.' : t === '-' ? 'Meldingen krijgen geen titel meer.' : `Titel van meldingen: ${t}`);
 };
 window.pushSetRain = function(on) {
     if (typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'admin')) return;

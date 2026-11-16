@@ -118,7 +118,7 @@ function plannerCheckReminders() {
     due.forEach(r => {
         const text = `${r.label}: nu starten is het goedkoopst!`;
         if (typeof showToast === 'function') showToast(`⏰ ${text}`);
-        try { if (typeof pushActive === 'function' && pushActive()) pushShow('Thuisbord', `⏰ ${text}`, 'planner_' + r.id); } catch (e) { /* negeren */ }
+        try { if (typeof pushActive === 'function' && pushActive()) pushShow('⏰ Planner', `⏰ ${text}`, 'planner_' + r.id); } catch (e) { /* negeren */ }
     });
     plannerHtmlCache = '';
     renderPlannerView();
