@@ -13,6 +13,8 @@ const NOTIF_CATEGORIES = [
     { key: 'internet',   label: '📶 Internetlimiet',    hint: 'Je Telenet-verbruik komt in de buurt van de limiet (vanaf 90%)' },
     { key: 'waste',      label: '♻️ Afvalophaling',     hint: 'Vandaag of morgen is er ophaling' },
     { key: 'music',      label: '🎵 Muziek',            hint: 'Toont wat er nu speelt, als rollende tekst (Music Assistant)' },
+    { key: 'batteries', label: '🪫 Batterij van sensoren', hint: 'Alleen via de pushserver: een batterijsensor in Home Assistant zakt onder 15%' },
+    { key: 'safety',     label: '🚨 Veiligheid',        hint: 'Alleen via de pushserver: rook-, gas-, koolmonoxide- of lekmelder, of alarm dat afgaat' },
     { key: 'connection', label: '📡 Verbinding',        hint: 'Geen live verbinding met Home Assistant' }
 ];
 const NOTIF_DONE_VISIBLE_MS = 90 * 60 * 1000;

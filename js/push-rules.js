@@ -4,7 +4,8 @@
    wasmachine/droger klaar, autoportier open, auto-batterij laag, robotstoring, stofbak vol, water bijna leeg, internetlimiet.
    Ook: bandendruk laag, toestel zonder statussensor klaar (op het stroomverbruik), robot klaar, afvalophaling (de avond ervoor en 's ochtends)
    en Home Assistant langer dan 5 minuten weg (dat laatste doet de server zelf).
-   Alleen categorieën die bij Meldingen aanstaan worden meegenomen. Niet mogelijk: airco en muziek (live weergave, geen gebeurtenis). */
+   Alleen categorieën die bij Meldingen aanstaan worden meegenomen. Ook: wasmachine/droger gestart (met programma, temperatuur en eindtijd), robot begint of gaat naar het dock, airco aan/uit, auto klaar met laden,
+   lege batterijen van sensoren en veiligheid (rook, gas, koolmonoxide, lekkage, alarm). Niet mogelijk: muziek (live weergave, geen gebeurtenis). */
 
 const PR_RUN = ['run', 'running', 'on', 'active', 'washing', 'drying', 'in_progress', 'busy', 'working'];
 const PR_NOT_DONE = PR_RUN.concat(['pause', 'paused', 'unavailable', 'unknown']);
@@ -64,6 +65,62 @@ function pushRulesBuild() {
             else if (/water|tank|reservoir/i.test(label) && pct) add({ naam: `${name}: ${label} leeg`, entity: eid, onder: 10, titel: '🤖 Robot', tekst: `💧 ${name}: ${label.toLowerCase()} bijna leeg`, tag: `rob_${rob.id}_${ex.id}` });
         });
     });
+
+    // Wasmachine / droger gestart: met programma, temperatuur en eindtijd zodra Home Assistant die doorgeeft (de server wacht 30 s)
+    ((on('laundry') && st.laundry && st.laundry.devices) || []).forEach(d => {
+        const e = d.entities || {}, id = prId(e.state); if (!id) return;
+        const dryer = d.kind === 'dryer', name = d.name || (dryer ? 'Droger' : 'Wasmachine');
+        const bits = [`${dryer ? '👕' : '🧺'} ${name} is gestart`];
+        if (prId(e.program)) bits.push(`{s:${prId(e.program)}}`);
+        if (!dryer && prId(e.temp)) bits.push(`{t:${prId(e.temp)}}`);
+        if (prId(e.completion)) bits.push(`klaar om {k:${prId(e.completion)}}`);
+        add({ naam: `${name} gestart`, entity: id, naar: PR_RUN, nietVan: PR_RUN, wacht: 30, titel: dryer ? '👕 Droger' : '🧺 Wasserij', tekst: bits.join(' · '), tag: `laun_start_${d.id}` });
+    });
+
+    // Robot begint of keert terug naar het dock
+    (on('robotsActive') ? (st.robots || []) : []).forEach(rob => {
+        const name = rob.name || 'Robot', id = prId(rob.entityId); if (!id) return;
+        const mower = String(rob.entityId || '').startsWith('lawn_mower.');
+        add({ naam: `${name}: gestart`, entity: id, naar: mower ? ['mowing'] : ['cleaning'], nietVan: mower ? ['mowing'] : ['cleaning', 'returning'], titel: '🤖 Robot', tekst: `${mower ? '🚜' : '🤖'} ${name} is aan het ${mower ? 'maaien' : 'schoonmaken'}`, tag: `robact_start_${rob.id}` });
+        add({ naam: `${name}: terug naar dock`, entity: id, naar: 'returning', titel: '🤖 Robot', tekst: `🏠 ${name} keert terug naar het dock`, tag: `robact_ret_${rob.id}` });
+    });
+
+    // Airco aan (met de stand) en uit
+    const CL = { cool: ['❄️', 'koelen'], heat: ['🔥', 'verwarmen'], heat_cool: ['🔄', 'automatisch'], auto: ['🔄', 'automatisch'], dry: ['💧', 'drogen'], fan_only: ['🌀', 'ventilator'] };
+    (on('climate') ? (st.climates || []) : []).forEach((cl, i) => {
+        const id = prId(cl.entityId); if (!id) return;
+        const name = cl.name || 'Airco', k = cl.id || i;
+        Object.keys(CL).forEach(m => add({ naam: `${name}: ${CL[m][1]}`, entity: id, naar: m, nietVan: m, titel: '❄️ Airco', tekst: `${CL[m][0]} ${name} staat aan: ${CL[m][1]}`, tag: `clim_${k}_${m}` }));
+        add({ naam: `${name}: uit`, entity: id, naar: 'off', van: Object.keys(CL), titel: '❄️ Airco', tekst: `⏹️ ${name} staat uit`, tag: `clim_${k}_off` });
+    });
+
+    // Auto: laden voltooid (en gestart), met batterijpercentage
+    (on('cars') ? (st.cars || []) : []).forEach(car => {
+        const e = car.entities || {}, name = car.name || 'Auto', cid = prId(e.charge_status); if (!cid) return;
+        const bat = prId(e.battery);
+        add({ naam: `${name}: laden voltooid`, entity: cid, naar: ['charging_complete', 'complete', 'done', 'fully_charged', 'finished'], titel: '🔋 Auto', tekst: `🔋 ${name} is klaar met laden${bat ? ` · {s:${bat}}%` : ''}`, tag: `car_${car.id}_chargedone` });
+        add({ naam: `${name}: laden gestart`, entity: cid, naar: ['charging'], nietVan: ['charging'], titel: '🔋 Auto', tekst: `⚡ ${name} is gaan laden${bat ? ` · {s:${bat}}%` : ''}`, tag: `car_${car.id}_chargestart` });
+    });
+
+    // Alle batterijsensoren in Home Assistant (zoals deursensoren, afstandsbedieningen): melding onder 15%
+    if (on('batteries')) {
+        const used = new Set((st.cars || []).map(c => prId((c.entities || {}).battery)));
+        const list = (typeof discoveredHaEntities !== 'undefined' ? discoveredHaEntities : []) || [];
+        list.filter(x => x && /^sensor\./.test(x.entity_id) && x.attributes && x.attributes.device_class === 'battery' && x.attributes.unit_of_measurement === '%' && !used.has(x.entity_id)).slice(0, 40).forEach(x => {
+            add({ naam: `Batterij laag: ${x.entity_id}`, entity: x.entity_id, onder: 15, titel: '🪫 Batterij', tekst: '🪫 {naam}: batterij bijna leeg ({nieuw}%)', tag: `bat_${x.entity_id}` });
+        });
+    }
+    // Veiligheid: rook-, gas-, koolmonoxide- en lekmelder, en een alarm dat afgaat
+    if (on('safety')) {
+        const list = (typeof discoveredHaEntities !== 'undefined' ? discoveredHaEntities : []) || [];
+        const what = { smoke: '🔥 rook gedetecteerd', gas: '⚠️ gas gedetecteerd', carbon_monoxide: '☠️ koolmonoxide gedetecteerd', moisture: '💧 lekkage gedetecteerd' };
+        list.filter(x => x && /^binary_sensor\./.test(x.entity_id) && x.attributes && what[x.attributes.device_class]).slice(0, 30).forEach(x => {
+            add({ naam: `Alarm: ${x.entity_id}`, entity: x.entity_id, naar: 'on', titel: '🚨 Veiligheid', tekst: `🚨 {naam}: ${what[x.attributes.device_class]}`, tag: `safe_${x.entity_id}` });
+        });
+        list.filter(x => x && /^alarm_control_panel\./.test(x.entity_id)).slice(0, 5).forEach(x => {
+            add({ naam: `Alarm afgegaan: ${x.entity_id}`, entity: x.entity_id, naar: 'triggered', titel: '🚨 Veiligheid', tekst: '🚨 {naam}: alarm is afgegaan!', tag: `safe_${x.entity_id}` });
+        });
+    }
 
     // Internet (Telenet): drempel op 90% en 100% van de limiet, omgerekend naar de eenheid van de sensor
     if (on('internet') && typeof telenetEntities === 'function') {
