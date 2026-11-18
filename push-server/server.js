@@ -92,6 +92,7 @@ function ruleMatches(r, to, from) {
     if (r.naar != null && !asList(r.naar).includes(to)) return false;
     if (r.van != null && !asList(r.van).includes(from)) return false;
     if (r.nietNaar != null && asList(r.nietNaar).includes(to)) return false;
+    if (r.nietVan != null && asList(r.nietVan).includes(from)) return false;
     if (r.boven != null) { const n = num(to), o = num(from); if (n === null || n < Number(r.boven) || (o !== null && o >= Number(r.boven))) return false; }
     if (r.onder != null) { const n = num(to), o = num(from); if (n === null || n > Number(r.onder) || (o !== null && o <= Number(r.onder))) return false; }
     return true;
@@ -111,8 +112,43 @@ function stroomRule(r, ev, to) {
         .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
 }
 
+// Laatst bekende status van alle entiteiten (voor invulvelden in de tekst van een melding)
+const stateCache = new Map();
+const NO_VALUE = new Set(['', 'unknown', 'unavailable', 'none', 'null']);
+const fmtClock = (iso) => { const t = Date.parse(iso); if (isNaN(t)) return ''; try { return new Intl.DateTimeFormat('nl-BE', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Brussels' }).format(new Date(t)); } catch (e) { return ''; } };
+// Waarde van een entiteit: eerst de vertaalde tekst van Home Assistant (bv. "Eco 40-60" i.p.v. de code "1c"), anders de ruwe status
+async function entityText(id, raw) {
+    if (!raw && cfg.haUrl && cfg.haToken && typeof fetch === 'function') {
+        try {
+            const r = await fetch(cfg.haUrl + '/api/template', { method: 'POST', headers: { Authorization: 'Bearer ' + cfg.haToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ template: `{{ state_translated('${id}') }}` }) });
+            if (r.ok) return String(await r.text()).trim();
+        } catch (e) { /* val terug op de gecachte status */ }
+    }
+    const st = stateCache.get(id); return st ? String(st.state) : '';
+}
+// Vult {s:entiteit} (tekst), {t:entiteit} (temperatuur: 40 -> 40°C) en {k:entiteit} (tijdstip: klaar om 15:20) in.
+// Een stukje tekst (gescheiden door " · ") met een lege waarde valt weg, zodat er nooit "unknown" in een melding staat.
+async function fillText(tekst) {
+    const parts = String(tekst).split(' · ');
+    const out = [];
+    for (const part of parts) {
+        let ok = true, res = part;
+        const ms = Array.from(part.matchAll(/\{([stk]):([a-z0-9_]+\.[a-z0-9_]+)\}/g));
+        for (const m of ms) {
+            let v = '';
+            if (m[1] === 'k') { const st = stateCache.get(m[2]); v = st && !NO_VALUE.has(String(st.state).toLowerCase()) ? fmtClock(st.state) : ''; }
+            else { v = await entityText(m[2], ''); if (NO_VALUE.has(v.toLowerCase())) v = ''; else if (m[1] === 't' && /^\d+([.,]\d+)?$/.test(v)) v += '°C'; }
+            if (!v) { ok = false; break; }
+            res = res.replace(m[0], v);
+        }
+        if (ok) out.push(res);
+    }
+    return out.join(' · ');
+}
+
 function handleStateChange(ev) {
     if (!ev || !ev.entity_id) return;
+    if (ev.new_state) stateCache.set(ev.entity_id, ev.new_state);
     const to = ev.new_state ? String(ev.new_state.state) : null;
     const from = ev.old_state ? String(ev.old_state.state) : null;
     if (to === null || from === to) return;
@@ -124,24 +160,30 @@ function handleStateChange(ev) {
         if (now - (lastFire.get(k) || 0) < 30000) return;   // niet vaker dan 1x per 30 s per melding
         lastFire.set(k, now);
         const name = (ev.new_state.attributes && ev.new_state.attributes.friendly_name) || ev.entity_id;
-        sendAll({ title: r.titel || 'Thuisbord', body: String(r.tekst || '{naam}: {nieuw}').replace('{naam}', name).replace('{nieuw}', to).replace('{oud}', from || ''), tag: r.tag || ev.entity_id }, toOwner())
-            .then(x => console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`));
+        const base = String(r.tekst || '{naam}: {nieuw}').replace('{naam}', name).replace('{nieuw}', to).replace('{oud}', from || '');
+        const go = async () => {
+            const body = await fillText(base).catch(() => base.replace(/ · [^·]*\{[stk]:[^}]*\}[^·]*/g, ''));
+            const x = await sendAll({ title: r.titel || 'Thuisbord', body, tag: r.tag || ev.entity_id }, toOwner());
+            console.log(`[regel] ${r.naam || r.entity} -> ${x.sent} verstuurd`);
+        };
+        // sommige gegevens (programma, klaar om) komen pas even na de start binnen
+        if (r.wacht > 0) setTimeout(go, Math.min(120, r.wacht) * 1000); else go();
     });
 }
 
 // Regels die van buitenaf (de app) binnenkomen: streng opschonen
 function cleanRules(list) {
-    if (!Array.isArray(list) || list.length > 150) return null;
+    if (!Array.isArray(list) || list.length > 300) return null;
     const txt = (v, n) => String(v == null ? '' : v).slice(0, n);
     const arr = (v) => (v == null ? undefined : (Array.isArray(v) ? v : [v]).slice(0, 30).map(x => txt(x, 60)));
     const out = [];
     for (const r of list) {
         if (!r || typeof r.entity !== 'string' || !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(r.entity)) continue;
         const c = { naam: txt(r.naam, 80), entity: r.entity, titel: txt(r.titel || 'Thuisbord', 60), tekst: txt(r.tekst, 200), tag: txt(r.tag || r.entity, 60) };
-        ['naar', 'van', 'nietNaar'].forEach(k => { const a = arr(r[k]); if (a && a.length) c[k] = a.length === 1 && k !== 'nietNaar' ? a[0] : a; });
-        ['boven', 'onder', 'stroomBoven', 'minMinuten'].forEach(k => { if (r[k] != null && isFinite(Number(r[k]))) c[k] = Number(r[k]); });
+        ['naar', 'van', 'nietNaar', 'nietVan'].forEach(k => { const a = arr(r[k]); if (a && a.length) c[k] = a.length === 1 && k !== 'nietNaar' ? a[0] : a; });
+        ['boven', 'onder', 'stroomBoven', 'minMinuten', 'wacht'].forEach(k => { if (r[k] != null && isFinite(Number(r[k]))) c[k] = Number(r[k]); });
         if (c.minMinuten != null && c.stroomBoven == null) delete c.minMinuten;
-        if (c.naar == null && c.van == null && c.nietNaar == null && c.boven == null && c.onder == null && c.stroomBoven == null) continue;
+        if (c.naar == null && c.van == null && c.nietNaar == null && c.nietVan == null && c.boven == null && c.onder == null && c.stroomBoven == null) continue;
         out.push(c);
     }
     return out;
@@ -186,13 +228,14 @@ function haUp() {
 function connectHa() {
     if (!cfg.haUrl || !cfg.haToken) { console.log('HA_URL/HA_TOKEN niet ingesteld: alleen /notify is actief.'); return; }
     const url = cfg.haUrl.replace(/^http/, 'ws') + '/api/websocket';
-    let id = 1, ws;
+    let id = 1, ws, statesId = -1;
     const retry = () => setTimeout(connectHa, 10000);
     try { ws = new WebSocket(url); } catch (e) { console.warn('HA-url ongeldig:', e.message); return; }
     ws.on('message', raw => {
         let m; try { m = JSON.parse(raw); } catch (e) { return; }
         if (m.type === 'auth_required') ws.send(JSON.stringify({ type: 'auth', access_token: cfg.haToken }));
-        else if (m.type === 'auth_ok') { console.log('Verbonden met Home Assistant'); haUp(); ws.send(JSON.stringify({ id: id++, type: 'subscribe_events', event_type: 'state_changed' })); }
+        else if (m.type === 'auth_ok') { console.log('Verbonden met Home Assistant'); haUp(); ws.send(JSON.stringify({ id: id++, type: 'subscribe_events', event_type: 'state_changed' })); statesId = id; ws.send(JSON.stringify({ id: id++, type: 'get_states' })); }
+        else if (m.type === 'result' && m.id === statesId && Array.isArray(m.result)) { m.result.forEach(st => { if (st && st.entity_id) stateCache.set(st.entity_id, st); }); }
         else if (m.type === 'auth_invalid') { console.error('HA_TOKEN is ongeldig'); ws.close(); }
         else if (m.type === 'event' && m.event && m.event.data) handleStateChange(m.event.data);
     });
